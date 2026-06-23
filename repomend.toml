@@ -1,6 +1,6 @@
 [repomend]
 # Path to the repository to scan (override with --repo flag)
-repo_path = "C:/Dev/Projects/checkdmarc"
+repo_path = "D:/Dev/Projects/RepoMend"
 
 # Semgrep ruleset to apply
 semgrep_rules = "p/python"
@@ -15,7 +15,7 @@ tracing_enabled = true
 
 [github]
 owner = "yehorcallmedai-maker"
-repo = "checkdmarc"
+repo = "RepoMend"
 base_branch = "main"
 
 [batch]
