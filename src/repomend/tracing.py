@@ -72,7 +72,7 @@ def flush() -> None:
     if _provider is not None:
         try:
             _provider.force_flush(timeout_millis=5000)
-        except Exception:
+        except Exception:  # nosec B110 — tracing flush must not crash the application
             pass
 
 

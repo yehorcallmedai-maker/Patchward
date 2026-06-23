@@ -53,7 +53,7 @@ __all__ = [
 ]
 
 # Gate status literals
-PASS = "pass"
+PASS = "pass"  # nosec B105 — gate status literal, not a password
 FAIL = "fail"
 SKIP = "skip"
 
