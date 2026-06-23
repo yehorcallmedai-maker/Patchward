@@ -134,12 +134,8 @@ def run_bandit(
         result = sandbox.run_in_container(cmd, repo_path, NetworkPolicy.OFFLINE)
     else:
         _require_tool("bandit", "Install: pip install bandit")
-        bandit_cfg = repo_path / ".bandit"
-        bandit_cmd = ["bandit", "-r", str(repo_path), "--format", "json", "-q"]
-        if bandit_cfg.exists():
-            bandit_cmd += ["-c", str(bandit_cfg)]
         result = _run_subprocess(
-            bandit_cmd,
+            ["bandit", "-r", str(repo_path), "--format", "json", "-q"],
             acceptable_exit_codes=(0, 1),
         )
     raw = _parse_json(result.stdout, "bandit")
