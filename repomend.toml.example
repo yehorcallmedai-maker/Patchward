@@ -1,0 +1,55 @@
+[anthropic]
+# Your Anthropic API key. Set here or via ANTHROPIC_API_KEY env var.
+# Get one at: https://console.anthropic.com
+api_key = ""
+
+[github]
+# GitHub repository to open PRs against (single-repo mode).
+# In multi-repo mode, use [[repos]] entries below instead.
+owner = "your-github-username"
+repo = "your-repo-name"
+base_branch = "main"
+
+[batch]
+# Maximum number of repos processed concurrently.
+# Default 3 is conservative for Anthropic Tier 1 rate limits.
+# Raise to 5-10 if you have Tier 2+ API access.
+max_concurrent = 3
+
+# Maximum findings processed per repo per run.
+# Each finding produces one Fix-Gen + Verify + PR cycle.
+# Default 5 keeps batch runs manageable.
+max_findings_per_repo = 5
+
+[models]
+# Model used for scanner triage (read-only, cheap).
+scanner_model = "claude-haiku-4-5-20251001"
+
+# Model used for fix generation and verification.
+# Opus is automatically used for HIGH/CRITICAL severity findings.
+fix_model = "claude-sonnet-4-6"
+
+[verifier]
+# Timeout in seconds for scanner re-runs in Gate 1.
+timeout_seconds = 120
+
+# Maximum lines a fix is allowed to touch outside the
+# vulnerability range. Import-block edits are always permitted.
+# Set to 0 for strict mode (vulnerability lines only).
+max_out_of_bounds_lines = 0
+
+# [[repos]] — multi-repo mode. Remove [github] section above
+# when using this. Each entry overrides [github] defaults
+# for that specific repo.
+#
+# [[repos]]
+# path = "/absolute/path/to/your/repo"
+# owner = "your-github-username"
+# repo = "your-repo-name"
+# base_branch = "main"
+#
+# [[repos]]
+# path = "/absolute/path/to/another/repo"
+# owner = "your-github-username"
+# repo = "another-repo-name"
+# base_branch = "develop"

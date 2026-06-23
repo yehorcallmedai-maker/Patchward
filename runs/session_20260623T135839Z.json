@@ -1,0 +1,4 @@
+{"repo":"acme/repo-0","status":"ok","pr_url":null,"error":null,"timestamp":"2026-06-23T13:58:39.072699+00:00"}
+{"repo":"acme/repo-1","status":"ok","pr_url":null,"error":null,"timestamp":"2026-06-23T13:58:39.073696+00:00"}
+{"repo":"acme/repo-0","status":"ok","pr_url":null,"error":null,"timestamp":"2026-06-23T13:58:39.081658+00:00"}
+{"repo":"acme/repo-1","status":"error","pr_url":null,"error":"scan failed","timestamp":"2026-06-23T13:58:39.082152+00:00"}
