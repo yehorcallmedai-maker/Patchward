@@ -14,8 +14,12 @@ See [docs/user_guide.md](docs/user_guide.md) for full setup instructions.
 
 ## Installation
 
+RepoMend is not yet published to PyPI. Install from source:
+
 ```
-uv tool install repomend
+git clone https://github.com/yehorcallmedai-maker/RepoMend.git
+cd RepoMend
+uv tool install .
 ```
 
 ## Quick Start
