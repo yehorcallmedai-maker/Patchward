@@ -6,13 +6,13 @@
 """
 Golden dataset gate — Phase 3 AC-P3-09.
 
-Runs Fix-Gen on all three planted vulnerabilities in repomend-fixture/vulnerable.py:
+Runs Fix-Gen on all three planted vulnerabilities in patchward-fixture/vulnerable.py:
   1. subprocess-shell-true          (line 24, severity=error)
   2. insecure-hash-algorithm-md5    (line 30, severity=warning)
   3. ssl-wrap-socket-is-deprecated  (line 37, severity=warning)
 
 For each finding:
-  - Fix-Gen applies a patch on a dedicated repomend/fix-<id> branch.
+  - Fix-Gen applies a patch on a dedicated patchward/fix-<id> branch.
   - Semgrep re-scans the patched file with p/python.
   - A finding-level PASS = the original rule_id is absent from re-scan output.
 
@@ -34,12 +34,12 @@ from pathlib import Path
 
 import pytest
 
-from repomend.fix_gen import FixGenSubagent
-from repomend.fix_worktree import fix_worktree_context
-from repomend.verifier import Verifier
+from patchward.fix_gen import FixGenSubagent
+from patchward.fix_worktree import fix_worktree_context
+from patchward.verifier import Verifier
 
 # ---------------------------------------------------------------------------
-# Fixture findings — the three plants in repomend-fixture/vulnerable.py
+# Fixture findings — the three plants in patchward-fixture/vulnerable.py
 # ---------------------------------------------------------------------------
 
 GOLDEN_FINDINGS = [
@@ -406,7 +406,7 @@ def test_verifier_end_to_end_failed_out_of_bounds() -> None:
         target = handle.worktree_path / finding["file_path"]
         original = target.read_text(encoding="utf-8", errors="replace")
         target.write_text(
-            "# REPOMEND-TEST: out-of-bounds edit at line 1\n" + original,
+            "# patchward-TEST: out-of-bounds edit at line 1\n" + original,
             encoding="utf-8",
         )
 
@@ -437,7 +437,7 @@ def test_verifier_end_to_end_failed_out_of_bounds() -> None:
 @pytest.mark.integration
 def test_end_to_end_pr() -> None:
     """
-    AC-P5-10: Full pipeline produces a real draft PR on repomend-fixture.
+    AC-P5-10: Full pipeline produces a real draft PR on patchward-fixture.
 
     Sequence: scan → fix (Fix-Gen) → verify (Verifier) → push (git push) →
     PR open (GitHub API) → assert pr_dict["status"] == "opened".
@@ -446,16 +446,16 @@ def test_end_to_end_pr() -> None:
       - PR is in Draft state
       - Body contains five sections (Finding, Fix, Verification Evidence,
         Diff, Test Output)
-      - Head branch is repomend/fix-p5-e2e-* pointing at repomend-fixture
+      - Head branch is patchward/fix-p5-e2e-* pointing at patchward-fixture
     Then close the PR without merging (test artifact).
 
     Requires: ANTHROPIC_API_KEY · GITHUB_TOKEN · semgrep · fixture repo
     """
     import os
-    from repomend.config import load_config, validate_github_config
-    from repomend.credential_proxy import CredentialProxy
-    from repomend.pr_publisher import PRPublisher
-    from repomend.run_log import RunLog
+    from patchward.config import load_config, validate_github_config
+    from patchward.credential_proxy import CredentialProxy
+    from patchward.pr_publisher import PRPublisher
+    from patchward.run_log import RunLog
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
@@ -477,7 +477,7 @@ def test_end_to_end_pr() -> None:
             "fixture at tests/fixture_repo"
         )
 
-    # Load config — needs [github] section in repomend.toml
+    # Load config — needs [github] section in patchward.toml
     cfg = load_config()
     validate_github_config(cfg)
 
@@ -566,7 +566,7 @@ def test_end_to_end_pr() -> None:
 @pytest.mark.integration
 def test_batch_two_findings() -> None:
     """
-    AC-P6-11: Batch pipeline on two entries pointing at repomend-fixture
+    AC-P6-11: Batch pipeline on two entries pointing at patchward-fixture
     produces two run log records.
 
     Uses two RepoConfig entries for the same repo so both pipeline
@@ -606,20 +606,20 @@ def test_batch_two_findings() -> None:
     if fixture_repo is None:
         pytest.skip("Fixture repo not found")
 
-    from repomend.config import (
+    from patchward.config import (
         RepomendConfig,
         GithubConfig,
         BatchConfig,
         ModelsConfig,
         RepoConfig,
     )
-    from repomend.pipeline import run_batch
-    from repomend.run_log import RunLog
+    from patchward.pipeline import run_batch
+    from patchward.run_log import RunLog
 
     repo_entry = RepoConfig(
         path=str(fixture_repo),
         owner="yehorcallmedai-maker",
-        repo="repomend-fixture",
+        repo="patchward-fixture",
         base_branch="main",
     )
 
@@ -627,7 +627,7 @@ def test_batch_two_findings() -> None:
         repo_path=str(fixture_repo),
         github=GithubConfig(
             owner="yehorcallmedai-maker",
-            repo="repomend-fixture",
+            repo="patchward-fixture",
             base_branch="main",
         ),
         batch=BatchConfig(max_concurrent=2),
@@ -641,8 +641,8 @@ def test_batch_two_findings() -> None:
     # Patch finding_id in pipeline to add uuid suffix so concurrent
     # tasks don't collide on the same branch name.
     # We monkeypatch fix_worktree_context to inject a uuid slot.
-    import repomend.pipeline as pipeline_mod
-    from repomend.fix_worktree import fix_worktree_context as _orig_ctx
+    import patchward.pipeline as pipeline_mod
+    from patchward.fix_worktree import fix_worktree_context as _orig_ctx
 
     def _uuid_ctx(repo_path, finding_id):
         return _orig_ctx(repo_path, f"{finding_id}-{uuid.uuid4().hex[:8]}")
@@ -700,7 +700,7 @@ def test_batch_two_findings() -> None:
 @pytest.mark.integration
 def test_multi_finding_e2e() -> None:
     """
-    AC-P7-10: Multi-finding pipeline on repomend-fixture.
+    AC-P7-10: Multi-finding pipeline on patchward-fixture.
 
     Runs run_batch against the fixture repo with
     max_findings_per_repo=3.  Asserts that run log records are
@@ -717,21 +717,21 @@ def test_multi_finding_e2e() -> None:
     semgrep + bandit + trivy + RUN_E2E_MULTI_FINDING
 
     Manual step after test: inspect any PRs opened on
-    repomend-fixture, close without merging.
+    patchward-fixture, close without merging.
 
     # KS-TRACE: AC-P7-10, C-P7-01, C-P7-02, C-P7-04
     """
     import asyncio
 
-    from repomend.config import (
+    from patchward.config import (
         BatchConfig,
         GithubConfig,
         ModelsConfig,
         RepomendConfig,
         RepoConfig,
     )
-    from repomend.pipeline import run_batch
-    from repomend.run_log import RunLog
+    from patchward.pipeline import run_batch
+    from patchward.run_log import RunLog
 
     # Skip guards
     if not os.environ.get("ANTHROPIC_API_KEY"):
@@ -751,14 +751,14 @@ def test_multi_finding_e2e() -> None:
     repo_entry = RepoConfig(
         path=str(fixture_repo),
         owner="yehorcallmedai-maker",
-        repo="repomend-fixture",
+        repo="patchward-fixture",
         base_branch="main",
     )
     cfg = RepomendConfig(
         repo_path=str(fixture_repo),
         github=GithubConfig(
             owner="yehorcallmedai-maker",
-            repo="repomend-fixture",
+            repo="patchward-fixture",
             base_branch="main",
         ),
         batch=BatchConfig(

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "repomend"
+name = "patchward"
 version = "0.1.0"
 description = "Local-first multi-repo security agent"
 requires-python = ">=3.12"
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-repomend = "repomend.cli:app"
+patchward = "patchward.cli:app"
 
 [dependency-groups]
 dev = [
@@ -31,7 +31,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=repomend --cov-report=term-missing --cov-fail-under=80 -m 'not integration'"
+addopts = "--cov=patchward --cov-report=term-missing --cov-fail-under=80 -m 'not integration'"
 # TestRunner is a legitimate enum name, not a test class
 filterwarnings = ["ignore::pytest.PytestCollectionWarning"]
 asyncio_mode = "auto"
@@ -42,15 +42,15 @@ markers = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/repomend"]
+packages = ["src/patchward"]
 
 [tool.coverage.run]
-source = ["src/repomend"]
+source = ["src/patchward"]
 # AC-08 scope: config loader + DB layer only.
 # cli, scanner, tracing require live I/O (Semgrep, SQLite file, Langfuse) — integration-tested in Phase 1.
 omit = [
-    "src/repomend/cli.py",
-    "src/repomend/scanner.py",
-    "src/repomend/tracing.py",
-    "src/repomend/subagent.py",
+    "src/patchward/cli.py",
+    "src/patchward/scanner.py",
+    "src/patchward/tracing.py",
+    "src/patchward/subagent.py",
 ]

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from repomend.db import (
+from patchward.db import (
     open_db,
     get_or_create_repo,
     create_run,

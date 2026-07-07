@@ -17,11 +17,11 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 
-from repomend.config import GithubConfig, RepomendConfig
-from repomend.credential_proxy import CredentialProxy
-from repomend.fix_gen import FixResult
-from repomend.pr_publisher import PRPublisher
-from repomend.verifier import GateResult, VerifierResult
+from patchward.config import GithubConfig, RepomendConfig
+from patchward.credential_proxy import CredentialProxy
+from patchward.fix_gen import FixResult
+from patchward.pr_publisher import PRPublisher
+from patchward.verifier import GateResult, VerifierResult
 
 
 # ---------------------------------------------------------------------------
@@ -50,12 +50,12 @@ def _make_verified_fix() -> FixResult:
         success=True,
         description="Replace subprocess shell=True with explicit args list",
         files_modified=["vulnerable.py"],
-        branch_name="repomend/fix-subprocess-abc12345",
+        branch_name="patchward/fix-subprocess-abc12345",
     )
 
 
 def _make_verifier_result(status: str = "verified") -> VerifierResult:
-    from repomend.verifier import PASS, FAIL
+    from patchward.verifier import PASS, FAIL
     vr = VerifierResult()
     if status == "verified":
         vr.gate_1 = GateResult(PASS, "")
@@ -95,7 +95,7 @@ def _mock_201_response(pr_number: int = 42) -> MagicMock:
 
 class TestPRPublisher:
 
-    @patch("repomend.pr_publisher.git_push_branch")
+    @patch("patchward.pr_publisher.git_push_branch")
     def test_publish_raises_if_not_verified(
         self, mock_push: MagicMock, tmp_path: Path
     ) -> None:
@@ -103,7 +103,7 @@ class TestPRPublisher:
         cfg = _make_config(tmp_path)
         proxy = _make_proxy()
         publisher = PRPublisher(cfg, proxy, http_client=MagicMock())
-        fix = FixResult(model="claude-sonnet-4-6", finding_id="test-abc", success=True, branch_name="repomend/fix-abc")
+        fix = FixResult(model="claude-sonnet-4-6", finding_id="test-abc", success=True, branch_name="patchward/fix-abc")
         vr = _make_verifier_result("failed")
         with pytest.raises(ValueError, match="unverified fix"):
             publisher.publish(fix, vr, _make_finding())
@@ -121,7 +121,7 @@ class TestPRPublisher:
                         "## Diff", "## Test Output"):
             assert section in body, f"Missing section: {section}"
 
-    @patch("repomend.pr_publisher.git_push_branch")
+    @patch("patchward.pr_publisher.git_push_branch")
     def test_create_pr_draft_true(
         self, mock_push: MagicMock, tmp_path: Path
     ) -> None:
@@ -139,7 +139,7 @@ class TestPRPublisher:
             "draft must be True — ADR-019 safety invariant"
         )
 
-    @patch("repomend.pr_publisher.git_push_branch")
+    @patch("patchward.pr_publisher.git_push_branch")
     def test_create_pr_maintainer_can_modify(
         self, mock_push: MagicMock, tmp_path: Path
     ) -> None:
@@ -155,7 +155,7 @@ class TestPRPublisher:
         call_kwargs = mock_http.post.call_args.kwargs
         assert call_kwargs["json"]["maintainer_can_modify"] is True
 
-    @patch("repomend.pr_publisher.git_push_branch")
+    @patch("patchward.pr_publisher.git_push_branch")
     def test_create_pr_already_open_422(
         self, mock_push: MagicMock, tmp_path: Path
     ) -> None:
@@ -167,18 +167,18 @@ class TestPRPublisher:
         error_resp.status_code = 422
         error_resp.json.return_value = {
             "message": "Validation Failed",
-            "errors": [{"message": "A pull request already exists for acme:repomend/fix-abc"}],
+            "errors": [{"message": "A pull request already exists for acme:patchward/fix-abc"}],
         }
         error_resp.text = "Validation Failed"
         mock_http.post.return_value = error_resp
         publisher = PRPublisher(cfg, proxy, http_client=mock_http)
 
-        result = publisher._create_pr("repomend/fix-abc", "body", "title")
+        result = publisher._create_pr("patchward/fix-abc", "body", "title")
 
         assert result["status"] == "already_open", f"Expected already_open, got {result}"
         assert mock_http.post.call_count == 1, "Must not open duplicate PR"
 
-    @patch("repomend.pr_publisher.git_push_branch")
+    @patch("patchward.pr_publisher.git_push_branch")
     def test_create_pr_403_api_error(
         self, mock_push: MagicMock, tmp_path: Path
     ) -> None:
@@ -195,12 +195,12 @@ class TestPRPublisher:
 
         assert result["status"] == "api_error"
 
-    @patch("repomend.pr_publisher.git_push_branch")
+    @patch("patchward.pr_publisher.git_push_branch")
     def test_github_token_not_in_run_log(
         self, mock_push: MagicMock, tmp_path: Path
     ) -> None:
         """GITHUB_TOKEN value must not appear in run log record repr (AC-P5-11)."""
-        from repomend.run_log import RunLog
+        from patchward.run_log import RunLog
         cfg = _make_config(tmp_path)
         secret_token = "ghp_SUPERSECRET99999"
         proxy = _make_proxy(secret_token)
@@ -221,7 +221,7 @@ class TestPRPublisher:
             "GITHUB_TOKEN must not appear in run log record"
         )
 
-    @patch("repomend.pr_publisher.git_push_branch")
+    @patch("patchward.pr_publisher.git_push_branch")
     def test_correct_head_base_title_in_request(
         self, mock_push: MagicMock, tmp_path: Path
     ) -> None:
@@ -248,9 +248,9 @@ class TestPRPublisher:
 
 def _make_publisher_with_mock_http(mock_http, tmp_path):
     """Build a PRPublisher with injectable mock HTTP client."""
-    from repomend.config import RepomendConfig, GithubConfig
-    from repomend.credential_proxy import CredentialProxy
-    from repomend.pr_publisher import PRPublisher
+    from patchward.config import RepomendConfig, GithubConfig
+    from patchward.credential_proxy import CredentialProxy
+    from patchward.pr_publisher import PRPublisher
     from unittest.mock import MagicMock
 
     repo_dir = tmp_path / "repo"
@@ -287,7 +287,7 @@ def test_check_branch_protection_404_returns_unprotected(
     mock_http.get.return_value.status_code = 404
 
     publisher = _make_publisher_with_mock_http(mock_http, tmp_path)
-    result = publisher._check_branch_protection("repomend/fix-abc")
+    result = publisher._check_branch_protection("patchward/fix-abc")
     assert result == "unprotected"
 
 
@@ -301,8 +301,8 @@ def test_check_branch_protection_403_logs_warning(
     mock_http.get.return_value.status_code = 403
 
     publisher = _make_publisher_with_mock_http(mock_http, tmp_path)
-    with caplog.at_level(logging.WARNING, logger="repomend.pr_publisher"):
-        result = publisher._check_branch_protection("repomend/fix-abc")
+    with caplog.at_level(logging.WARNING, logger="patchward.pr_publisher"):
+        result = publisher._check_branch_protection("patchward/fix-abc")
 
     assert result == "unknown"
     assert any("403" in rec.message for rec in caplog.records), (
@@ -325,11 +325,11 @@ def test_publish_aborts_push_on_protected_branch(tmp_path) -> None:
             side_effect=RuntimeError("branch 'main' is protected"),
         ),
         patch(
-            "repomend.pr_publisher.git_push_branch"
+            "patchward.pr_publisher.git_push_branch"
         ) as mock_push,
     ):
         with pytest.raises(RuntimeError, match="protected"):
-            from repomend.fix_gen import FixResult
+            from patchward.fix_gen import FixResult
             from unittest.mock import MagicMock as MM
             fix = FixResult(
                 model="claude-sonnet-4-6",
@@ -377,16 +377,16 @@ def test_publish_proceeds_on_unprotected_branch(tmp_path) -> None:
             return_value="unprotected",
         ),
         patch(
-            "repomend.pr_publisher.git_push_branch"
+            "patchward.pr_publisher.git_push_branch"
         ) as mock_push,
     ):
-        from repomend.fix_gen import FixResult
+        from patchward.fix_gen import FixResult
         from unittest.mock import MagicMock as MM
         fix = FixResult(
             model="claude-sonnet-4-6",
             finding_id="t",
             success=True,
-            branch_name="repomend/fix-abc",
+            branch_name="patchward/fix-abc",
             description="fixed",
         )
         vr = MM()
@@ -429,16 +429,16 @@ def test_publish_proceeds_on_unknown_protection(tmp_path) -> None:
             return_value="unknown",
         ),
         patch(
-            "repomend.pr_publisher.git_push_branch"
+            "patchward.pr_publisher.git_push_branch"
         ) as mock_push,
     ):
-        from repomend.fix_gen import FixResult
+        from patchward.fix_gen import FixResult
         from unittest.mock import MagicMock as MM
         fix = FixResult(
             model="claude-sonnet-4-6",
             finding_id="t",
             success=True,
-            branch_name="repomend/fix-abc",
+            branch_name="patchward/fix-abc",
             description="fixed",
         )
         vr = MM()

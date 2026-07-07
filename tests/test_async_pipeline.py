@@ -16,15 +16,15 @@ import anthropic
 import pytest
 from typer.testing import CliRunner
 
-from repomend.cli import app
-from repomend.config import (
+from patchward.cli import app
+from patchward.config import (
     BatchConfig,
     GithubConfig,
     ModelsConfig,
     RepomendConfig,
     RepoConfig,
 )
-from repomend.pipeline import run_batch, run_repo_pipeline
+from patchward.pipeline import run_batch, run_repo_pipeline
 
 
 # ---------------------------------------------------------------------------
@@ -83,7 +83,7 @@ async def test_run_batch_produces_n_results(tmp_path: Path) -> None:
         return _ok_dict(repo)
 
     with patch(
-        "repomend.pipeline.run_repo_pipeline",
+        "patchward.pipeline.run_repo_pipeline",
         side_effect=mock_pipeline,
     ):
         results = await run_batch(cfg, "key", "token")
@@ -114,7 +114,7 @@ async def test_semaphore_bounds_concurrency(tmp_path: Path) -> None:
             return _ok_dict(repo)
 
     with patch(
-        "repomend.pipeline.run_repo_pipeline",
+        "patchward.pipeline.run_repo_pipeline",
         side_effect=counting_pipeline,
     ):
         await run_batch(cfg, "key", "token")
@@ -146,7 +146,7 @@ async def test_failure_isolation(tmp_path: Path) -> None:
         return _ok_dict(repo)
 
     with patch(
-        "repomend.pipeline.run_repo_pipeline",
+        "patchward.pipeline.run_repo_pipeline",
         side_effect=sometimes_raises,
     ):
         results = await run_batch(cfg, "key", "token")
@@ -178,7 +178,7 @@ async def test_semaphore_drain_no_deadlock(tmp_path: Path) -> None:
             return _ok_dict(repo)
 
     with patch(
-        "repomend.pipeline.run_repo_pipeline",
+        "patchward.pipeline.run_repo_pipeline",
         side_effect=slow_pipeline,
     ):
         results = await asyncio.wait_for(
@@ -240,12 +240,12 @@ def test_batch_cli_exits_0_on_all_success(tmp_path: Path) -> None:
     ok_results = [_ok_dict(r) for r in cfg_obj.repos]
 
     with (
-        patch("repomend.cli.load_config", return_value=cfg_obj),
+        patch("patchward.cli.load_config", return_value=cfg_obj),
         patch(
-            "repomend.cli.CredentialProxy"
+            "patchward.cli.CredentialProxy"
         ) as mock_proxy_cls,
         patch(
-            "repomend.cli.run_batch",
+            "patchward.cli.run_batch",
             new=AsyncMock(return_value=ok_results),
         ),
     ):
@@ -282,12 +282,12 @@ def test_batch_cli_exits_1_on_any_failure(tmp_path: Path) -> None:
     ]
 
     with (
-        patch("repomend.cli.load_config", return_value=cfg_obj),
+        patch("patchward.cli.load_config", return_value=cfg_obj),
         patch(
-            "repomend.cli.CredentialProxy"
+            "patchward.cli.CredentialProxy"
         ) as mock_proxy_cls,
         patch(
-            "repomend.cli.run_batch",
+            "patchward.cli.run_batch",
             new=AsyncMock(return_value=mixed_results),
         ),
     ):
@@ -316,7 +316,7 @@ def test_no_blocking_subprocess_in_async_pipeline() -> None:
     """
     pipeline_path = (
         Path(__file__).parent.parent
-        / "src" / "repomend" / "pipeline.py"
+        / "src" / "patchward" / "pipeline.py"
     )
     source = pipeline_path.read_text(encoding="utf-8")
     tree = ast.parse(source)
@@ -394,7 +394,7 @@ async def test_run_repo_pipeline_no_findings(
     empty_run = _make_sarif_run([])
 
     with patch(
-        "repomend.pipeline.run_all_scanners",
+        "patchward.pipeline.run_all_scanners",
         return_value=[empty_run],
     ):
         result = await run_repo_pipeline(
@@ -410,7 +410,7 @@ async def test_run_repo_pipeline_fix_failed(
     tmp_path: Path,
 ) -> None:
     """Fix-Gen returns success=False → status='fix_failed'."""
-    from repomend.fix_gen import FixResult
+    from patchward.fix_gen import FixResult
 
     cfg = _make_cfg(tmp_path, n_repos=1)
     sem = asyncio.Semaphore(1)
@@ -424,19 +424,19 @@ async def test_run_repo_pipeline_fix_failed(
 
     with (
         patch(
-            "repomend.pipeline.run_all_scanners",
+            "patchward.pipeline.run_all_scanners",
             return_value=[sarif_run],
         ),
         patch(
-            "repomend.pipeline.fix_worktree_context"
+            "patchward.pipeline.fix_worktree_context"
         ) as mock_ctx,
         patch(
-            "repomend.pipeline.FixGenSubagent"
+            "patchward.pipeline.FixGenSubagent"
         ) as mock_agent_cls,
     ):
         handle = mock_ctx.return_value.__enter__.return_value
         handle.worktree_path = tmp_path / "wt"
-        handle.branch = "repomend/fix-test"
+        handle.branch = "patchward/fix-test"
         mock_agent_cls.return_value.apply_fix = AsyncMock(
             return_value=failed_result
         )
@@ -456,7 +456,7 @@ async def test_run_repo_pipeline_verify_failed(
 ) -> None:
     """Verifier returns status !='verified' → status='verify_failed'."""
     from unittest.mock import MagicMock
-    from repomend.fix_gen import FixResult
+    from patchward.fix_gen import FixResult
 
     cfg = _make_cfg(tmp_path, n_repos=1)
     sem = asyncio.Semaphore(1)
@@ -473,22 +473,22 @@ async def test_run_repo_pipeline_verify_failed(
 
     with (
         patch(
-            "repomend.pipeline.run_all_scanners",
+            "patchward.pipeline.run_all_scanners",
             return_value=[sarif_run],
         ),
         patch(
-            "repomend.pipeline.fix_worktree_context"
+            "patchward.pipeline.fix_worktree_context"
         ) as mock_ctx,
         patch(
-            "repomend.pipeline.FixGenSubagent"
+            "patchward.pipeline.FixGenSubagent"
         ) as mock_agent_cls,
         patch(
-            "repomend.pipeline.Verifier"
+            "patchward.pipeline.Verifier"
         ) as mock_verifier_cls,
     ):
         handle = mock_ctx.return_value.__enter__.return_value
         handle.worktree_path = tmp_path / "wt"
-        handle.branch = "repomend/fix-test"
+        handle.branch = "patchward/fix-test"
         mock_agent_cls.return_value.apply_fix = AsyncMock(
             return_value=good_fix
         )
@@ -514,19 +514,19 @@ async def test_run_repo_pipeline_rate_limit(
 
     with (
         patch(
-            "repomend.pipeline.run_all_scanners",
+            "patchward.pipeline.run_all_scanners",
             return_value=[sarif_run],
         ),
         patch(
-            "repomend.pipeline.fix_worktree_context"
+            "patchward.pipeline.fix_worktree_context"
         ) as mock_ctx,
         patch(
-            "repomend.pipeline.FixGenSubagent"
+            "patchward.pipeline.FixGenSubagent"
         ) as mock_agent_cls,
     ):
         handle = mock_ctx.return_value.__enter__.return_value
         handle.worktree_path = tmp_path / "wt"
-        handle.branch = "repomend/fix-test"
+        handle.branch = "patchward/fix-test"
         # RateLimitError requires a real httpx.Response — use a
         # MagicMock with .request attribute to satisfy the SDK.
         from unittest.mock import MagicMock as _MM
@@ -554,7 +554,7 @@ async def test_run_repo_pipeline_pr_opened(
 ) -> None:
     """Full success path: verified fix → PR opened. (AC-P6-01)"""
     from unittest.mock import MagicMock
-    from repomend.fix_gen import FixResult
+    from patchward.fix_gen import FixResult
 
     cfg = _make_cfg(tmp_path, n_repos=1)
     sem = asyncio.Semaphore(1)
@@ -564,7 +564,7 @@ async def test_run_repo_pipeline_pr_opened(
         finding_id="test",
         success=True,
         description="fixed shell=True",
-        branch_name="repomend/fix-test",
+        branch_name="patchward/fix-test",
     )
     good_verify = MagicMock()
     good_verify.verification_status = "verified"
@@ -573,28 +573,28 @@ async def test_run_repo_pipeline_pr_opened(
 
     with (
         patch(
-            "repomend.pipeline.run_all_scanners",
+            "patchward.pipeline.run_all_scanners",
             return_value=[sarif_run],
         ),
         patch(
-            "repomend.pipeline.fix_worktree_context"
+            "patchward.pipeline.fix_worktree_context"
         ) as mock_ctx,
         patch(
-            "repomend.pipeline.FixGenSubagent"
+            "patchward.pipeline.FixGenSubagent"
         ) as mock_agent_cls,
         patch(
-            "repomend.pipeline.Verifier"
+            "patchward.pipeline.Verifier"
         ) as mock_verifier_cls,
         patch(
-            "repomend.pipeline.CredentialProxy"
+            "patchward.pipeline.CredentialProxy"
         ) as mock_proxy_cls,
         patch(
-            "repomend.pipeline.PRPublisher"
+            "patchward.pipeline.PRPublisher"
         ) as mock_pub_cls,
     ):
         handle = mock_ctx.return_value.__enter__.return_value
         handle.worktree_path = tmp_path / "wt"
-        handle.branch = "repomend/fix-test"
+        handle.branch = "patchward/fix-test"
         mock_agent_cls.return_value.apply_fix = AsyncMock(
             return_value=good_fix
         )
@@ -610,7 +610,7 @@ def test_scanner_subagent_uses_config_scanner_model():
     instead of SCANNER_MODEL constant (AC-P6-05).
     """
     from unittest.mock import MagicMock
-    from repomend.subagent import ScannerSubagent, SCANNER_MODEL
+    from patchward.subagent import ScannerSubagent, SCANNER_MODEL
 
     cfg = MagicMock()
     cfg.models.scanner_model = "claude-custom-model"
@@ -625,7 +625,7 @@ def test_scanner_subagent_no_config_uses_constant():
     ScannerSubagent without config falls back to SCANNER_MODEL constant.
     """
     from unittest.mock import MagicMock
-    from repomend.subagent import ScannerSubagent, SCANNER_MODEL
+    from patchward.subagent import ScannerSubagent, SCANNER_MODEL
 
     agent = ScannerSubagent(client=MagicMock())
     assert agent._model == SCANNER_MODEL
@@ -633,13 +633,13 @@ def test_scanner_subagent_no_config_uses_constant():
 
 def test_batch_cli_model_flag_overrides_config(monkeypatch):
     """
-    ``repomend batch --model <x>`` sets cfg.models.fix_model = x
+    ``patchward batch --model <x>`` sets cfg.models.fix_model = x
     before run_batch is called (AC-P6-05).
     """
     import asyncio
     from typer.testing import CliRunner
     from unittest.mock import patch, MagicMock
-    from repomend.cli import app
+    from patchward.cli import app
 
     runner = CliRunner()
 
@@ -658,11 +658,11 @@ def test_batch_cli_model_flag_overrides_config(monkeypatch):
     mock_cfg.models.fix_model = "claude-sonnet-4-6"  # default
 
     with (
-        patch("repomend.cli.load_config", return_value=mock_cfg),
+        patch("patchward.cli.load_config", return_value=mock_cfg),
         patch(
-            "repomend.cli.CredentialProxy"
+            "patchward.cli.CredentialProxy"
         ) as mock_proxy_cls,
-        patch("repomend.cli.run_batch", side_effect=fake_run_batch),
+        patch("patchward.cli.run_batch", side_effect=fake_run_batch),
     ):
         mock_proxy = MagicMock()
         mock_proxy._creds = {"GITHUB_TOKEN": "tok"}
@@ -683,7 +683,7 @@ def test_batch_cli_model_flag_overrides_config(monkeypatch):
 async def test_with_retry_succeeds_on_first_attempt():
     """_with_retry returns immediately when coro_fn succeeds."""
     from unittest.mock import AsyncMock
-    from repomend.pipeline import _with_retry
+    from patchward.pipeline import _with_retry
 
     coro_fn = AsyncMock(return_value="ok")
     result = await _with_retry(coro_fn, max_retries=3, base_delay=0.0)
@@ -698,7 +698,7 @@ async def test_with_retry_retries_on_rate_limit():
     """
     from unittest.mock import AsyncMock, MagicMock, patch
     import anthropic
-    from repomend.pipeline import _with_retry
+    from patchward.pipeline import _with_retry
 
     fake_response = MagicMock()
     fake_response.request = MagicMock()
@@ -720,7 +720,7 @@ async def test_with_retry_retries_on_rate_limit():
     async def fake_sleep(delay):
         sleep_calls.append(delay)
 
-    with patch("repomend.pipeline.asyncio.sleep", side_effect=fake_sleep):
+    with patch("patchward.pipeline.asyncio.sleep", side_effect=fake_sleep):
         result = await _with_retry(
             coro_fn, max_retries=3, base_delay=1.0
         )
@@ -737,7 +737,7 @@ async def test_with_retry_raises_after_max_retries():
     from unittest.mock import MagicMock, patch
     import anthropic
     import pytest
-    from repomend.pipeline import _with_retry
+    from patchward.pipeline import _with_retry
 
     fake_response = MagicMock()
     fake_response.request = MagicMock()
@@ -755,7 +755,7 @@ async def test_with_retry_raises_after_max_retries():
     async def fake_sleep(_):
         pass
 
-    with patch("repomend.pipeline.asyncio.sleep", side_effect=fake_sleep):
+    with patch("patchward.pipeline.asyncio.sleep", side_effect=fake_sleep):
         with pytest.raises(anthropic.RateLimitError):
             await _with_retry(coro_fn, max_retries=2, base_delay=0.0)
 
@@ -773,7 +773,7 @@ async def test_run_repo_pipeline_rate_limited_after_retries(
     import asyncio
     import anthropic
     from unittest.mock import MagicMock, patch
-    from repomend.pipeline import run_repo_pipeline
+    from patchward.pipeline import run_repo_pipeline
 
     fake_response = MagicMock()
     fake_response.request = MagicMock()
@@ -812,14 +812,14 @@ async def test_run_repo_pipeline_rate_limited_after_retries(
 
     with (
         patch(
-            "repomend.pipeline.run_all_scanners",
+            "patchward.pipeline.run_all_scanners",
             return_value=[mock_sarif],
         ),
         patch(
-            "repomend.pipeline.fix_worktree_context"
+            "patchward.pipeline.fix_worktree_context"
         ) as mock_ctx,
         patch(
-            "repomend.pipeline.asyncio.sleep",
+            "patchward.pipeline.asyncio.sleep",
             side_effect=fake_sleep,
         ),
     ):
@@ -827,11 +827,11 @@ async def test_run_repo_pipeline_rate_limited_after_retries(
         handle.__enter__ = MagicMock(return_value=handle)
         handle.__exit__ = MagicMock(return_value=False)
         handle.worktree_path = MagicMock()
-        handle.branch = "repomend/fix-S001"
+        handle.branch = "patchward/fix-S001"
         mock_ctx.return_value = handle
 
         with patch(
-            "repomend.pipeline.FixGenSubagent"
+            "patchward.pipeline.FixGenSubagent"
         ) as MockAgent:
             MockAgent.return_value.apply_fix = AsyncMock(
                 side_effect=rate_exc

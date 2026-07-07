@@ -4,7 +4,7 @@
 # |             mark_success() called only when verification_status == "verified";
 # |             run log always contains verifier sub-dict (AC-P4-10)
 """
-Unit tests for the `repomend fix` Orchestrator command (KS-P4-04).
+Unit tests for the `patchward fix` Orchestrator command (KS-P4-04).
 
 These tests mock Fix-Gen, Verifier, and the worktree context so they run
 without an API key, without semgrep, and without a real git repo.
@@ -32,7 +32,7 @@ from typer.testing import CliRunner
 # Helpers — build lightweight mock objects
 # ---------------------------------------------------------------------------
 
-def _make_fix_result(*, success: bool = True, branch: str = "repomend/fix-test-abc", error: str = "") -> MagicMock:
+def _make_fix_result(*, success: bool = True, branch: str = "patchward/fix-test-abc", error: str = "") -> MagicMock:
     r = MagicMock()
     r.success = success
     r.branch_name = branch
@@ -93,17 +93,17 @@ def _make_finding(
 # ---------------------------------------------------------------------------
 
 _BASE_PATCHES = [
-    "repomend.cli.load_config",
-    "repomend.cli.CredentialProxy",
-    "repomend.cli.require_git_version",
-    "repomend.cli.tracing",
-    "repomend.cli.open_db",
-    "repomend.cli.get_or_create_repo",
-    "repomend.cli.create_run",
-    "repomend.cli.finish_run",
-    "repomend.cli.insert_finding",
-    "repomend.cli.worktree_context",
-    "repomend.cli.run_all_scanners",
+    "patchward.cli.load_config",
+    "patchward.cli.CredentialProxy",
+    "patchward.cli.require_git_version",
+    "patchward.cli.tracing",
+    "patchward.cli.open_db",
+    "patchward.cli.get_or_create_repo",
+    "patchward.cli.create_run",
+    "patchward.cli.finish_run",
+    "patchward.cli.insert_finding",
+    "patchward.cli.worktree_context",
+    "patchward.cli.run_all_scanners",
 ]
 
 
@@ -135,8 +135,8 @@ class TestFixCommandRunLog:
 
         AC-P4-10, C-P4-06, C-P4-07, C-P3-12.
         """
-        from repomend.cli import app
-        from repomend.run_log import RunLog
+        from patchward.cli import app
+        from patchward.run_log import RunLog
 
         log_path = tmp_path / "run.json"
         finding = _make_finding()
@@ -147,7 +147,7 @@ class TestFixCommandRunLog:
 
         handle = MagicMock()
         handle.worktree_path = tmp_path / "worktree"
-        handle.branch = "repomend/fix-test-abc"
+        handle.branch = "patchward/fix-test-abc"
 
         # worktree_context is for scan; fix_worktree_context is for fix
         wt_ctx = MagicMock()
@@ -164,20 +164,20 @@ class TestFixCommandRunLog:
         runner = CliRunner()
 
         with (
-            patch("repomend.cli.load_config", return_value=cfg),
-            patch("repomend.cli.CredentialProxy") as mock_proxy_cls,
-            patch("repomend.cli.require_git_version"),
-            patch("repomend.cli.tracing"),
-            patch("repomend.cli.open_db"),
-            patch("repomend.cli.get_or_create_repo", return_value=1),
-            patch("repomend.cli.create_run", return_value=1),
-            patch("repomend.cli.finish_run"),
-            patch("repomend.cli.insert_finding"),
-            patch("repomend.cli.worktree_context", return_value=wt_ctx),
-            patch("repomend.cli.run_all_scanners", return_value=[sarif_run]),
-            patch("repomend.cli.fix_worktree_context", return_value=fix_wt_ctx),
-            patch("repomend.cli.FixGenSubagent") as mock_fg_cls,
-            patch("repomend.cli.Verifier") as mock_vfy_cls,
+            patch("patchward.cli.load_config", return_value=cfg),
+            patch("patchward.cli.CredentialProxy") as mock_proxy_cls,
+            patch("patchward.cli.require_git_version"),
+            patch("patchward.cli.tracing"),
+            patch("patchward.cli.open_db"),
+            patch("patchward.cli.get_or_create_repo", return_value=1),
+            patch("patchward.cli.create_run", return_value=1),
+            patch("patchward.cli.finish_run"),
+            patch("patchward.cli.insert_finding"),
+            patch("patchward.cli.worktree_context", return_value=wt_ctx),
+            patch("patchward.cli.run_all_scanners", return_value=[sarif_run]),
+            patch("patchward.cli.fix_worktree_context", return_value=fix_wt_ctx),
+            patch("patchward.cli.FixGenSubagent") as mock_fg_cls,
+            patch("patchward.cli.Verifier") as mock_vfy_cls,
         ):
             mock_proxy_cls.return_value.load.return_value = MagicMock()
             mock_proxy_cls.return_value.load.return_value.assert_credentials_excluded = MagicMock()
@@ -215,8 +215,8 @@ class TestFixCommandRunLog:
 
         AC-P4-10, C-P3-12.
         """
-        from repomend.cli import app
-        from repomend.run_log import RunLog
+        from patchward.cli import app
+        from patchward.run_log import RunLog
 
         log_path = tmp_path / "run.json"
         finding = _make_finding()
@@ -230,7 +230,7 @@ class TestFixCommandRunLog:
 
         handle = MagicMock()
         handle.worktree_path = tmp_path / "worktree"
-        handle.branch = "repomend/fix-test-abc"
+        handle.branch = "patchward/fix-test-abc"
 
         wt_ctx = MagicMock()
         wt_ctx.__enter__ = MagicMock(return_value=tmp_path / "scan-wt")
@@ -246,20 +246,20 @@ class TestFixCommandRunLog:
         runner = CliRunner()
 
         with (
-            patch("repomend.cli.load_config", return_value=cfg),
-            patch("repomend.cli.CredentialProxy") as mock_proxy_cls,
-            patch("repomend.cli.require_git_version"),
-            patch("repomend.cli.tracing"),
-            patch("repomend.cli.open_db"),
-            patch("repomend.cli.get_or_create_repo", return_value=1),
-            patch("repomend.cli.create_run", return_value=1),
-            patch("repomend.cli.finish_run"),
-            patch("repomend.cli.insert_finding"),
-            patch("repomend.cli.worktree_context", return_value=wt_ctx),
-            patch("repomend.cli.run_all_scanners", return_value=[sarif_run]),
-            patch("repomend.cli.fix_worktree_context", return_value=fix_wt_ctx),
-            patch("repomend.cli.FixGenSubagent") as mock_fg_cls,
-            patch("repomend.cli.Verifier") as mock_vfy_cls,
+            patch("patchward.cli.load_config", return_value=cfg),
+            patch("patchward.cli.CredentialProxy") as mock_proxy_cls,
+            patch("patchward.cli.require_git_version"),
+            patch("patchward.cli.tracing"),
+            patch("patchward.cli.open_db"),
+            patch("patchward.cli.get_or_create_repo", return_value=1),
+            patch("patchward.cli.create_run", return_value=1),
+            patch("patchward.cli.finish_run"),
+            patch("patchward.cli.insert_finding"),
+            patch("patchward.cli.worktree_context", return_value=wt_ctx),
+            patch("patchward.cli.run_all_scanners", return_value=[sarif_run]),
+            patch("patchward.cli.fix_worktree_context", return_value=fix_wt_ctx),
+            patch("patchward.cli.FixGenSubagent") as mock_fg_cls,
+            patch("patchward.cli.Verifier") as mock_vfy_cls,
         ):
             mock_proxy_cls.return_value.load.return_value = MagicMock()
             mock_proxy_cls.return_value.load.return_value.assert_credentials_excluded = MagicMock()
@@ -288,8 +288,8 @@ class TestFixCommandRunLog:
         When Fix-Gen does not produce a fix (success=False),
         run log entry is written with verifier=None and mark_success not called.
         """
-        from repomend.cli import app
-        from repomend.run_log import RunLog
+        from patchward.cli import app
+        from patchward.run_log import RunLog
 
         log_path = tmp_path / "run.json"
         finding = _make_finding()
@@ -299,7 +299,7 @@ class TestFixCommandRunLog:
 
         handle = MagicMock()
         handle.worktree_path = tmp_path / "worktree"
-        handle.branch = "repomend/fix-test-abc"
+        handle.branch = "patchward/fix-test-abc"
 
         wt_ctx = MagicMock()
         wt_ctx.__enter__ = MagicMock(return_value=tmp_path / "scan-wt")
@@ -315,20 +315,20 @@ class TestFixCommandRunLog:
         runner = CliRunner()
 
         with (
-            patch("repomend.cli.load_config", return_value=cfg),
-            patch("repomend.cli.CredentialProxy") as mock_proxy_cls,
-            patch("repomend.cli.require_git_version"),
-            patch("repomend.cli.tracing"),
-            patch("repomend.cli.open_db"),
-            patch("repomend.cli.get_or_create_repo", return_value=1),
-            patch("repomend.cli.create_run", return_value=1),
-            patch("repomend.cli.finish_run"),
-            patch("repomend.cli.insert_finding"),
-            patch("repomend.cli.worktree_context", return_value=wt_ctx),
-            patch("repomend.cli.run_all_scanners", return_value=[sarif_run]),
-            patch("repomend.cli.fix_worktree_context", return_value=fix_wt_ctx),
-            patch("repomend.cli.FixGenSubagent") as mock_fg_cls,
-            patch("repomend.cli.Verifier"),
+            patch("patchward.cli.load_config", return_value=cfg),
+            patch("patchward.cli.CredentialProxy") as mock_proxy_cls,
+            patch("patchward.cli.require_git_version"),
+            patch("patchward.cli.tracing"),
+            patch("patchward.cli.open_db"),
+            patch("patchward.cli.get_or_create_repo", return_value=1),
+            patch("patchward.cli.create_run", return_value=1),
+            patch("patchward.cli.finish_run"),
+            patch("patchward.cli.insert_finding"),
+            patch("patchward.cli.worktree_context", return_value=wt_ctx),
+            patch("patchward.cli.run_all_scanners", return_value=[sarif_run]),
+            patch("patchward.cli.fix_worktree_context", return_value=fix_wt_ctx),
+            patch("patchward.cli.FixGenSubagent") as mock_fg_cls,
+            patch("patchward.cli.Verifier"),
         ):
             mock_proxy_cls.return_value.load.return_value = MagicMock()
             mock_proxy_cls.return_value.load.return_value.assert_credentials_excluded = MagicMock()
@@ -349,12 +349,12 @@ class TestFixCommandRunLog:
 
     def test_no_api_key_exits_nonzero(self, tmp_path: Path) -> None:
         """fix command requires ANTHROPIC_API_KEY — exits 1 without it."""
-        from repomend.cli import app
+        from patchward.cli import app
 
         cfg = _base_cfg(api_key="")
         runner = CliRunner()
 
-        with patch("repomend.cli.load_config", return_value=cfg):
+        with patch("patchward.cli.load_config", return_value=cfg):
             result = runner.invoke(app, ["fix"])
 
         assert result.exit_code == 1
@@ -368,7 +368,7 @@ class TestVerifierConfigPropagation:
         """
         Verifier must be constructed with timeout_seconds from VerifierConfig.
         """
-        from repomend.cli import app
+        from patchward.cli import app
 
         cfg = _base_cfg(timeout=42)
         finding = _make_finding()
@@ -377,7 +377,7 @@ class TestVerifierConfigPropagation:
 
         handle = MagicMock()
         handle.worktree_path = tmp_path / "worktree"
-        handle.branch = "repomend/fix-test-abc"
+        handle.branch = "patchward/fix-test-abc"
 
         wt_ctx = MagicMock()
         wt_ctx.__enter__ = MagicMock(return_value=tmp_path / "scan-wt")
@@ -394,20 +394,20 @@ class TestVerifierConfigPropagation:
         log_path = tmp_path / "run.json"
 
         with (
-            patch("repomend.cli.load_config", return_value=cfg),
-            patch("repomend.cli.CredentialProxy") as mock_proxy_cls,
-            patch("repomend.cli.require_git_version"),
-            patch("repomend.cli.tracing"),
-            patch("repomend.cli.open_db"),
-            patch("repomend.cli.get_or_create_repo", return_value=1),
-            patch("repomend.cli.create_run", return_value=1),
-            patch("repomend.cli.finish_run"),
-            patch("repomend.cli.insert_finding"),
-            patch("repomend.cli.worktree_context", return_value=wt_ctx),
-            patch("repomend.cli.run_all_scanners", return_value=[sarif_run]),
-            patch("repomend.cli.fix_worktree_context", return_value=fix_wt_ctx),
-            patch("repomend.cli.FixGenSubagent") as mock_fg_cls,
-            patch("repomend.cli.Verifier") as mock_vfy_cls,
+            patch("patchward.cli.load_config", return_value=cfg),
+            patch("patchward.cli.CredentialProxy") as mock_proxy_cls,
+            patch("patchward.cli.require_git_version"),
+            patch("patchward.cli.tracing"),
+            patch("patchward.cli.open_db"),
+            patch("patchward.cli.get_or_create_repo", return_value=1),
+            patch("patchward.cli.create_run", return_value=1),
+            patch("patchward.cli.finish_run"),
+            patch("patchward.cli.insert_finding"),
+            patch("patchward.cli.worktree_context", return_value=wt_ctx),
+            patch("patchward.cli.run_all_scanners", return_value=[sarif_run]),
+            patch("patchward.cli.fix_worktree_context", return_value=fix_wt_ctx),
+            patch("patchward.cli.FixGenSubagent") as mock_fg_cls,
+            patch("patchward.cli.Verifier") as mock_vfy_cls,
         ):
             mock_proxy_cls.return_value.load.return_value = MagicMock()
             mock_proxy_cls.return_value.load.return_value.assert_credentials_excluded = MagicMock()
@@ -427,23 +427,23 @@ class TestVerifierConfig:
     """Unit tests for VerifierConfig model (C-P4-10)."""
 
     def test_default_timeout(self) -> None:
-        from repomend.config import VerifierConfig
+        from patchward.config import VerifierConfig
         vc = VerifierConfig()
         assert vc.timeout_seconds == 120
 
     def test_custom_timeout(self) -> None:
-        from repomend.config import VerifierConfig
+        from patchward.config import VerifierConfig
         vc = VerifierConfig(timeout_seconds=60)
         assert vc.timeout_seconds == 60
 
     def test_timeout_bounds(self) -> None:
-        from repomend.config import VerifierConfig
+        from patchward.config import VerifierConfig
         import pydantic
         with pytest.raises((pydantic.ValidationError, ValueError)):
             VerifierConfig(timeout_seconds=0)
 
     def test_repomend_config_has_verifier(self) -> None:
-        from repomend.config import RepomendConfig, VerifierConfig
+        from patchward.config import RepomendConfig, VerifierConfig
         # VerifierConfig is nested in RepomendConfig
         assert hasattr(RepomendConfig.model_fields, "verifier") or "verifier" in RepomendConfig.model_fields
 
@@ -453,11 +453,11 @@ class TestVerifierConfig:
 # ---------------------------------------------------------------------------
 
 _PR_PATCHES = _BASE_PATCHES + [
-    "repomend.cli.FixGenSubagent",
-    "repomend.cli.fix_worktree_context",
-    "repomend.cli.Verifier",
-    "repomend.cli.PRPublisher",
-    "repomend.cli.validate_github_config",
+    "patchward.cli.FixGenSubagent",
+    "patchward.cli.fix_worktree_context",
+    "patchward.cli.Verifier",
+    "patchward.cli.PRPublisher",
+    "patchward.cli.validate_github_config",
 ]
 
 
@@ -469,22 +469,22 @@ _PR_PATCHES = _BASE_PATCHES + [
 def _pr_base_patches():
     """Return context-manager stack that mocks every external dep for fix+PR tests."""
     return [
-        "repomend.cli.load_config",
-        "repomend.cli.CredentialProxy",
-        "repomend.cli.require_git_version",
-        "repomend.cli.tracing",
-        "repomend.cli.open_db",
-        "repomend.cli.get_or_create_repo",
-        "repomend.cli.create_run",
-        "repomend.cli.finish_run",
-        "repomend.cli.insert_finding",
-        "repomend.cli.worktree_context",
-        "repomend.cli.run_all_scanners",
-        "repomend.cli.FixGenSubagent",
-        "repomend.cli.fix_worktree_context",
-        "repomend.cli.Verifier",
-        "repomend.cli.PRPublisher",
-        "repomend.cli.validate_github_config",
+        "patchward.cli.load_config",
+        "patchward.cli.CredentialProxy",
+        "patchward.cli.require_git_version",
+        "patchward.cli.tracing",
+        "patchward.cli.open_db",
+        "patchward.cli.get_or_create_repo",
+        "patchward.cli.create_run",
+        "patchward.cli.finish_run",
+        "patchward.cli.insert_finding",
+        "patchward.cli.worktree_context",
+        "patchward.cli.run_all_scanners",
+        "patchward.cli.FixGenSubagent",
+        "patchward.cli.fix_worktree_context",
+        "patchward.cli.Verifier",
+        "patchward.cli.PRPublisher",
+        "patchward.cli.validate_github_config",
     ]
 
 
@@ -499,10 +499,10 @@ class TestPRPublisherWiring:
         api_key: str = "sk-test",
     ):
         """
-        Invoke `repomend fix` with every external dependency mocked.
+        Invoke `patchward fix` with every external dependency mocked.
         Returns (result, mock_validate, mock_pr_cls).
         """
-        from repomend.cli import app
+        from patchward.cli import app
 
         runner = CliRunner()
         log_path = tmp_path / "run.ndjson"
@@ -528,29 +528,29 @@ class TestPRPublisherWiring:
         # fix_worktree_context
         handle = MagicMock()
         handle.worktree_path = tmp_path / "fix-wt"
-        handle.branch = "repomend/fix-abc"
+        handle.branch = "patchward/fix-abc"
         fix_wt_ctx = MagicMock()
         fix_wt_ctx.__enter__.return_value = handle
         fix_wt_ctx.__exit__.return_value = False
 
         with (
-            patch("repomend.cli.load_config", return_value=cfg),
-            patch("repomend.cli.CredentialProxy") as mock_proxy_cls,
-            patch("repomend.cli.require_git_version"),
-            patch("repomend.cli.tracing"),
-            patch("repomend.cli.open_db"),
-            patch("repomend.cli.get_or_create_repo", return_value=1),
-            patch("repomend.cli.create_run", return_value=1),
-            patch("repomend.cli.finish_run"),
-            patch("repomend.cli.insert_finding"),
-            patch("repomend.cli.worktree_context", return_value=wt_ctx),
-            patch("repomend.cli.run_all_scanners", return_value=[sarif_run]),
-            patch("repomend.cli.fix_worktree_context", return_value=fix_wt_ctx),
-            patch("repomend.cli.FixGenSubagent") as mock_fg_cls,
-            patch("repomend.cli.Verifier") as mock_vfy_cls,
-            patch("repomend.cli.PRPublisher") as mock_pr_cls,
-            patch("repomend.cli.validate_github_config") as mock_validate,
-            patch("repomend.cli.RunLog") as mock_run_log_cls,
+            patch("patchward.cli.load_config", return_value=cfg),
+            patch("patchward.cli.CredentialProxy") as mock_proxy_cls,
+            patch("patchward.cli.require_git_version"),
+            patch("patchward.cli.tracing"),
+            patch("patchward.cli.open_db"),
+            patch("patchward.cli.get_or_create_repo", return_value=1),
+            patch("patchward.cli.create_run", return_value=1),
+            patch("patchward.cli.finish_run"),
+            patch("patchward.cli.insert_finding"),
+            patch("patchward.cli.worktree_context", return_value=wt_ctx),
+            patch("patchward.cli.run_all_scanners", return_value=[sarif_run]),
+            patch("patchward.cli.fix_worktree_context", return_value=fix_wt_ctx),
+            patch("patchward.cli.FixGenSubagent") as mock_fg_cls,
+            patch("patchward.cli.Verifier") as mock_vfy_cls,
+            patch("patchward.cli.PRPublisher") as mock_pr_cls,
+            patch("patchward.cli.validate_github_config") as mock_validate,
+            patch("patchward.cli.RunLog") as mock_run_log_cls,
         ):
             # Wire proxy mock
             mock_proxy_cls.return_value.load.return_value.assert_credentials_excluded = MagicMock()
@@ -595,7 +595,7 @@ class TestPRPublisherWiring:
 
     def test_run_log_has_pr_subobject_after_publish(self, tmp_path: Path) -> None:
         """After publish(), run log record includes pr.url, number, status, pushed_at (AC-P5-09)."""
-        from repomend.run_log import RunLog
+        from patchward.run_log import RunLog
         log_path = tmp_path / "run.ndjson"
         real_run_log = RunLog(log_path)
         pr_record = {
@@ -630,7 +630,7 @@ class TestRunLogThreaded:
 
         import pytest
 
-        from repomend.pipeline import run_batch, run_repo_pipeline
+        from patchward.pipeline import run_batch, run_repo_pipeline
 
         sig = inspect.signature(run_repo_pipeline)
         assert "run_log" in sig.parameters, (
@@ -644,7 +644,7 @@ class TestRunLogThreaded:
         )
         assert sig2.parameters["run_log"].default is None
 
-        import repomend.pipeline as _pipe
+        import patchward.pipeline as _pipe
 
         src_lines = inspect.getsource(_pipe).splitlines()
         for line in src_lines:
@@ -668,8 +668,8 @@ class TestRunLogThreaded:
         import asyncio
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from repomend.pipeline import run_repo_pipeline
-        from repomend.run_log import RunLog
+        from patchward.pipeline import run_repo_pipeline
+        from patchward.run_log import RunLog
 
         run_log = RunLog(path=tmp_path / "batch.ndjson")
 
@@ -717,7 +717,7 @@ class TestRunLogThreaded:
 
         handle = MagicMock()
         handle.worktree_path = tmp_path
-        handle.branch = "repomend/fix-abc"
+        handle.branch = "patchward/fix-abc"
 
         fix_wt_ctx = MagicMock()
         fix_wt_ctx.__enter__ = MagicMock(return_value=handle)
@@ -725,22 +725,22 @@ class TestRunLogThreaded:
 
         with (
             patch(
-                "repomend.pipeline.run_all_scanners",
+                "patchward.pipeline.run_all_scanners",
                 return_value=[sarif_run],
             ),
             patch(
-                "repomend.pipeline.FixGenSubagent"
+                "patchward.pipeline.FixGenSubagent"
             ) as mock_fg_cls,
             patch(
-                "repomend.pipeline.Verifier"
+                "patchward.pipeline.Verifier"
             ) as mock_vfy_cls,
             patch(
-                "repomend.pipeline.fix_worktree_context",
+                "patchward.pipeline.fix_worktree_context",
                 return_value=fix_wt_ctx,
             ),
-            patch("repomend.pipeline.CredentialProxy"),
+            patch("patchward.pipeline.CredentialProxy"),
             patch(
-                "repomend.pipeline.PRPublisher"
+                "patchward.pipeline.PRPublisher"
             ) as mock_pr_cls,
         ):
             mock_fg_cls.return_value.apply_fix = AsyncMock(
@@ -776,8 +776,8 @@ class TestRunLogThreaded:
         import asyncio
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from repomend.pipeline import run_repo_pipeline
-        from repomend.run_log import RunLog
+        from patchward.pipeline import run_repo_pipeline
+        from patchward.run_log import RunLog
 
         run_log = RunLog(path=tmp_path / "batch.ndjson")
 
@@ -809,7 +809,7 @@ class TestRunLogThreaded:
 
         handle = MagicMock()
         handle.worktree_path = tmp_path
-        handle.branch = "repomend/fix-abc"
+        handle.branch = "patchward/fix-abc"
 
         fix_wt_ctx = MagicMock()
         fix_wt_ctx.__enter__ = MagicMock(return_value=handle)
@@ -817,15 +817,15 @@ class TestRunLogThreaded:
 
         with (
             patch(
-                "repomend.pipeline.run_all_scanners",
+                "patchward.pipeline.run_all_scanners",
                 return_value=[sarif_run],
             ),
             patch(
-                "repomend.pipeline.FixGenSubagent"
+                "patchward.pipeline.FixGenSubagent"
             ) as mock_fg_cls,
-            patch("repomend.pipeline.Verifier"),
+            patch("patchward.pipeline.Verifier"),
             patch(
-                "repomend.pipeline.fix_worktree_context",
+                "patchward.pipeline.fix_worktree_context",
                 return_value=fix_wt_ctx,
             ),
         ):
@@ -852,7 +852,7 @@ class TestRunLogThreaded:
         import asyncio
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from repomend.pipeline import run_repo_pipeline
+        from patchward.pipeline import run_repo_pipeline
 
         finding: dict = {
             "rule_id": "rule.x",
@@ -886,7 +886,7 @@ class TestRunLogThreaded:
 
         handle = MagicMock()
         handle.worktree_path = tmp_path
-        handle.branch = "repomend/fix-abc"
+        handle.branch = "patchward/fix-abc"
 
         fix_wt_ctx = MagicMock()
         fix_wt_ctx.__enter__ = MagicMock(return_value=handle)
@@ -894,22 +894,22 @@ class TestRunLogThreaded:
 
         with (
             patch(
-                "repomend.pipeline.run_all_scanners",
+                "patchward.pipeline.run_all_scanners",
                 return_value=[sarif_run],
             ),
             patch(
-                "repomend.pipeline.FixGenSubagent"
+                "patchward.pipeline.FixGenSubagent"
             ) as mock_fg_cls,
             patch(
-                "repomend.pipeline.Verifier"
+                "patchward.pipeline.Verifier"
             ) as mock_vfy_cls,
             patch(
-                "repomend.pipeline.fix_worktree_context",
+                "patchward.pipeline.fix_worktree_context",
                 return_value=fix_wt_ctx,
             ),
-            patch("repomend.pipeline.CredentialProxy"),
+            patch("patchward.pipeline.CredentialProxy"),
             patch(
-                "repomend.pipeline.PRPublisher"
+                "patchward.pipeline.PRPublisher"
             ) as mock_pr_cls,
         ):
             mock_fg_cls.return_value.apply_fix = AsyncMock(
@@ -952,7 +952,7 @@ def _mf(rule_id: str, file_path: str = "f.py") -> dict:
 def _make_handle(tmp_path: Path) -> MagicMock:
     h = MagicMock()
     h.worktree_path = tmp_path
-    h.branch = "repomend/fix-abc"
+    h.branch = "patchward/fix-abc"
     return h
 
 
@@ -990,8 +990,8 @@ class TestMultiFindingLoop:
         import asyncio
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from repomend.pipeline import run_repo_pipeline
-        from repomend.run_log import RunLog
+        from patchward.pipeline import run_repo_pipeline
+        from patchward.run_log import RunLog
 
         run_log = RunLog(path=tmp_path / "b.ndjson")
         findings = [
@@ -1015,22 +1015,22 @@ class TestMultiFindingLoop:
 
         with (
             patch(
-                "repomend.pipeline.run_all_scanners",
+                "patchward.pipeline.run_all_scanners",
                 return_value=[sarif_run],
             ),
             patch(
-                "repomend.pipeline.FixGenSubagent"
+                "patchward.pipeline.FixGenSubagent"
             ) as mock_fg,
             patch(
-                "repomend.pipeline.Verifier"
+                "patchward.pipeline.Verifier"
             ) as mock_vfy,
             patch(
-                "repomend.pipeline.fix_worktree_context",
+                "patchward.pipeline.fix_worktree_context",
                 return_value=_fix_wt_ctx(tmp_path),
             ),
-            patch("repomend.pipeline.CredentialProxy"),
+            patch("patchward.pipeline.CredentialProxy"),
             patch(
-                "repomend.pipeline.PRPublisher"
+                "patchward.pipeline.PRPublisher"
             ) as mock_pr,
         ):
             mock_fg.return_value.apply_fix = AsyncMock(
@@ -1062,8 +1062,8 @@ class TestMultiFindingLoop:
         import asyncio
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from repomend.pipeline import run_repo_pipeline
-        from repomend.run_log import RunLog
+        from patchward.pipeline import run_repo_pipeline
+        from patchward.run_log import RunLog
 
         run_log = RunLog(path=tmp_path / "b.ndjson")
         findings = [
@@ -1097,22 +1097,22 @@ class TestMultiFindingLoop:
 
         with (
             patch(
-                "repomend.pipeline.run_all_scanners",
+                "patchward.pipeline.run_all_scanners",
                 return_value=[sarif_run],
             ),
             patch(
-                "repomend.pipeline.FixGenSubagent"
+                "patchward.pipeline.FixGenSubagent"
             ) as mock_fg,
             patch(
-                "repomend.pipeline.Verifier"
+                "patchward.pipeline.Verifier"
             ) as mock_vfy,
             patch(
-                "repomend.pipeline.fix_worktree_context",
+                "patchward.pipeline.fix_worktree_context",
                 return_value=_fix_wt_ctx(tmp_path),
             ),
-            patch("repomend.pipeline.CredentialProxy"),
+            patch("patchward.pipeline.CredentialProxy"),
             patch(
-                "repomend.pipeline.PRPublisher"
+                "patchward.pipeline.PRPublisher"
             ) as mock_pr,
         ):
             mock_fg.return_value.apply_fix = AsyncMock(
@@ -1149,8 +1149,8 @@ class TestMultiFindingLoop:
         import asyncio
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from repomend.pipeline import run_repo_pipeline
-        from repomend.run_log import RunLog
+        from patchward.pipeline import run_repo_pipeline
+        from patchward.run_log import RunLog
 
         run_log = RunLog(path=tmp_path / "b.ndjson")
         findings = [
@@ -1174,22 +1174,22 @@ class TestMultiFindingLoop:
 
         with (
             patch(
-                "repomend.pipeline.run_all_scanners",
+                "patchward.pipeline.run_all_scanners",
                 return_value=[sarif_run],
             ),
             patch(
-                "repomend.pipeline.FixGenSubagent"
+                "patchward.pipeline.FixGenSubagent"
             ) as mock_fg,
             patch(
-                "repomend.pipeline.Verifier"
+                "patchward.pipeline.Verifier"
             ) as mock_vfy,
             patch(
-                "repomend.pipeline.fix_worktree_context",
+                "patchward.pipeline.fix_worktree_context",
                 return_value=_fix_wt_ctx(tmp_path),
             ),
-            patch("repomend.pipeline.CredentialProxy"),
+            patch("patchward.pipeline.CredentialProxy"),
             patch(
-                "repomend.pipeline.PRPublisher"
+                "patchward.pipeline.PRPublisher"
             ) as mock_pr,
         ):
             mock_fg.return_value.apply_fix = AsyncMock(
@@ -1222,7 +1222,7 @@ class TestMultiFindingLoop:
         import asyncio
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from repomend.pipeline import run_repo_pipeline
+        from patchward.pipeline import run_repo_pipeline
 
         findings = [
             _mf("r.a"),
@@ -1245,22 +1245,22 @@ class TestMultiFindingLoop:
 
         with (
             patch(
-                "repomend.pipeline.run_all_scanners",
+                "patchward.pipeline.run_all_scanners",
                 return_value=[sarif_run],
             ),
             patch(
-                "repomend.pipeline.FixGenSubagent"
+                "patchward.pipeline.FixGenSubagent"
             ) as mock_fg_cls,
             patch(
-                "repomend.pipeline.Verifier"
+                "patchward.pipeline.Verifier"
             ) as mock_vfy,
             patch(
-                "repomend.pipeline.fix_worktree_context",
+                "patchward.pipeline.fix_worktree_context",
                 return_value=_fix_wt_ctx(tmp_path),
             ),
-            patch("repomend.pipeline.CredentialProxy"),
+            patch("patchward.pipeline.CredentialProxy"),
             patch(
-                "repomend.pipeline.PRPublisher"
+                "patchward.pipeline.PRPublisher"
             ) as mock_pr,
         ):
             mock_fg_cls.return_value.apply_fix = AsyncMock(
@@ -1292,8 +1292,8 @@ class TestMultiFindingLoop:
         import asyncio
         from unittest.mock import AsyncMock, MagicMock, patch
 
-        from repomend.pipeline import run_repo_pipeline
-        from repomend.run_log import RunLog
+        from patchward.pipeline import run_repo_pipeline
+        from patchward.run_log import RunLog
 
         run_log = RunLog(path=tmp_path / "b.ndjson")
         findings = [
@@ -1321,22 +1321,22 @@ class TestMultiFindingLoop:
 
         with (
             patch(
-                "repomend.pipeline.run_all_scanners",
+                "patchward.pipeline.run_all_scanners",
                 return_value=[sarif_run],
             ),
             patch(
-                "repomend.pipeline.FixGenSubagent"
+                "patchward.pipeline.FixGenSubagent"
             ) as mock_fg,
             patch(
-                "repomend.pipeline.Verifier"
+                "patchward.pipeline.Verifier"
             ) as mock_vfy,
             patch(
-                "repomend.pipeline.fix_worktree_context",
+                "patchward.pipeline.fix_worktree_context",
                 return_value=_fix_wt_ctx(tmp_path),
             ),
-            patch("repomend.pipeline.CredentialProxy"),
+            patch("patchward.pipeline.CredentialProxy"),
             patch(
-                "repomend.pipeline.PRPublisher"
+                "patchward.pipeline.PRPublisher"
             ) as mock_pr,
         ):
             mock_fg.return_value.apply_fix = AsyncMock(

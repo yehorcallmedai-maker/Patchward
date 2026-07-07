@@ -13,10 +13,10 @@ PROJECT_ROOT = Path(__file__).parent.parent
 
 
 def test_repomend_toml_example_exists() -> None:
-    """repomend.toml.example must be present at project root.
+    """patchward.toml.example must be present at project root.
     (AC-P7-07)"""
-    assert (PROJECT_ROOT / "repomend.toml.example").exists(), (
-        "repomend.toml.example not found at project root"
+    assert (PROJECT_ROOT / "patchward.toml.example").exists(), (
+        "patchward.toml.example not found at project root"
     )
 
 

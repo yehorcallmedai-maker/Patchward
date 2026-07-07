@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from repomend.run_log import RunLog
+from patchward.run_log import RunLog
 
 # ---------------------------------------------------------------------------
 # Helper
@@ -32,7 +32,7 @@ def _record(n: int = 1) -> dict:
         "rule_id": "some.rule",
         "severity": "error",
         "model_used": "claude-opus-4-8",
-        "branch_name": f"repomend/fix-{n:03d}",
+        "branch_name": f"patchward/fix-{n:03d}",
         "success": True,
         "timestamp": f"2026-06-12T00:0{n}:00+00:00",
     }
@@ -149,7 +149,7 @@ def test_append_batch_result_writes_repo_field(tmp_path):
     append_batch_result() writes the 'repo' field to the NDJSON log.
     # KS-TRACE: AC-P6-09, C-P6-09
     """
-    from repomend.run_log import RunLog
+    from patchward.run_log import RunLog
 
     log = RunLog(path=tmp_path / "batch.json")
     log.append_batch_result({"repo": "acme/foo", "status": "pr_opened"})
@@ -165,7 +165,7 @@ def test_append_batch_result_adds_timestamp(tmp_path):
     append_batch_result() injects a 'timestamp' field into the record.
     # KS-TRACE: AC-P6-09, C-P6-09
     """
-    from repomend.run_log import RunLog
+    from patchward.run_log import RunLog
 
     log = RunLog(path=tmp_path / "batch.json")
     log.append_batch_result({"repo": "acme/bar", "status": "ok"})
@@ -181,7 +181,7 @@ def test_append_batch_result_does_not_mutate_input(tmp_path):
     """
     append_batch_result() must not modify the caller's result dict.
     """
-    from repomend.run_log import RunLog
+    from patchward.run_log import RunLog
 
     log = RunLog(path=tmp_path / "batch.json")
     result = {"repo": "acme/baz", "status": "no_findings"}

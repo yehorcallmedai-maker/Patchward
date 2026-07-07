@@ -1,5 +1,5 @@
 """
-Shared pytest configuration for RepoMend test suite.
+Shared pytest configuration for patchward test suite.
 
 Loads .env at collection time so ANTHROPIC_API_KEY, GITHUB_TOKEN,
 LANGFUSE_PUBLIC_KEY, and LANGFUSE_SECRET_KEY are available to

@@ -17,7 +17,7 @@ from typing import NamedTuple
 
 import pytest
 
-from repomend.hooks import DeniedToolCallError, check_tool_call
+from patchward.hooks import DeniedToolCallError, check_tool_call
 
 
 # ---------------------------------------------------------------------------

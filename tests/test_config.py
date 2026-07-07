@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import typer
 
-from repomend.config import (
+from patchward.config import (
     load_config,
     RepomendConfig,
     FixGenConfig,
@@ -22,10 +22,10 @@ from repomend.config import (
 def test_load_valid_config(tmp_path: Path) -> None:
     repo = tmp_path / "myrepo"
     repo.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         textwrap.dedent(f"""
-        [repomend]
+        [patchward]
         repo_path = "{repo.as_posix()}"
         semgrep_rules = "p/python"
         db_path = "{(tmp_path / 'runs/state.db').as_posix()}"
@@ -46,7 +46,7 @@ def test_missing_config_exits_1(tmp_path: Path) -> None:
 
 
 def test_malformed_toml_exits_1(tmp_path: Path) -> None:
-    bad = tmp_path / "repomend.toml"
+    bad = tmp_path / "patchward.toml"
     bad.write_text("this is not valid toml }{", encoding="utf-8")
     with pytest.raises(SystemExit) as exc_info:
         load_config(bad)
@@ -54,10 +54,10 @@ def test_malformed_toml_exits_1(tmp_path: Path) -> None:
 
 
 def test_invalid_repo_path_exits_1(tmp_path: Path) -> None:
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         textwrap.dedent("""
-        [repomend]
+        [patchward]
         repo_path = "/does/not/exist/anywhere"
         """),
         encoding="utf-8",
@@ -83,9 +83,9 @@ def test_dotenv_loads_langfuse_key(tmp_path: Path, monkeypatch: pytest.MonkeyPat
         encoding="utf-8",
     )
 
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
-        f'[repomend]\nrepo_path = "{repo.as_posix()}"\ntracing_enabled = false\n',
+        f'[patchward]\nrepo_path = "{repo.as_posix()}"\ntracing_enabled = false\n',
         encoding="utf-8",
     )
 
@@ -102,9 +102,9 @@ def test_dotenv_absent_leaves_keys_empty(tmp_path: Path, monkeypatch: pytest.Mon
 
     repo = tmp_path / "repo"
     repo.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
-        f'[repomend]\nrepo_path = "{repo.as_posix()}"\ntracing_enabled = false\n',
+        f'[patchward]\nrepo_path = "{repo.as_posix()}"\ntracing_enabled = false\n',
         encoding="utf-8",
     )
 
@@ -117,9 +117,9 @@ def test_dotenv_absent_leaves_keys_empty(tmp_path: Path, monkeypatch: pytest.Mon
 def test_defaults_applied(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
-        f'[repomend]\nrepo_path = "{repo.as_posix()}"\n',
+        f'[patchward]\nrepo_path = "{repo.as_posix()}"\n',
         encoding="utf-8",
     )
     cfg = load_config(toml)
@@ -136,10 +136,10 @@ def test_fix_gen_max_turns_from_toml(tmp_path: Path) -> None:
     """
     repo = tmp_path / "repo"
     repo.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         textwrap.dedent(f"""
-        [repomend]
+        [patchward]
         repo_path = "{repo.as_posix()}"
 
         [fix_gen]
@@ -159,9 +159,9 @@ def test_fix_gen_max_turns_default_when_section_absent(tmp_path: Path) -> None:
     """
     repo = tmp_path / "repo"
     repo.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
-        f'[repomend]\nrepo_path = "{repo.as_posix()}"\n',
+        f'[patchward]\nrepo_path = "{repo.as_posix()}"\n',
         encoding="utf-8",
     )
     cfg = load_config(toml)
@@ -177,16 +177,16 @@ def test_fix_gen_config_standalone_default() -> None:
 # ---------------------------------------------------------------------------
 # KS-P5-02 STEP 1 — [github] section tests (C-P5-07, C-P5-10, AC-P5-13)
 # ---------------------------------------------------------------------------
-from repomend.config import GithubConfig, validate_github_config
+from patchward.config import GithubConfig, validate_github_config
 
 
 def test_github_config_loaded_from_toml(tmp_path: Path) -> None:
     """[github] section is parsed into cfg.github (C-P5-07, C-P5-10)."""
     repo = tmp_path / "repo"
     repo.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
-        f'[repomend]\nrepo_path = "{repo.as_posix()}"\n'
+        f'[patchward]\nrepo_path = "{repo.as_posix()}"\n'
         '[github]\nowner = "acme"\nrepo = "my-app"\nbase_branch = "develop"\n',
         encoding="utf-8",
     )
@@ -200,9 +200,9 @@ def test_github_config_defaults(tmp_path: Path) -> None:
     """No [github] section → defaults: owner='', repo='', base_branch='main'."""
     repo = tmp_path / "repo"
     repo.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
-        f'[repomend]\nrepo_path = "{repo.as_posix()}"\n',
+        f'[patchward]\nrepo_path = "{repo.as_posix()}"\n',
         encoding="utf-8",
     )
     cfg = load_config(toml)
@@ -215,9 +215,9 @@ def test_missing_github_owner_exits(tmp_path: Path) -> None:
     """validate_github_config() exits 1 with 'owner' in message when owner empty (AC-P5-13)."""
     repo = tmp_path / "repo"
     repo.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
-        f'[repomend]\nrepo_path = "{repo.as_posix()}"\n'
+        f'[patchward]\nrepo_path = "{repo.as_posix()}"\n'
         '[github]\nrepo = "my-app"\n',
         encoding="utf-8",
     )
@@ -232,9 +232,9 @@ def test_missing_github_repo_exits(tmp_path: Path) -> None:
     repo empty (AC-P5-13)."""
     repo = tmp_path / "repo"
     repo.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
-        f'[repomend]\nrepo_path = "{repo.as_posix()}"\n'
+        f'[patchward]\nrepo_path = "{repo.as_posix()}"\n'
         '[github]\nowner = "acme"\n',
         encoding="utf-8",
     )
@@ -252,9 +252,9 @@ def test_missing_github_repo_exits(tmp_path: Path) -> None:
 
 
 def _base_toml(repo_dir: Path) -> str:
-    """Minimal [repomend] block referencing an existing directory."""
+    """Minimal [patchward] block referencing an existing directory."""
     return (
-        f'[repomend]\nrepo_path = "{repo_dir.as_posix()}"\n'
+        f'[patchward]\nrepo_path = "{repo_dir.as_posix()}"\n'
     )
 
 
@@ -263,7 +263,7 @@ def test_repos_loaded_from_array_of_tables(tmp_path: Path) -> None:
     correct field values. (AC-P6-06)"""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         _base_toml(repo_dir)
         + '[github]\nowner = "default-owner"\nrepo = "default-repo"\n'
@@ -293,7 +293,7 @@ def test_repos_field_merge_inherits_github_owner(
     'main'. No KeyError or ValidationError. (AC-P6-06, ADR-022)"""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         _base_toml(repo_dir)
         + '[github]\nowner = "acme"\nrepo = "default-repo"\n'
@@ -315,7 +315,7 @@ def test_repos_fallback_to_github_singleton(tmp_path: Path) -> None:
     from [github] fields. Backward-compatible. (AC-P6-07)"""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         _base_toml(repo_dir)
         + '[github]\nowner = "acme"\nrepo = "legacy"\n'
@@ -335,7 +335,7 @@ def test_repos_entry_missing_path_raises(tmp_path: Path) -> None:
     """[[repos]] entry with no 'path' field → SystemExit(1)."""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         _base_toml(repo_dir)
         + '[github]\nowner = "acme"\nrepo = "x"\n'
@@ -355,7 +355,7 @@ def test_repos_entry_missing_owner_after_merge_raises(
     SystemExit(1) with 'owner' in error message. (AC-P6-06)"""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         _base_toml(repo_dir)
         # [github] deliberately has no owner
@@ -374,7 +374,7 @@ def test_batch_config_loaded(tmp_path: Path) -> None:
     """[batch] max_concurrent from toml overrides default. (C-P6-02)"""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         _base_toml(repo_dir) + "[batch]\nmax_concurrent = 5\n",
         encoding="utf-8",
@@ -387,7 +387,7 @@ def test_batch_config_default(tmp_path: Path) -> None:
     """No [batch] section → max_concurrent defaults to 3. (C-P6-02)"""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(_base_toml(repo_dir), encoding="utf-8")
     cfg = load_config(toml)
     assert cfg.batch.max_concurrent == 3
@@ -398,7 +398,7 @@ def test_models_config_loaded(tmp_path: Path) -> None:
     (AC-P6-05, C-P6-05)"""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         _base_toml(repo_dir)
         + "[models]\n"
@@ -415,7 +415,7 @@ def test_models_config_defaults(tmp_path: Path) -> None:
     """No [models] section → haiku and sonnet defaults. (AC-P6-05)"""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(_base_toml(repo_dir), encoding="utf-8")
     cfg = load_config(toml)
     assert cfg.models.scanner_model == "claude-haiku-4-5-20251001"
@@ -431,7 +431,7 @@ def test_max_findings_per_repo_default(tmp_path: Path) -> None:
     """No [batch] section → max_findings_per_repo defaults to 5."""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(_base_toml(repo_dir), encoding="utf-8")
     cfg = load_config(toml)
     assert cfg.batch.max_findings_per_repo == 5
@@ -441,7 +441,7 @@ def test_max_findings_per_repo_from_toml(tmp_path: Path) -> None:
     """[batch] max_findings_per_repo = 2 → cfg value 2. (AC-P7-11)"""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     extra = "[batch]\nmax_findings_per_repo = 2\n"
     toml.write_text(
         _base_toml(repo_dir) + extra, encoding="utf-8"
@@ -454,7 +454,7 @@ def test_max_findings_per_repo_zero_raises(tmp_path: Path) -> None:
     """max_findings_per_repo = 0 → SystemExit. (AD-P7-02)"""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     extra = "[batch]\nmax_findings_per_repo = 0\n"
     toml.write_text(
         _base_toml(repo_dir) + extra, encoding="utf-8"
@@ -469,7 +469,7 @@ def test_max_findings_per_repo_negative_raises(
     """max_findings_per_repo = -1 → SystemExit."""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     extra = "[batch]\nmax_findings_per_repo = -1\n"
     toml.write_text(
         _base_toml(repo_dir) + extra, encoding="utf-8"
@@ -480,25 +480,25 @@ def test_max_findings_per_repo_negative_raises(
 
 def test_toml_example_parses_cleanly(tmp_path: Path) -> None:
     """
-    repomend.toml.example loads without ValidationError or SystemExit
+    patchward.toml.example loads without ValidationError or SystemExit
     when a valid repo_path is injected. (AC-P7-07)
 
-    The example file has no [repomend] section (intentionally — users
+    The example file has no [patchward] section (intentionally — users
     set repo_path via CLI flag or scan command).  We inject a minimal
-    [repomend] block pointing at tmp_path so load_config() can
+    [patchward] block pointing at tmp_path so load_config() can
     validate repo_path existence without touching the rest of the
     example content.
     """
     example = (
-        Path(__file__).parent.parent / "repomend.toml.example"
+        Path(__file__).parent.parent / "patchward.toml.example"
     )
-    assert example.exists(), "repomend.toml.example not found"
+    assert example.exists(), "patchward.toml.example not found"
     base = example.read_text(encoding="utf-8")
     injected = (
-        f'[repomend]\nrepo_path = "{tmp_path.as_posix()}"\n'
+        f'[patchward]\nrepo_path = "{tmp_path.as_posix()}"\n'
         + base
     )
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(injected, encoding="utf-8")
     cfg = load_config(toml)
     assert cfg.github.owner == "your-github-username"

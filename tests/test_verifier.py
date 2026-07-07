@@ -4,7 +4,7 @@
 # |             all gate logic is pure-Python testable in isolation
 # | test: this file
 """
-Tests for repomend.verifier (Phase 4 — KS-P4-02).
+Tests for patchward.verifier (Phase 4 — KS-P4-02).
 
 Test organisation:
   Structural (AC-P4-01)         — 2 tests
@@ -27,7 +27,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from repomend.verifier import (
+from patchward.verifier import (
     FAIL,
     PASS,
     SKIP,
@@ -74,7 +74,7 @@ class TestStructural:
         import ast
         import importlib.util
 
-        spec = importlib.util.find_spec("repomend.verifier")
+        spec = importlib.util.find_spec("patchward.verifier")
         source = Path(spec.origin).read_text(encoding="utf-8")
         tree = ast.parse(source)
         imports = [

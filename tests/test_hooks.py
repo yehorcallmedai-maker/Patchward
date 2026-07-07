@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import pytest
 
-from repomend.hooks import (
+from patchward.hooks import (
     ALLOWLIST_CONTEXTS,
     DENY_PAYLOADS,
     DeniedToolCallError,
@@ -130,11 +130,11 @@ def test_allowlist_context_bypasses_payload_match() -> None:
 # None of these should trigger DeniedToolCallError.
 _CLEAN_SCAN_INPUTS: list[tuple[str, str]] = [
     # File reads — plain paths
-    ("read_file", "C:/Dev/Projects/repomend-fixture/vulnerable.py"),
-    ("read_file", "C:/Dev/Projects/repomend-fixture/requirements.txt"),
-    ("read_file", "src/repomend/scanner.py"),
+    ("read_file", "C:/Dev/Projects/patchward-fixture/vulnerable.py"),
+    ("read_file", "C:/Dev/Projects/patchward-fixture/requirements.txt"),
+    ("read_file", "src/patchward/scanner.py"),
     # Glob patterns
-    ("glob_files", "C:/Dev/Projects/repomend-fixture/**/*.py"),
+    ("glob_files", "C:/Dev/Projects/patchward-fixture/**/*.py"),
     ("glob_files", "**/*.json"),
     # Grep patterns — searching FOR the pattern, not executing it
     ("grep_files", "subprocess.run"),  # substring of PL-09 but not the full payload
@@ -146,7 +146,7 @@ _CLEAN_SCAN_INPUTS: list[tuple[str, str]] = [
     ("bash", "pytest --tb=short tests/"),
     ("bash", "uv run semgrep --config p/python --sarif ."),
     # git worktree add — the worktree path; no force-push payload
-    ("bash", "git worktree add repomend/scan-abc123 HEAD"),
+    ("bash", "git worktree add patchward/scan-abc123 HEAD"),
 ]
 
 
@@ -230,7 +230,7 @@ def test_env_local_file_path_is_blocked() -> None:
 
 def test_clean_input_returns_none() -> None:
     """check_tool_call returns None (not raises) for clean input."""
-    result = check_tool_call("read_file", "C:/Dev/Projects/repomend-fixture/clean.py")
+    result = check_tool_call("read_file", "C:/Dev/Projects/patchward-fixture/clean.py")
     assert result is None
 
 

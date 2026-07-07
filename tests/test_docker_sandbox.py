@@ -10,7 +10,7 @@ Test categories:
   3. Per-scanner network policy assertions
   3b. C-P3-08 structural tests — --cap-add NET_ADMIN and REPOMEND_NETWORK_POLICY env var
   4. AC-P2-01 integration tests — requires Docker running
-  5. AC-P3-01/AC-P3-02 egress hardening integration tests — requires Docker + repomend-scanner:0.1.0
+  5. AC-P3-01/AC-P3-02 egress hardening integration tests — requires Docker + patchward-scanner:0.1.0
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from repomend.docker_sandbox import (
+from patchward.docker_sandbox import (
     BASE_IMAGE,
     NetworkPolicy,
     DockerNotAvailableError,
@@ -28,7 +28,7 @@ from repomend.docker_sandbox import (
     _CREDENTIAL_KEYS,
     require_docker,
 )
-from repomend.scanner import (
+from patchward.scanner import (
     _SCANNER_NETWORK_POLICIES,
     run_semgrep,
     run_bandit,
@@ -48,7 +48,7 @@ def test_require_docker_fails_fast_on_nonzero_returncode() -> None:
     """AC-P2-02: docker info non-zero → DockerNotAvailableError with correct message."""
     mock_result = MagicMock()
     mock_result.returncode = 1
-    with patch("repomend.docker_sandbox.subprocess.run", return_value=mock_result):
+    with patch("patchward.docker_sandbox.subprocess.run", return_value=mock_result):
         with pytest.raises(DockerNotAvailableError) as exc_info:
             require_docker()
     assert "Docker is not running" in str(exc_info.value)
@@ -58,7 +58,7 @@ def test_require_docker_fails_fast_on_nonzero_returncode() -> None:
 def test_require_docker_fails_fast_when_docker_not_found() -> None:
     """AC-P2-02: docker not on PATH (FileNotFoundError) → DockerNotAvailableError."""
     with patch(
-        "repomend.docker_sandbox.subprocess.run",
+        "patchward.docker_sandbox.subprocess.run",
         side_effect=FileNotFoundError("docker not found"),
     ):
         with pytest.raises(DockerNotAvailableError) as exc_info:
@@ -70,7 +70,7 @@ def test_require_docker_passes_when_docker_running() -> None:
     """require_docker() must not raise when docker info returns 0."""
     mock_result = MagicMock()
     mock_result.returncode = 0
-    with patch("repomend.docker_sandbox.subprocess.run", return_value=mock_result):
+    with patch("patchward.docker_sandbox.subprocess.run", return_value=mock_result):
         require_docker()  # must not raise
 
 
@@ -359,7 +359,7 @@ def test_run_in_container_returns_output() -> None:
     sandbox = DockerSandbox()
     result = sandbox.run_in_container(
         ["python", "--version"],
-        repo_path=Path("C:/Dev/Projects/repomend-fixture"),
+        repo_path=Path("C:/Dev/Projects/patchward-fixture"),
         network_policy=NetworkPolicy.OFFLINE,
         timeout=60,
         acceptable_exit_codes=(0,),
@@ -387,7 +387,7 @@ def test_network_none_blocks_egress() -> None:
                 "print('REACHABLE')"
             ),
         ],
-        repo_path=Path("C:/Dev/Projects/repomend-fixture"),
+        repo_path=Path("C:/Dev/Projects/patchward-fixture"),
         network_policy=NetworkPolicy.OFFLINE,
         timeout=30,
         acceptable_exit_codes=(0, 1),  # 1 = unhandled exception (network blocked)
@@ -406,7 +406,7 @@ def test_pypi_only_allows_pip_index_query() -> None:
     sandbox = DockerSandbox()
     result = sandbox.run_in_container(
         ["pip", "index", "versions", "requests", "--no-input"],
-        repo_path=Path("C:/Dev/Projects/repomend-fixture"),
+        repo_path=Path("C:/Dev/Projects/patchward-fixture"),
         network_policy=NetworkPolicy.PYPI_ONLY,
         timeout=60,
         acceptable_exit_codes=(0,),
@@ -420,13 +420,13 @@ def test_pypi_only_allows_pip_index_query() -> None:
 def test_run_in_container_semgrep_on_fixture() -> None:
     """
     AC-P2-01 full: run semgrep inside Docker on fixture repo, assert SARIF returned.
-    semgrep is baked into repomend-scanner:0.1.0 — no runtime install needed (ADR-014).
+    semgrep is baked into patchward-scanner:0.1.0 — no runtime install needed (ADR-014).
     Requires: Docker Desktop running.
     """
     import json
-    fixture = Path("C:/Dev/Projects/repomend-fixture")
+    fixture = Path("C:/Dev/Projects/patchward-fixture")
     if not fixture.exists():
-        pytest.skip("repomend-fixture not available")
+        pytest.skip("patchward-fixture not available")
 
     sandbox = DockerSandbox()
     result = sandbox.run_in_container(
@@ -451,7 +451,7 @@ def test_run_in_container_semgrep_on_fixture() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 5. AC-P3-01 / AC-P3-02 egress hardening — requires repomend-scanner:0.1.0
+# 5. AC-P3-01 / AC-P3-02 egress hardening — requires patchward-scanner:0.1.0
 # KS-TRACE: C-P3-08, AC-P3-01, AC-P3-02, ADR-013, ADR-014
 # ---------------------------------------------------------------------------
 
@@ -468,7 +468,7 @@ def test_npm_only_allows_npm_registry_query() -> None:
     sandbox = DockerSandbox()
     result = sandbox.run_in_container(
         ["npm", "view", "lodash", "version"],
-        repo_path=Path("C:/Dev/Projects/repomend-fixture"),
+        repo_path=Path("C:/Dev/Projects/patchward-fixture"),
         network_policy=NetworkPolicy.NPM_ONLY,
         timeout=60,
         acceptable_exit_codes=(0,),
@@ -499,7 +499,7 @@ def test_pypi_only_blocks_non_pypi_hostname() -> None:
                 "print('REACHABLE')"
             ),
         ],
-        repo_path=Path("C:/Dev/Projects/repomend-fixture"),
+        repo_path=Path("C:/Dev/Projects/patchward-fixture"),
         network_policy=NetworkPolicy.PYPI_ONLY,
         timeout=30,
         acceptable_exit_codes=(0, 1),
@@ -546,7 +546,7 @@ def test_ac_p3_02_pypi_only_blocks_raw_ip_not_dns() -> None:
                 " iptables -L OUTPUT -n 2>&1"
             ),
         ],
-        repo_path=Path("C:/Dev/Projects/repomend-fixture"),
+        repo_path=Path("C:/Dev/Projects/patchward-fixture"),
         network_policy=NetworkPolicy.PYPI_ONLY,
         timeout=30,
         acceptable_exit_codes=(0,),

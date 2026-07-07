@@ -21,8 +21,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from repomend.sarif import SARIFNormalizer, SARIFResult, SARIFLocation, SARIFRun
-from repomend.subagent import (
+from patchward.sarif import SARIFNormalizer, SARIFResult, SARIFLocation, SARIFRun
+from patchward.subagent import (
     SCANNER_ALLOWED_TOOLS,
     SCANNER_MAX_TURNS,
     SCANNER_MODEL,
@@ -109,9 +109,9 @@ def test_semgrep_pipeline_finding_count() -> None:
     After SARIFNormalizer, finding count must equal 3.
     Subagent receives only this serialised JSON — C-03 firewall holds.
     """
-    fixture = Path("C:/Dev/Projects/repomend-fixture")
+    fixture = Path("C:/Dev/Projects/patchward-fixture")
     if not fixture.exists():
-        pytest.skip("repomend-fixture not available in this environment")
+        pytest.skip("patchward-fixture not available in this environment")
 
     import subprocess
     result = subprocess.run(

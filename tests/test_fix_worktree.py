@@ -18,9 +18,9 @@ Test categories:
   6. FixWorktreeHandle — structural invariants
 
 Note on patch targets: git_worktree_add and git_worktree_remove live in
-repomend.worktree_common. Tests that mock subprocess.run at the git level patch
-"repomend.worktree_common.subprocess.run". Tests that mock create_fix_worktree or
-cleanup_fix_worktree at the function level patch "repomend.fix_worktree.*".
+patchward.worktree_common. Tests that mock subprocess.run at the git level patch
+"patchward.worktree_common.subprocess.run". Tests that mock create_fix_worktree or
+cleanup_fix_worktree at the function level patch "patchward.fix_worktree.*".
 """
 from __future__ import annotations
 
@@ -29,9 +29,9 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-import repomend.fix_worktree as fix_worktree_mod
-import repomend.worktree_common as worktree_common_mod
-from repomend.fix_worktree import (
+import patchward.fix_worktree as fix_worktree_mod
+import patchward.worktree_common as worktree_common_mod
+from patchward.fix_worktree import (
     GitVersionError,
     FixWorktreeHandle,
     _fix_worktree_path,
@@ -70,11 +70,11 @@ def test_mark_success_persists_worktree(tmp_path: Path) -> None:
     AC-P3-03: When mark_success() is called, cleanup_fix_worktree must NOT
     be called — the branch and worktree persist for PR staging.
     """
-    fake_fix_path = tmp_path / "repomend-fix-abc00001"
+    fake_fix_path = tmp_path / "patchward-fix-abc00001"
     fake_fix_path.mkdir()
 
-    with patch("repomend.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
-        with patch("repomend.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
+    with patch("patchward.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
+        with patch("patchward.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
             with fix_worktree_context(tmp_path, "abc00001") as handle:
                 handle.mark_success()
 
@@ -87,14 +87,14 @@ def test_mark_success_handle_fields(tmp_path: Path) -> None:
     """
     AC-P3-03: The yielded handle carries the correct worktree_path and branch name.
     """
-    fake_fix_path = tmp_path / "repomend-fix-abc00002"
+    fake_fix_path = tmp_path / "patchward-fix-abc00002"
     fake_fix_path.mkdir()
 
-    with patch("repomend.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
-        with patch("repomend.fix_worktree.cleanup_fix_worktree"):
+    with patch("patchward.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
+        with patch("patchward.fix_worktree.cleanup_fix_worktree"):
             with fix_worktree_context(tmp_path, "abc00002") as handle:
                 assert handle.worktree_path == fake_fix_path
-                assert handle.branch == "repomend/fix-abc00002"
+                assert handle.branch == "patchward/fix-abc00002"
                 handle.mark_success()
 
 
@@ -107,11 +107,11 @@ def test_exception_triggers_cleanup(tmp_path: Path) -> None:
     AC-P3-04: If an exception is raised inside fix_worktree_context,
     cleanup_fix_worktree must be called — branch and worktree removed.
     """
-    fake_fix_path = tmp_path / "repomend-fix-abc00003"
+    fake_fix_path = tmp_path / "patchward-fix-abc00003"
     fake_fix_path.mkdir()
 
-    with patch("repomend.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
-        with patch("repomend.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
+    with patch("patchward.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
+        with patch("patchward.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
             with pytest.raises(RuntimeError, match="fix failed"):
                 with fix_worktree_context(tmp_path, "abc00003") as handle:
                     raise RuntimeError("fix failed")
@@ -132,11 +132,11 @@ def test_exception_with_mark_success_before_raise_still_cleans_up(tmp_path: Path
     with no subsequent exception should persist). If mark_success was called
     but an exception follows, the fix is still not delivered cleanly.
     """
-    fake_fix_path = tmp_path / "repomend-fix-abc00004"
+    fake_fix_path = tmp_path / "patchward-fix-abc00004"
     fake_fix_path.mkdir()
 
-    with patch("repomend.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
-        with patch("repomend.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
+    with patch("patchward.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
+        with patch("patchward.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
             with pytest.raises(RuntimeError, match="verifier rejected"):
                 with fix_worktree_context(tmp_path, "abc00004") as handle:
                     handle.mark_success()
@@ -164,11 +164,11 @@ def test_clean_exit_without_mark_success_triggers_cleanup(tmp_path: Path) -> Non
     A silently-persisted unverified branch could be staged as a PR by Phase 5/6.
     The fail-safe default prevents this.
     """
-    fake_fix_path = tmp_path / "repomend-fix-abc00005"
+    fake_fix_path = tmp_path / "patchward-fix-abc00005"
     fake_fix_path.mkdir()
 
-    with patch("repomend.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
-        with patch("repomend.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
+    with patch("patchward.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
+        with patch("patchward.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
             with fix_worktree_context(tmp_path, "abc00005"):
                 pass  # clean exit, no mark_success()
 
@@ -186,11 +186,11 @@ def test_keyboard_interrupt_triggers_cleanup(tmp_path: Path) -> None:
     KeyboardInterrupt inside fix_worktree_context must trigger cleanup.
     User hits Ctrl-C mid-fix — the unfinished branch must not persist.
     """
-    fake_fix_path = tmp_path / "repomend-fix-abc00006"
+    fake_fix_path = tmp_path / "patchward-fix-abc00006"
     fake_fix_path.mkdir()
 
-    with patch("repomend.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
-        with patch("repomend.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
+    with patch("patchward.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
+        with patch("patchward.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
             with pytest.raises(KeyboardInterrupt):
                 with fix_worktree_context(tmp_path, "abc00006"):
                     raise KeyboardInterrupt()
@@ -200,11 +200,11 @@ def test_keyboard_interrupt_triggers_cleanup(tmp_path: Path) -> None:
 
 def test_system_exit_triggers_cleanup(tmp_path: Path) -> None:
     """SystemExit inside fix_worktree_context must trigger cleanup."""
-    fake_fix_path = tmp_path / "repomend-fix-abc00007"
+    fake_fix_path = tmp_path / "patchward-fix-abc00007"
     fake_fix_path.mkdir()
 
-    with patch("repomend.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
-        with patch("repomend.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
+    with patch("patchward.fix_worktree.create_fix_worktree", return_value=fake_fix_path):
+        with patch("patchward.fix_worktree.cleanup_fix_worktree") as mock_cleanup:
             with pytest.raises(SystemExit):
                 with fix_worktree_context(tmp_path, "abc00007"):
                     raise SystemExit(1)
@@ -225,16 +225,16 @@ def test_two_findings_produce_independent_branches(tmp_path: Path) -> None:
     created_branches: list[str] = []
 
     def capture_create(repo_path: Path, finding_id: str) -> Path:
-        path = tmp_path / f"repomend-fix-{finding_id}"
+        path = tmp_path / f"patchward-fix-{finding_id}"
         path.mkdir(exist_ok=True)
-        created_branches.append(f"repomend/fix-{finding_id}")
+        created_branches.append(f"patchward/fix-{finding_id}")
         return path
 
     id_1 = "finding-aaa00001"
     id_2 = "finding-bbb00002"
 
-    with patch("repomend.fix_worktree.create_fix_worktree", side_effect=capture_create):
-        with patch("repomend.fix_worktree.cleanup_fix_worktree"):
+    with patch("patchward.fix_worktree.create_fix_worktree", side_effect=capture_create):
+        with patch("patchward.fix_worktree.cleanup_fix_worktree"):
             with fix_worktree_context(tmp_path, id_1) as h1:
                 h1.mark_success()
             with fix_worktree_context(tmp_path, id_2) as h2:
@@ -255,8 +255,8 @@ def test_two_findings_produce_independent_branches(tmp_path: Path) -> None:
 def test_handle_default_success_is_false() -> None:
     """FixWorktreeHandle._success defaults to False — cleanup is the default."""
     handle = FixWorktreeHandle(
-        worktree_path=Path("/tmp/repomend-fix-test"),
-        branch="repomend/fix-test",
+        worktree_path=Path("/tmp/patchward-fix-test"),
+        branch="patchward/fix-test",
     )
     assert handle._success is False, (
         "Fail-safe default: _success must be False before mark_success() — C-P3-12"
@@ -266,8 +266,8 @@ def test_handle_default_success_is_false() -> None:
 def test_handle_mark_success_sets_flag() -> None:
     """mark_success() must flip _success to True — and only that."""
     handle = FixWorktreeHandle(
-        worktree_path=Path("/tmp/repomend-fix-test"),
-        branch="repomend/fix-test",
+        worktree_path=Path("/tmp/patchward-fix-test"),
+        branch="patchward/fix-test",
     )
     handle.mark_success()
     assert handle._success is True
@@ -277,15 +277,15 @@ def test_fix_worktree_path_contains_finding_id() -> None:
     """_fix_worktree_path() must embed the finding_id in the directory name."""
     path = _fix_worktree_path("deadbeef-01")
     assert "deadbeef-01" in str(path)
-    assert "repomend-fix" in str(path)
+    assert "patchward-fix" in str(path)
 
 
 def test_create_fix_worktree_calls_git_worktree_add() -> None:
-    """create_fix_worktree() calls git_worktree_add with repomend/fix-<id> branch."""
+    """create_fix_worktree() calls git_worktree_add with patchward/fix-<id> branch."""
     mock_result = MagicMock()
     mock_result.returncode = 0
 
-    with patch("repomend.worktree_common.subprocess.run", return_value=mock_result) as mock_run:
+    with patch("patchward.worktree_common.subprocess.run", return_value=mock_result) as mock_run:
         returned = create_fix_worktree(Path("/repo"), "myfix-001")
 
     mock_run.assert_called_once()
@@ -293,7 +293,7 @@ def test_create_fix_worktree_calls_git_worktree_add() -> None:
     assert cmd[0] == "git"
     assert cmd[1] == "worktree"
     assert cmd[2] == "add"
-    assert "repomend/fix-myfix-001" in cmd
+    assert "patchward/fix-myfix-001" in cmd
     assert returned == _fix_worktree_path("myfix-001")
 
 
@@ -310,7 +310,7 @@ def test_cleanup_fix_worktree_calls_both_git_steps() -> None:
         result.returncode = 128 if "remove" in cmd else 0
         return result
 
-    with patch("repomend.worktree_common.subprocess.run", side_effect=record_calls):
+    with patch("patchward.worktree_common.subprocess.run", side_effect=record_calls):
         cleanup_fix_worktree(Path("/repo"), "myfix-002")
 
     cmds = [" ".join(c) for c in call_log]
@@ -341,7 +341,7 @@ class TestGitCommitAll:
         Happy path: stages changes and commits with the provided message.
         Asserts the three git subcommands fire in order.
         """
-        from repomend.worktree_common import git_commit_all
+        from patchward.worktree_common import git_commit_all
 
         calls_seen: list[list[str]] = []
 
@@ -355,7 +355,7 @@ class TestGitCommitAll:
             return mock
 
         with patch(
-            "repomend.worktree_common.subprocess.run", side_effect=fake_run
+            "patchward.worktree_common.subprocess.run", side_effect=fake_run
         ):
             git_commit_all(tmp_path, "fix(subprocess-shell-true): test commit")
 
@@ -375,7 +375,7 @@ class TestGitCommitAll:
         If git status --porcelain returns empty after git add -A,
         git_commit_all() must raise RuntimeError — Fix-Gen wrote no files.
         """
-        from repomend.worktree_common import git_commit_all
+        from patchward.worktree_common import git_commit_all
 
         def fake_run(cmd, **kwargs):
             mock = MagicMock()
@@ -385,7 +385,7 @@ class TestGitCommitAll:
             return mock
 
         with patch(
-            "repomend.worktree_common.subprocess.run", side_effect=fake_run
+            "patchward.worktree_common.subprocess.run", side_effect=fake_run
         ):
             with pytest.raises(RuntimeError, match="nothing to commit"):
                 git_commit_all(tmp_path, "fix: empty")
@@ -394,7 +394,7 @@ class TestGitCommitAll:
         """
         All git subcommands must use worktree_path as cwd, not repo root.
         """
-        from repomend.worktree_common import git_commit_all
+        from patchward.worktree_common import git_commit_all
 
         cwds_seen: list[str] = []
 
@@ -407,7 +407,7 @@ class TestGitCommitAll:
             return mock
 
         with patch(
-            "repomend.worktree_common.subprocess.run", side_effect=fake_run
+            "patchward.worktree_common.subprocess.run", side_effect=fake_run
         ):
             git_commit_all(tmp_path / "worktree", "msg")
 
@@ -423,7 +423,7 @@ class TestGitCommitAll:
         If git add -A returns non-zero, CalledProcessError is raised.
         """
         import subprocess
-        from repomend.worktree_common import git_commit_all
+        from patchward.worktree_common import git_commit_all
 
         def fake_run(cmd, **kwargs):
             if "add" in cmd:
@@ -435,7 +435,7 @@ class TestGitCommitAll:
             return mock
 
         with patch(
-            "repomend.worktree_common.subprocess.run", side_effect=fake_run
+            "patchward.worktree_common.subprocess.run", side_effect=fake_run
         ):
             with pytest.raises(subprocess.CalledProcessError):
                 git_commit_all(tmp_path, "msg")
@@ -446,7 +446,7 @@ class TestGitCommitAll:
         """
         The message argument must be passed verbatim to `git commit -m`.
         """
-        from repomend.worktree_common import git_commit_all
+        from patchward.worktree_common import git_commit_all
 
         commit_cmds: list[list[str]] = []
 
@@ -459,9 +459,9 @@ class TestGitCommitAll:
             mock.stderr = ""
             return mock
 
-        msg = "fix(subprocess-shell-true): replaced shell=True [repomend/abc12345]"
+        msg = "fix(subprocess-shell-true): replaced shell=True [patchward/abc12345]"
         with patch(
-            "repomend.worktree_common.subprocess.run", side_effect=fake_run
+            "patchward.worktree_common.subprocess.run", side_effect=fake_run
         ):
             git_commit_all(tmp_path, msg)
 
@@ -474,7 +474,7 @@ class TestGitCommitAll:
 # ---------------------------------------------------------------------------
 # KS-P5-02 STEP 3 — git_push_branch() tests (AC-P5-02, AC-P5-03, C-P5-04)
 # ---------------------------------------------------------------------------
-from repomend.worktree_common import git_push_branch
+from patchward.worktree_common import git_push_branch
 
 
 class TestGitPushBranch:
@@ -484,10 +484,10 @@ class TestGitPushBranch:
         """git push is called with [git, push, remote_url, branch:branch] (AC-P5-02)."""
         from unittest.mock import patch, MagicMock
         remote = "https://oauth2:token@github.com/acme/repo.git"
-        branch = "repomend/fix-abc123"
+        branch = "patchward/fix-abc123"
         mock_result = MagicMock()
         mock_result.returncode = 0
-        with patch("repomend.worktree_common.subprocess.run", return_value=mock_result) as mock_run:
+        with patch("patchward.worktree_common.subprocess.run", return_value=mock_result) as mock_run:
             git_push_branch(tmp_path, remote, branch)
         mock_run.assert_called_once()
         args = mock_run.call_args[0][0]
@@ -504,7 +504,7 @@ class TestGitPushBranch:
         mock_proc.stdout = ""
         mock_proc.stderr = "error: failed to push"
         mock_proc.args = ["git", "push"]
-        with patch("repomend.worktree_common.subprocess.run", return_value=mock_proc):
+        with patch("patchward.worktree_common.subprocess.run", return_value=mock_proc):
             with pytest.raises(RuntimeError, match="git push failed"):
                 git_push_branch(tmp_path, "https://example.com/repo.git", "fix-branch")
 
@@ -513,6 +513,6 @@ class TestGitPushBranch:
         from unittest.mock import patch, MagicMock
         mock_ok = MagicMock()
         mock_ok.returncode = 0
-        with patch("repomend.worktree_common.subprocess.run", return_value=mock_ok) as mock_run:
+        with patch("patchward.worktree_common.subprocess.run", return_value=mock_ok) as mock_run:
             git_push_branch(tmp_path, "https://example.com/repo.git", "fix-branch", timeout=30)
         assert mock_run.call_args.kwargs["timeout"] == 30

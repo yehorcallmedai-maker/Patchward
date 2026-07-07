@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from repomend.repo import Ecosystem, PackageManager, RepoContext, TestRunner
+from patchward.repo import Ecosystem, PackageManager, RepoContext, TestRunner
 
 
 # ---------------------------------------------------------------------------
@@ -164,12 +164,12 @@ def test_detect_unknown_test_runner(tmp_path: Path) -> None:
 
 def test_fixture_repo_detection() -> None:
     """
-    repomend-fixture: Python only, requirements.txt, no package.json.
+    patchward-fixture: Python only, requirements.txt, no package.json.
     ESLint and npm audit must be skipped per AC-P1-09 / C-08.
     """
-    fixture = Path("C:/Dev/Projects/repomend-fixture")
+    fixture = Path("C:/Dev/Projects/patchward-fixture")
     if not fixture.exists():
-        pytest.skip("repomend-fixture not available in this environment")
+        pytest.skip("patchward-fixture not available in this environment")
     ctx = RepoContext.from_path(fixture)
     assert ctx.ecosystem == Ecosystem.PYTHON
     assert ctx.has_package_json is False

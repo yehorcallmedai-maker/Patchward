@@ -19,7 +19,7 @@ import os
 
 import pytest
 
-from repomend.credential_proxy import (
+from patchward.credential_proxy import (
     _CREDENTIAL_KEYS,
     CredentialLeakError,
     CredentialProxy,
@@ -181,8 +181,8 @@ def test_credential_keys_single_source_of_truth() -> None:
     docker_sandbox._CREDENTIAL_KEYS must be the same object imported from
     credential_proxy — not a separate definition that could diverge.
     """
-    from repomend.docker_sandbox import _CREDENTIAL_KEYS as sandbox_keys
-    from repomend.credential_proxy import _CREDENTIAL_KEYS as proxy_keys
+    from patchward.docker_sandbox import _CREDENTIAL_KEYS as sandbox_keys
+    from patchward.credential_proxy import _CREDENTIAL_KEYS as proxy_keys
     assert sandbox_keys is proxy_keys, (
         "_CREDENTIAL_KEYS in docker_sandbox.py must be imported from credential_proxy.py, "
         "not redefined. Two separate frozensets can diverge."
@@ -244,7 +244,7 @@ def test_github_token_scrubbed(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_github_token_single_source_of_truth() -> None:
     """_CREDENTIAL_KEYS is the single source imported by docker_sandbox (C-P2-04 pattern)."""
-    from repomend.docker_sandbox import _CREDENTIAL_KEYS as sandbox_keys
+    from patchward.docker_sandbox import _CREDENTIAL_KEYS as sandbox_keys
     assert _CREDENTIAL_KEYS is sandbox_keys, (
         "_CREDENTIAL_KEYS must be the same object in credential_proxy and docker_sandbox"
     )

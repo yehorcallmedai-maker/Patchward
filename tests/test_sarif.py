@@ -2,7 +2,7 @@
 # | test: normalizer unit tests — no subprocess, no I/O
 from __future__ import annotations
 
-from repomend.sarif import (
+from patchward.sarif import (
     SARIF_SCHEMA,
     SARIF_VERSION,
     SARIFLocation,
@@ -358,7 +358,7 @@ def test_from_osv_scanner_empty() -> None:
 # KS-P1-04: SARIFValidationError + validate_sarif_run / validate_sarif_document
 # ---------------------------------------------------------------------------
 
-from repomend.sarif import SARIFValidationError, validate_sarif_run, validate_sarif_document  # noqa: E402
+from patchward.sarif import SARIFValidationError, validate_sarif_run, validate_sarif_document  # noqa: E402
 
 
 def test_validate_sarif_run_valid() -> None:

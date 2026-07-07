@@ -15,10 +15,10 @@ Test categories:
   5. Working branch invariant — no git checkout issued on original repo
 
 Note on patch targets: require_git_version, git_worktree_add, and git_worktree_remove
-live in repomend.worktree_common (single source of truth per C-P3-10). Tests that
-mock subprocess.run for those operations patch "repomend.worktree_common.subprocess.run".
+live in patchward.worktree_common (single source of truth per C-P3-10). Tests that
+mock subprocess.run for those operations patch "patchward.worktree_common.subprocess.run".
 Tests that mock the create_worktree/cleanup_worktree function objects directly patch
-"repomend.worktree.create_worktree" / "repomend.worktree.cleanup_worktree" — unchanged.
+"patchward.worktree.create_worktree" / "patchward.worktree.cleanup_worktree" — unchanged.
 """
 from __future__ import annotations
 
@@ -28,9 +28,9 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-import repomend.worktree as worktree_mod
-import repomend.worktree_common as worktree_common_mod
-from repomend.worktree import (
+import patchward.worktree as worktree_mod
+import patchward.worktree_common as worktree_common_mod
+from patchward.worktree import (
     GitVersionError,
     _worktree_path,
     cleanup_worktree,
@@ -67,7 +67,7 @@ def test_require_git_version_passes() -> None:
     mock_result = MagicMock()
     mock_result.returncode = 0
     mock_result.stdout = "git version 2.39.0\n"
-    with patch("repomend.worktree_common.subprocess.run", return_value=mock_result):
+    with patch("patchward.worktree_common.subprocess.run", return_value=mock_result):
         require_git_version()  # must not raise
 
 
@@ -75,7 +75,7 @@ def test_require_git_version_passes_windows_format() -> None:
     """Windows git appends '.windows.N' — parser must still extract major.minor."""
     mock_result = MagicMock()
     mock_result.stdout = "git version 2.42.0.windows.2\n"
-    with patch("repomend.worktree_common.subprocess.run", return_value=mock_result):
+    with patch("patchward.worktree_common.subprocess.run", return_value=mock_result):
         require_git_version()  # must not raise
 
 
@@ -83,7 +83,7 @@ def test_require_git_version_fails() -> None:
     """Mock git --version returning 2.4.0; assert GitVersionError with version in message."""
     mock_result = MagicMock()
     mock_result.stdout = "git version 2.4.0\n"
-    with patch("repomend.worktree_common.subprocess.run", return_value=mock_result):
+    with patch("patchward.worktree_common.subprocess.run", return_value=mock_result):
         with pytest.raises(GitVersionError) as exc_info:
             require_git_version()
     assert "2.4" in str(exc_info.value)
@@ -94,7 +94,7 @@ def test_require_git_version_fails_on_exact_boundary() -> None:
     """git 2.4.99 is still below 2.5 — must raise."""
     mock_result = MagicMock()
     mock_result.stdout = "git version 2.4.99\n"
-    with patch("repomend.worktree_common.subprocess.run", return_value=mock_result):
+    with patch("patchward.worktree_common.subprocess.run", return_value=mock_result):
         with pytest.raises(GitVersionError):
             require_git_version()
 
@@ -102,7 +102,7 @@ def test_require_git_version_fails_on_exact_boundary() -> None:
 def test_require_git_version_not_found() -> None:
     """git not on PATH → FileNotFoundError → GitVersionError with actionable message."""
     with patch(
-        "repomend.worktree_common.subprocess.run",
+        "patchward.worktree_common.subprocess.run",
         side_effect=FileNotFoundError("git not found"),
     ):
         with pytest.raises(GitVersionError) as exc_info:
@@ -119,7 +119,7 @@ def test_create_worktree_creates_branch() -> None:
     mock_result = MagicMock()
     mock_result.returncode = 0
 
-    with patch("repomend.worktree_common.subprocess.run", return_value=mock_result) as mock_run:
+    with patch("patchward.worktree_common.subprocess.run", return_value=mock_result) as mock_run:
         scan_path = create_worktree(Path("/repo"), "abc12345")
 
     mock_run.assert_called_once()
@@ -127,8 +127,8 @@ def test_create_worktree_creates_branch() -> None:
     assert cmd[0] == "git"
     assert cmd[1] == "worktree"
     assert cmd[2] == "add"
-    # Branch name must follow repomend/scan-{scan_id} convention
-    assert "repomend/scan-abc12345" in cmd
+    # Branch name must follow patchward/scan-{scan_id} convention
+    assert "patchward/scan-abc12345" in cmd
 
 
 def test_create_worktree_returns_deterministic_path() -> None:
@@ -136,7 +136,7 @@ def test_create_worktree_returns_deterministic_path() -> None:
     mock_result = MagicMock()
     mock_result.returncode = 0
 
-    with patch("repomend.worktree_common.subprocess.run", return_value=mock_result):
+    with patch("patchward.worktree_common.subprocess.run", return_value=mock_result):
         returned = create_worktree(Path("/repo"), "abc12345")
 
     expected = _worktree_path("abc12345")
@@ -147,7 +147,7 @@ def test_worktree_path_contains_scan_id() -> None:
     """_worktree_path() embeds the scan_id in the directory name."""
     path = _worktree_path("deadbeef")
     assert "deadbeef" in str(path)
-    assert "repomend-scan" in str(path)
+    assert "patchward-scan" in str(path)
 
 
 # ---------------------------------------------------------------------------
@@ -163,7 +163,7 @@ def test_cleanup_is_idempotent() -> None:
     mock_result = MagicMock()
     mock_result.returncode = 128  # git "not found" error — worktree/branch already gone
 
-    with patch("repomend.worktree_common.subprocess.run", return_value=mock_result):
+    with patch("patchward.worktree_common.subprocess.run", return_value=mock_result):
         cleanup_worktree(Path("/repo"), "abc12345")  # first call
         cleanup_worktree(Path("/repo"), "abc12345")  # second call — must not raise
 
@@ -173,7 +173,7 @@ def test_cleanup_does_not_raise_when_worktree_missing() -> None:
     mock_result = MagicMock()
     mock_result.returncode = 128  # fatal: not a git repository / no such path
 
-    with patch("repomend.worktree_common.subprocess.run", return_value=mock_result):
+    with patch("patchward.worktree_common.subprocess.run", return_value=mock_result):
         cleanup_worktree(Path("/repo"), "nonexistent-id")  # must not raise
 
 
@@ -190,7 +190,7 @@ def test_cleanup_runs_both_steps_even_if_first_fails() -> None:
         result.returncode = 128 if "remove" in cmd else 0
         return result
 
-    with patch("repomend.worktree_common.subprocess.run", side_effect=record_calls):
+    with patch("patchward.worktree_common.subprocess.run", side_effect=record_calls):
         cleanup_worktree(Path("/repo"), "abc12345")
 
     cmds = [" ".join(c) for c in call_log]
@@ -204,19 +204,19 @@ def test_cleanup_runs_both_steps_even_if_first_fails() -> None:
 
 def test_worktree_context_yields_scan_path(tmp_path: Path) -> None:
     """worktree_context() yields the path returned by create_worktree."""
-    fake_worktree = tmp_path / "repomend-scan-abc123"
+    fake_worktree = tmp_path / "patchward-scan-abc123"
     fake_worktree.mkdir()
 
-    with patch("repomend.worktree.create_worktree", return_value=fake_worktree):
-        with patch("repomend.worktree.cleanup_worktree"):
+    with patch("patchward.worktree.create_worktree", return_value=fake_worktree):
+        with patch("patchward.worktree.cleanup_worktree"):
             with worktree_context(tmp_path) as scan_path:
                 assert scan_path == fake_worktree
 
 
 def test_cleanup_runs_on_clean_exit(tmp_path: Path) -> None:
     """cleanup_worktree() must be called when worktree_context exits cleanly."""
-    with patch("repomend.worktree.create_worktree", return_value=tmp_path / "wt"):
-        with patch("repomend.worktree.cleanup_worktree") as mock_cleanup:
+    with patch("patchward.worktree.create_worktree", return_value=tmp_path / "wt"):
+        with patch("patchward.worktree.cleanup_worktree") as mock_cleanup:
             with worktree_context(tmp_path):
                 pass  # clean exit
     mock_cleanup.assert_called_once()
@@ -226,10 +226,10 @@ def test_cleanup_runs_on_exception(tmp_path: Path) -> None:
     """
     cleanup_worktree() must be called even when an exception is raised
     inside the worktree_context block (e.g. scanner crash, hook denial).
-    AC-P2-06: No leaked repomend/scan-* branch regardless of exit path.
+    AC-P2-06: No leaked patchward/scan-* branch regardless of exit path.
     """
-    with patch("repomend.worktree.create_worktree", return_value=tmp_path / "wt"):
-        with patch("repomend.worktree.cleanup_worktree") as mock_cleanup:
+    with patch("patchward.worktree.create_worktree", return_value=tmp_path / "wt"):
+        with patch("patchward.worktree.cleanup_worktree") as mock_cleanup:
             with pytest.raises(RuntimeError, match="scanner crash"):
                 with worktree_context(tmp_path):
                     raise RuntimeError("scanner crash")
@@ -242,8 +242,8 @@ def test_cleanup_runs_on_keyboard_interrupt(tmp_path: Path) -> None:
     Adversarial case: user hits Ctrl-C mid-scan — worktree must still be removed.
     AC-P2-06 invariant: no leaked branch under any exit path.
     """
-    with patch("repomend.worktree.create_worktree", return_value=tmp_path / "wt"):
-        with patch("repomend.worktree.cleanup_worktree") as mock_cleanup:
+    with patch("patchward.worktree.create_worktree", return_value=tmp_path / "wt"):
+        with patch("patchward.worktree.cleanup_worktree") as mock_cleanup:
             with pytest.raises(KeyboardInterrupt):
                 with worktree_context(tmp_path):
                     raise KeyboardInterrupt()
@@ -252,8 +252,8 @@ def test_cleanup_runs_on_keyboard_interrupt(tmp_path: Path) -> None:
 
 def test_cleanup_runs_on_system_exit(tmp_path: Path) -> None:
     """cleanup_worktree() must be called on SystemExit (e.g. typer.Exit from hook)."""
-    with patch("repomend.worktree.create_worktree", return_value=tmp_path / "wt"):
-        with patch("repomend.worktree.cleanup_worktree") as mock_cleanup:
+    with patch("patchward.worktree.create_worktree", return_value=tmp_path / "wt"):
+        with patch("patchward.worktree.cleanup_worktree") as mock_cleanup:
             with pytest.raises(SystemExit):
                 with worktree_context(tmp_path):
                     raise SystemExit(1)
@@ -271,11 +271,11 @@ def test_scanner_receives_worktree_path_not_original(tmp_path: Path) -> None:
     """
     original_path = tmp_path / "my-repo"
     original_path.mkdir()
-    fake_worktree = tmp_path / "repomend-scan-deadbeef"
+    fake_worktree = tmp_path / "patchward-scan-deadbeef"
     fake_worktree.mkdir()
 
-    with patch("repomend.worktree.create_worktree", return_value=fake_worktree):
-        with patch("repomend.worktree.cleanup_worktree"):
+    with patch("patchward.worktree.create_worktree", return_value=fake_worktree):
+        with patch("patchward.worktree.cleanup_worktree"):
             with worktree_context(original_path) as scan_path:
                 # Scanner receives scan_path, not original_path
                 assert scan_path == fake_worktree
@@ -298,7 +298,7 @@ def test_working_branch_unchanged(tmp_path: Path) -> None:
         result.stdout = ""
         return result
 
-    with patch("repomend.worktree_common.subprocess.run", side_effect=record_and_succeed):
+    with patch("patchward.worktree_common.subprocess.run", side_effect=record_and_succeed):
         with worktree_context(tmp_path):
             pass
 
@@ -323,8 +323,8 @@ def test_scan_id_is_unique_across_contexts(tmp_path: Path) -> None:
         wt.mkdir(exist_ok=True)
         return wt
 
-    with patch("repomend.worktree.create_worktree", side_effect=capture_create):
-        with patch("repomend.worktree.cleanup_worktree"):
+    with patch("patchward.worktree.create_worktree", side_effect=capture_create):
+        with patch("patchward.worktree.cleanup_worktree"):
             with worktree_context(tmp_path):
                 pass
             with worktree_context(tmp_path):

@@ -24,7 +24,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from repomend.fix_gen import (
+from patchward.fix_gen import (
     FIX_GEN_ALLOWED_TOOLS,
     FIX_GEN_MODEL,
     FIX_GEN_MODEL_DEFAULT,
@@ -36,7 +36,7 @@ from repomend.fix_gen import (
     _model_for_severity,
     _risk_class_for_severity,
 )
-from repomend.hooks import DENY_PAYLOADS
+from patchward.hooks import DENY_PAYLOADS
 
 
 
@@ -48,7 +48,7 @@ from repomend.hooks import DENY_PAYLOADS
 @pytest.fixture(autouse=True)
 def _mock_git_commit_all(monkeypatch):
     """Prevent real git subprocess calls in non-integration tests."""
-    monkeypatch.setattr("repomend.fix_gen.git_commit_all", MagicMock())
+    monkeypatch.setattr("patchward.fix_gen.git_commit_all", MagicMock())
 
 # ---------------------------------------------------------------------------
 # 1. Structural invariants — AC-P3-06, AC-P3-07
@@ -335,7 +335,7 @@ async def test_fix_gen_scope_containment_subprocess_shell_true(tmp_path: Path) -
     tests/fixture_repo (or REPOMEND_FIXTURE_REPO env var).
     """
     import os
-    from repomend.fix_worktree import fix_worktree_context
+    from patchward.fix_worktree import fix_worktree_context
 
     fixture_repo = Path(os.environ.get(
         "REPOMEND_FIXTURE_REPO",
@@ -508,9 +508,9 @@ async def test_apply_fix_result_has_pr_dict_fields(tmp_path: Path) -> None:
     result = await agent.apply_fix(
         finding, tmp_path,
         finding_id="pr-test-001",
-        branch_name="repomend/fix-pr-test-001",
+        branch_name="patchward/fix-pr-test-001",
     )
-    assert result.branch_name == "repomend/fix-pr-test-001"
+    assert result.branch_name == "patchward/fix-pr-test-001"
     assert result.risk_class == "HIGH"
     assert result.test_status == "pending"
 
@@ -524,14 +524,14 @@ def test_fix_result_as_pr_dict_shape(tmp_path: Path) -> None:
         description="Replaced shell=True.",
         files_modified=["vulnerable.py"],
         confidence="high",
-        branch_name="repomend/fix-pr-001",
+        branch_name="patchward/fix-pr-001",
         risk_class="HIGH",
         test_status="pending",
     )
     pr = result.as_pr_dict()
     required_keys = {"branch_name", "finding_id", "file_path", "diff_summary", "risk_class", "test_status"}
     assert required_keys <= pr.keys(), f"Missing keys: {required_keys - pr.keys()}"
-    assert pr["branch_name"] == "repomend/fix-pr-001"
+    assert pr["branch_name"] == "patchward/fix-pr-001"
     assert pr["risk_class"] == "HIGH"
     assert pr["file_path"] == "vulnerable.py"
 
@@ -564,7 +564,7 @@ async def test_apply_fix_makes_no_github_api_calls(tmp_path: Path) -> None:
 
 async def test_apply_fix_writes_to_run_log_on_success(tmp_path: Path) -> None:
     """apply_fix() writes one record to the run log on success (AC-P3-11)."""
-    from repomend.run_log import RunLog
+    from patchward.run_log import RunLog
 
     log = RunLog(tmp_path / "run.json")
     mock_client = _make_mock_client(
@@ -601,14 +601,14 @@ async def test_apply_fix_respects_config_max_turns(tmp_path: Path) -> None:
     must exhaust in exactly 2 turns.
     """
     import textwrap
-    from repomend.config import load_config
+    from patchward.config import load_config
 
     repo = tmp_path / "repo"
     repo.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         textwrap.dedent(f"""
-        [repomend]
+        [patchward]
         repo_path = "{repo.as_posix()}"
 
         [fix_gen]
@@ -654,14 +654,14 @@ async def test_apply_fix_respects_config_max_turns(tmp_path: Path) -> None:
 async def test_apply_fix_config_overrides_positional_max_turns(tmp_path: Path) -> None:
     """config.fix_gen.max_turns takes precedence over the max_turns arg (AC-P3-10)."""
     import textwrap
-    from repomend.config import load_config
+    from patchward.config import load_config
 
     repo = tmp_path / "repo"
     repo.mkdir()
-    toml = tmp_path / "repomend.toml"
+    toml = tmp_path / "patchward.toml"
     toml.write_text(
         textwrap.dedent(f"""
-        [repomend]
+        [patchward]
         repo_path = "{repo.as_posix()}"
 
         [fix_gen]
@@ -763,7 +763,7 @@ async def test_apply_fix_calls_git_commit_all_on_success(tmp_path: Path) -> None
         "message": "subprocess called with shell=True",
     }
 
-    with _patch("repomend.fix_gen.git_commit_all") as mock_commit:
+    with _patch("patchward.fix_gen.git_commit_all") as mock_commit:
         result = await agent.apply_fix(finding, tmp_path, finding_id="commit-test-001")
 
     assert result.success is True
@@ -803,7 +803,7 @@ async def test_apply_fix_does_not_call_git_commit_on_failure(tmp_path: Path) -> 
         "message": "subprocess called with shell=True",
     }
 
-    with _patch("repomend.fix_gen.git_commit_all") as mock_commit:
+    with _patch("patchward.fix_gen.git_commit_all") as mock_commit:
         result = await agent.apply_fix(finding, tmp_path, finding_id="no-commit-test", max_turns=1)
 
     assert result.success is False
@@ -818,7 +818,7 @@ async def test_system_prompt_has_cache_control(tmp_path: Path) -> None:
     """AC-P6-04: Fix-Gen messages.create() passes system as a list
     with cache_control = {'type': 'ephemeral'} on the first block.
     (ADR-021)"""
-    from repomend.fix_gen import _FIX_GEN_SYSTEM_PROMPT
+    from patchward.fix_gen import _FIX_GEN_SYSTEM_PROMPT
 
     block = MagicMock()
     block.type = "tool_use"
@@ -874,7 +874,7 @@ class TestModelTieringWithBase:
 
     def test_error_severity_always_returns_opus(self):
         """severity 'error' → Opus regardless of base_model."""
-        from repomend.fix_gen import (
+        from patchward.fix_gen import (
             _model_for_severity_with_base,
             FIX_GEN_MODEL_HIGH,
         )
@@ -885,7 +885,7 @@ class TestModelTieringWithBase:
 
     def test_warning_severity_uses_base_model(self):
         """severity 'warning' → returns base_model as-is."""
-        from repomend.fix_gen import _model_for_severity_with_base
+        from patchward.fix_gen import _model_for_severity_with_base
         result = _model_for_severity_with_base(
             "warning", "claude-haiku-4-5-20251001"
         )
@@ -896,7 +896,7 @@ class TestModelTieringWithBase:
         _model_for_severity_with_base() returns the config base_model
         unchanged for non-error severities (AC-P6-05).
         """
-        from repomend.fix_gen import _model_for_severity_with_base
+        from patchward.fix_gen import _model_for_severity_with_base
 
         custom = "claude-haiku-4-5-20251001"
         assert _model_for_severity_with_base("warning", custom) == custom
