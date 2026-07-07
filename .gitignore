@@ -1,6 +1,6 @@
 # Runtime state
 .env
-repomend.toml
+patchward.toml
 state.db
 runs/
 *.json
