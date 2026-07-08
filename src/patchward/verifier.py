@@ -468,7 +468,14 @@ class Verifier:
         Allowed zones for '-' lines:
           - Pre-edit position within [line_start, line_end] → permitted.
           - Content is a Python import statement → permitted (rare: removing old import).
-          - Everything else is out of bounds.
+          - Everything else is out of bounds — checked per line, NOT per hunk.
+            (Diff hunks can bundle an unrelated nearby removal together with the
+            vulnerability removal when they fall within difflib's context window;
+            hunk-level "vuln hunk" membership alone does not prove a given removed
+            line is a sanctioned part of the fix. Fixed 2026-07-08 — see D-P4-01
+            defect log: this previously granted blanket permission to every line
+            in a hunk that merely overlapped the vuln range, silently accepting
+            unrelated edits bundled into that hunk.)
 
         Unified diff hunk header: @@ -PRE_START[,PRE_COUNT] +POST_START[,POST_COUNT] @@
 
@@ -513,12 +520,12 @@ class Verifier:
                 content = line[1:]
                 if line_start <= pre_line <= line_end:
                     touched_vuln = True
-                elif in_vuln_hunk:
-                    # Removal is within the vulnerability hunk — permitted.
-                    # A correct fix often needs to replace adjacent lines
-                    # (e.g. the `pass` body of a bare except).
-                    pass
                 elif not import_re.match(content):
+                    # Removal outside the vulnerability range and not an
+                    # import statement — out of bounds, even if this line
+                    # sits inside a hunk that also touches the vulnerability.
+                    # (`in_vuln_hunk` is intentionally NOT consulted here —
+                    # see docstring above.)
                     out_of_bounds.add(pre_line)
                 pre_line += 1
 

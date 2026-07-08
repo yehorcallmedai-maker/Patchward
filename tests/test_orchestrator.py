@@ -23,7 +23,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from typer.testing import CliRunner
@@ -36,7 +36,15 @@ def _make_fix_result(*, success: bool = True, branch: str = "patchward/fix-test-
     r = MagicMock()
     r.success = success
     r.branch_name = branch
-    r.model_used = "claude-sonnet-4-6"
+    # NOTE: the real FixGenResult dataclass field is `.model` (fix_gen.py:258),
+    # not `.model_used` — cli.py reads `fix_result.model` and writes it under
+    # the dict key "model_used". This mock previously set `.model_used`
+    # instead, which meant cli.py's `fix_result.model` read an
+    # auto-vivified, non-JSON-serializable MagicMock attribute, causing
+    # run_log.append() to raise inside the broad per-finding except-and-
+    # continue block in cli.py — silently discarding the run log record
+    # (found + fixed 2026-07-08, see project_open_tasks.md #25).
+    r.model = "claude-sonnet-4-6"
     r.error = error
     return r
 
@@ -184,7 +192,14 @@ class TestFixCommandRunLog:
             mock_proxy_cls.return_value.load.return_value.get_container_env = MagicMock(return_value={})
             mock_proxy_cls.return_value.load.return_value.scrub = lambda x: x
 
-            mock_fg_cls.return_value.apply_fix.return_value = fix_result
+            # NOTE: cli.py calls `asyncio.run(fix_agent.apply_fix(...))` —
+            # apply_fix must be an AsyncMock (a plain MagicMock attribute
+            # returns a MagicMock, not a coroutine, and asyncio.run() raises
+            # "a coroutine was expected", which the per-finding except-block
+            # in cli.py silently swallows, producing 0 run log records
+            # despite exit_code == 0 (found + fixed 2026-07-08, see
+            # project_open_tasks.md #25).
+            mock_fg_cls.return_value.apply_fix = AsyncMock(return_value=fix_result)
             mock_vfy_cls.return_value.verify.return_value = verify_result
 
             result = runner.invoke(app, ["fix", "--log", str(log_path)])
@@ -266,7 +281,14 @@ class TestFixCommandRunLog:
             mock_proxy_cls.return_value.load.return_value.get_container_env = MagicMock(return_value={})
             mock_proxy_cls.return_value.load.return_value.scrub = lambda x: x
 
-            mock_fg_cls.return_value.apply_fix.return_value = fix_result
+            # NOTE: cli.py calls `asyncio.run(fix_agent.apply_fix(...))` —
+            # apply_fix must be an AsyncMock (a plain MagicMock attribute
+            # returns a MagicMock, not a coroutine, and asyncio.run() raises
+            # "a coroutine was expected", which the per-finding except-block
+            # in cli.py silently swallows, producing 0 run log records
+            # despite exit_code == 0 (found + fixed 2026-07-08, see
+            # project_open_tasks.md #25).
+            mock_fg_cls.return_value.apply_fix = AsyncMock(return_value=fix_result)
             mock_vfy_cls.return_value.verify.return_value = verify_result
 
             result = runner.invoke(app, ["fix", "--log", str(log_path)])
@@ -335,7 +357,14 @@ class TestFixCommandRunLog:
             mock_proxy_cls.return_value.load.return_value.get_container_env = MagicMock(return_value={})
             mock_proxy_cls.return_value.load.return_value.scrub = lambda x: x
 
-            mock_fg_cls.return_value.apply_fix.return_value = fix_result
+            # NOTE: cli.py calls `asyncio.run(fix_agent.apply_fix(...))` —
+            # apply_fix must be an AsyncMock (a plain MagicMock attribute
+            # returns a MagicMock, not a coroutine, and asyncio.run() raises
+            # "a coroutine was expected", which the per-finding except-block
+            # in cli.py silently swallows, producing 0 run log records
+            # despite exit_code == 0 (found + fixed 2026-07-08, see
+            # project_open_tasks.md #25).
+            mock_fg_cls.return_value.apply_fix = AsyncMock(return_value=fix_result)
 
             result = runner.invoke(app, ["fix", "--log", str(log_path)])
 
@@ -414,7 +443,14 @@ class TestVerifierConfigPropagation:
             mock_proxy_cls.return_value.load.return_value.get_container_env = MagicMock(return_value={})
             mock_proxy_cls.return_value.load.return_value.scrub = lambda x: x
 
-            mock_fg_cls.return_value.apply_fix.return_value = fix_result
+            # NOTE: cli.py calls `asyncio.run(fix_agent.apply_fix(...))` —
+            # apply_fix must be an AsyncMock (a plain MagicMock attribute
+            # returns a MagicMock, not a coroutine, and asyncio.run() raises
+            # "a coroutine was expected", which the per-finding except-block
+            # in cli.py silently swallows, producing 0 run log records
+            # despite exit_code == 0 (found + fixed 2026-07-08, see
+            # project_open_tasks.md #25).
+            mock_fg_cls.return_value.apply_fix = AsyncMock(return_value=fix_result)
             mock_vfy_cls.return_value.verify.return_value = verify_result
 
             runner.invoke(app, ["fix", "--log", str(log_path)])
@@ -558,7 +594,14 @@ class TestPRPublisherWiring:
             mock_proxy_cls.return_value.load.return_value.scrub = lambda x: x
 
             # Fix-Gen
-            mock_fg_cls.return_value.apply_fix.return_value = fix_result
+            # NOTE: cli.py calls `asyncio.run(fix_agent.apply_fix(...))` —
+            # apply_fix must be an AsyncMock (a plain MagicMock attribute
+            # returns a MagicMock, not a coroutine, and asyncio.run() raises
+            # "a coroutine was expected", which the per-finding except-block
+            # in cli.py silently swallows, producing 0 run log records
+            # despite exit_code == 0 (found + fixed 2026-07-08, see
+            # project_open_tasks.md #25).
+            mock_fg_cls.return_value.apply_fix = AsyncMock(return_value=fix_result)
 
             # Verifier
             mock_vfy_cls.return_value.verify.return_value = verify_result
