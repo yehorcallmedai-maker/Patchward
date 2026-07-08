@@ -1,4 +1,4 @@
-# RepoMend
+# Patchward
 
 Local-first multi-repo security agent: scans your code for vulnerabilities,
 generates patches with an LLM subagent, verifies them deterministically, and
@@ -14,27 +14,27 @@ See [docs/user_guide.md](docs/user_guide.md) for full setup instructions.
 
 ## Installation
 
-RepoMend is not yet published to PyPI. Install from source:
+Patchward is not yet published to PyPI. Install from source:
 
 ```
-git clone https://github.com/yehorcallmedai-maker/RepoMend.git
-cd RepoMend
+git clone https://github.com/yehorcallmedai-maker/Patchward.git
+cd Patchward
 uv tool install .
 ```
 
 ## Quick Start
 
 ```
-cp repomend.toml.example repomend.toml
-# edit repomend.toml with your GitHub owner/repo and API keys
-repomend scan --repo /path/to/your/repo
-repomend fix  --repo /path/to/your/repo
+cp patchward.toml.example patchward.toml
+# edit patchward.toml with your GitHub owner/repo and API keys
+patchward scan --repo /path/to/your/repo
+patchward fix  --repo /path/to/your/repo
 ```
 
-Batch mode (multiple repos defined in repomend.toml):
+Batch mode (multiple repos defined in patchward.toml):
 
 ```
-repomend batch
+patchward batch
 ```
 
 ## Documentation
