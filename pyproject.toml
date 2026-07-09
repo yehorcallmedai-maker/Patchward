@@ -17,6 +17,18 @@ dependencies = [
     "anthropic>=0.40",
 ]
 
+[project.optional-dependencies]
+# KS-TRACE: P1-WEBHOOK-06 — only needed to run src/patchward/webhook.py
+# (the GitHub App + Marketplace receiver, deployed via docker/webhook.
+# Dockerfile / fly.toml). The CLI (patchward scan|fix|batch) does not
+# import this module and does not need these installed.
+webhook = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pyjwt[crypto]>=2.9",
+    "httpx>=0.27",
+]
+
 [project.scripts]
 patchward = "patchward.cli:app"
 
@@ -53,4 +65,7 @@ omit = [
     "src/patchward/scanner.py",
     "src/patchward/tracing.py",
     "src/patchward/subagent.py",
+    # webhook.py requires live I/O (HTTP server, git clone, GitHub API) —
+    # same category as cli.py above; covered by integration tests, not unit coverage.
+    "src/patchward/webhook.py",
 ]

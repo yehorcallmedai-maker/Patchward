@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/repomend
+      url: https://pypi.org/p/patchward
     permissions:
       id-token: write  # required for OIDC Trusted Publishing
     steps:

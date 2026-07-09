@@ -1,0 +1,59 @@
+# Fly.io deployment config for the webhook receiver.
+# KS-TRACE: P1-WEBHOOK-05 — see docs/architecture/patchward-webhook-billing-design.md §2
+#
+# This deploys ONLY src/patchward/webhook.py (via docker/webhook.Dockerfile).
+# It does not replace the local CLI (patchward scan|fix|batch), which keeps
+# working exactly as before for manual, single-repo use.
+#
+# First-time setup — see the copy-paste PowerShell walkthrough handed
+# to Yehor directly in chat (2026-07-09 session). Short version:
+#   flyctl auth login
+#   flyctl launch --no-deploy --dockerfile docker/webhook.Dockerfile --name patchward-webhook
+#   flyctl volumes create patchward_data --size 1 --region iad
+#   flyctl secrets set GITHUB_APP_ID=... GITHUB_WEBHOOK_SECRET=... ANTHROPIC_API_KEY=...
+#   flyctl secrets set GITHUB_APP_PRIVATE_KEY_B64=<base64 of the .pem>
+#   flyctl deploy --dockerfile docker/webhook.Dockerfile
+#
+# The volume matters: Fly machines are ephemeral and this config sets
+# min_machines_running = 0 (scale-to-zero to save cost), so the SQLite
+# install/purchase state in installations_db.py MUST live on a mounted
+# volume, not the container's own filesystem, or it's wiped on every
+# restart. PATCHWARD_WEBHOOK_DB defaults to /data/webhook_state.db,
+# matching the mount below — override only if you change the mount path.
+#
+# After deploy, set the GitHub App's webhook URL (App settings ->
+# General -> Webhook -> Webhook URL) to:
+#   https://patchward-webhook.fly.dev/webhooks/github
+# and the webhook secret to the same value passed to `flyctl secrets set`
+# above for GITHUB_WEBHOOK_SECRET.
+
+app = "patchward-webhook"
+primary_region = "iad"
+
+[build]
+  dockerfile = "docker/webhook.Dockerfile"
+
+[env]
+  PATCHWARD_WEBHOOK_DB = "/data/webhook_state.db"
+
+[[mounts]]
+  source = "patchward_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "10s"
+  method = "GET"
+  path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
