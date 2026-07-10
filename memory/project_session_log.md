@@ -665,3 +665,113 @@ interrupted — closing early.
 - [ ] KS-P7-03 through KS-P7-09: remaining Phase 7 build tasks
 **Next session starts at:**
 Sign docs/intake_phase7.md, then KS-P7-02.
+
+## Session 012 — 2026-07-10 (record-gap reconciliation + org build plan)
+**Status:** Session closed cleanly. No code changes. All actions
+documentation/process/verification only.
+**Context:** 16-day gap since Session 011 (2026-06-23 → 2026-07-09)
+contains real, substantial, previously unlogged work: rename
+RepoMend → Patchward (c27ea40), GitHub App webhook receiver +
+Marketplace billing (0bb0286), Fly.io deployment
+(patchward-webhook.fly.dev), PyPI Trusted Publisher CI scaffold.
+None of it had a session log, ADR, or task-file entry until this
+session.
+**Done:**
+- Re-verified item #27 (webhook/billing commit reachability from
+  `main`) fresh, not from memory. Found and resolved a genuine
+  conflict: unauthenticated `api.github.com` reads (via this
+  sandbox's shared/rate-limited proxy) repeatedly returned the
+  stale SHA `9bbe4967`, while `git ls-remote origin main` (Yehor,
+  real machine) and the authenticated GitHub web UI both agreed on
+  `0bb0286`. Root-caused via `.git/logs/refs/remotes/origin/main`
+  reflog: a prior session ran `git push` through this sandbox's
+  proxied network path, which recorded a local "update by push"
+  success without the ref actually landing on GitHub's git-protocol
+  backend at that time — resolved once Yehor pushed for real from
+  his own machine. Item #27 — CLOSED, confirmed by two independent
+  Tier-0/1 sources, re-confirmed a third time at session close
+  (still closed; `api.github.com` is still serving stale `9bbe4967`
+  even now, which is expected and fine — it's a known-unreliable
+  Tier-2 source, not a new problem).
+- Confirmed Fly deployment alive (`/healthz` → `{"status":"ok"}`),
+  checked twice, hours apart.
+- Re-checked all named external PR/issue references live (Future
+  AGI #1283, smolagents #2467, tablib #642, twisted #12663/#12676/
+  #12687) — all still open/unresolved as of 2026-07-10.
+- Rewrote `memory/CONTEXT.md` to flag the record gap explicitly and
+  record the item #27 resolution + verification lesson (verified
+  intact via Read tool after edit — see file-integrity finding
+  below).
+- Produced `memory/deep_research_prompt_org_buildplan.md` — a
+  self-contained deep-research brief (used to commission 3
+  independent model runs on: closing the informational gap,
+  industrial-grade org structure for a solo-dev + AI-agent hosted
+  product, and a self-organization/role model for the operator).
+- Synthesized the 3 returned reports into
+  `memory/BUILD_PLAN_2026-07-10.md` — a proposed (NOT yet
+  authorized/executed) step-by-step plan: State Reconstruction
+  Audit procedure, STATE.md/WORKLOG.md/VERIFICATION.md/BACKLOG.md
+  memory structure, a trust-tier verification protocol, a two-speed
+  phase-gate redesign (Phase 8 Reconciliation / 9 Hosted-Surface
+  Hardening / 10 Marketplace Readiness), a worked WSJF backlog
+  resolution, and a "Directing Engineer" role definition. Two of
+  the plan's factual claims (EU CRA reporting timeline, AGENTS.md
+  as cross-tool standard) were independently spot-checked via live
+  web search before being included, not taken on the research
+  runs' word alone; the CRA's exact applicability/classification to
+  Patchward specifically is flagged as needing real legal
+  confirmation, not asserted as settled.
+**Findings from this session's own hard-verification pass (new,
+worth carrying forward):**
+- `.git/index.lock` (0 bytes, created 2026-07-10 15:51) is
+  currently sitting in the repo, left behind by a read-only `git
+  status` call that failed to clean up its own lock due to sandbox
+  mount permissions ("unable to unlink... Operation not
+  permitted"). **Not removed by this session** (removing anything
+  under `.git` from the sandbox is out of scope per standing
+  rules) — **Yehor should delete
+  `D:\Dev\Projects\Patchward\.git\index.lock` manually before his
+  next git command**, or git may refuse to run citing another
+  process.
+- The bash tool's view of a file just edited via the Edit tool can
+  be **stale and does not self-correct on retry**: after editing
+  CONTEXT.md (76 → 125 lines), `wc -l` via bash repeatedly reported
+  73 lines (neither the old nor the new true count), while the Read
+  tool correctly showed all 125 lines, fully intact, on demand.
+  Confirmed no actual data loss — this is a tool-view discrepancy,
+  not file corruption. **Lesson: for files edited/written earlier
+  in the same session, verify via Read, never via bash cat/wc/diff
+  — the bash sandbox's mount of the file can lag behind the native
+  file-tool view with no observed self-correction.** This is a new,
+  distinct finding from the older documented RULE-1 (NTFS
+  truncation on Edit/Write) — same family of mount-reliability
+  hazard, different symptom, worth its own rule if/when the rules
+  section gets reconciled.
+- Secret-leak scan (grep for token patterns + known env-var names)
+  across every file written/edited this session — clean, no
+  matches.
+**Open (carry forward):**
+- [ ] `memory/BUILD_PLAN_2026-07-10.md` awaiting Yehor's review/
+      edits/sign-off — no execution has started
+- [ ] `memory/project_open_tasks.md` still not reconciled against
+      the Patchward rename or Phase 1.3-1.5 work (CONTEXT.md now
+      flags this explicitly; the task file itself is untouched)
+- [ ] ClinInsight/Databutton LinkedIn DM replies — still
+      unconfirmed
+- [ ] Delete stale `.git/index.lock` on Yehor's machine
+- [ ] Backlog decision pending: authorized E2E pipeline test vs.
+      Mirror Pass Tier 2 vs. callmed-landing — BUILD_PLAN proposes
+      a specific sequence, not yet approved
+**Next session starts at:**
+See `memory/NEXT_SESSION_START.md` — read that file first.
+
+**Addendum (same session, immediately post-close):** the bash-staleness
+finding above is worse than first documented. `git diff --quiet -- memory/
+CONTEXT.md` and the same for `project_session_log.md`, run via this
+sandbox's bash tool, both reported **no difference at all** — git's own
+diff engine, not just `cat`/`wc`, is blind to Edit-tool changes on this
+mount for at least some files. Practical consequence: nobody should trust
+a "here's what changed" file list produced by this sandbox's git for
+files edited earlier in the same session. **Yehor's own `git status` /
+`git diff` on his real machine is the only reliable source** before
+staging or committing anything.
