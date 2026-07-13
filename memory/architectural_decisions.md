@@ -365,3 +365,212 @@ tool at Phase 7. The user guide content is more valuable than the delivery
 mechanism at this stage.
 
 **Status:** Approved — signed by Yehor 2026-06-23 (KS-P7-01)
+
+---
+
+## ADR-027 | 2026-07-07 (retroactive, 2026-07-13) | Rename RepoMend to Patchward
+
+**Decision:** Rename the project from RepoMend to Patchward across the
+entire tree: `src/repomend/` → `src/patchward/`, package name, CLI entry
+point, config file (`repomend.toml` → `patchward.toml`), docs, and README.
+
+**Evidence:** commit `c27ea40` (2026-07-07, "Rename RepoMend to Patchward —
+repomend.com is a live unrelated competitor in the same category"),
+135 files changed. Follow-up doc fixes in `6ebe135` and `e6bb75e`
+(2026-07-08) corrected remaining RepoMend branding in `user_guide.md` and
+`README.md`.
+
+**Rationale (reconstructed from the commit message — no separate design
+doc found):** `repomend.com` is a live, unrelated competitor product in
+the same category. Continuing under the RepoMend name risked trademark/
+confusion issues at exactly the point the project was moving from a local
+CLI tool to a hosted product with a public-facing webhook and a GitHub
+Marketplace listing — i.e., the rename timing is not incidental, it
+precedes the webhook/billing work (`0bb0286`) by two days.
+
+**Consequence:** every ADR before ADR-027 in this log refers to "RepoMend"
+by name; those decisions still hold, only the name changed. No functional
+behavior changed in `c27ea40` itself (confirmed: diff is renames + import
+path updates only, 743 insertions / 741 deletions on a 135-file commit is
+consistent with a mechanical rename, not new logic).
+
+**Status:** Accepted (retroactive, reconstructed from git archaeology,
+2026-07-13). Not yet reviewed by Yehor — carries the same "proposed"
+status as the rest of this audit until signed off.
+
+---
+
+## ADR-028 | 2026-07-09 (retroactive, 2026-07-13) | FastAPI + Uvicorn + PyJWT for the webhook receiver
+
+**Decision:** Build the GitHub App webhook receiver (`src/patchward/
+webhook.py`) on FastAPI + Uvicorn, with PyJWT for GitHub App JWT signing,
+as a new `webhook` optional-dependency group (`fastapi>=0.115`,
+`uvicorn[standard]>=0.30`, `pyjwt[crypto]>=2.9`, `httpx>=0.27`) —
+isolated from the CLI's core dependencies.
+
+**Evidence:** commit `0bb0286` (2026-07-09), `pyproject.toml` lines 21-29
+(KS-TRACE comment: "only needed to run src/patchward/webhook.py ... The
+CLI (patchward scan|fix|batch) does not import this module and does not
+need these installed"); `src/patchward/webhook.py`, `github_app_auth.py`.
+
+**Rationale (reconstructed — no separate design doc found in the repo,
+see Known Documentation Gap in STATE.md):** async-native web framework
+needed for a receiver that clones repos and awaits an LLM pipeline per
+request without blocking; `httpx` for the GitHub API token exchange;
+`pyjwt[crypto]` for RS256 App JWT signing per GitHub's App auth spec.
+Keeping this as an optional extra (not a core dependency) preserves the
+existing single-user local CLI as a zero-extra-dependency install path —
+consistent with ADR-024/025's Phase 7 "keep the CLI lightweight" stance.
+
+**Status:** Accepted (retroactive, reconstructed from git archaeology,
+2026-07-13). Not yet reviewed by Yehor.
+
+---
+
+## ADR-029 | 2026-07-09 (retroactive, 2026-07-13) | Fly.io as the webhook deployment target
+
+**Decision:** Deploy the webhook receiver to Fly.io (`patchward-webhook.fly.dev`)
+via `docker/webhook.Dockerfile` and `fly.toml`, with a mounted volume
+(`patchward_data` → `/data`) for `installations_db.py`'s SQLite state, and
+`min_machines_running = 0` (scale-to-zero).
+
+**Evidence:** commit `0bb0286` added `fly.toml` and `docker/
+webhook.Dockerfile`; live at `patchward-webhook.fly.dev/healthz` →
+`{"status":"ok"}`, reconfirmed 2026-07-13 (Tier 1, direct HTTPS).
+
+**Rationale (reconstructed from `fly.toml`'s own committed comments,
+which are the closest thing to a design doc for this decision):** the
+volume is load-bearing, not optional — scale-to-zero means the container
+filesystem is wiped on every restart, so the SQLite install/purchase state
+must live on the mounted volume or installation state is lost silently
+between webhook deliveries. This is a real single-point-of-failure worth
+naming: if the volume mount is ever misconfigured, `installations_db.py`
+degrades silently (empty DB, not a crash) rather than failing loudly.
+
+**Known operational risk (real, from Session 012):** `flyctl deploy`
+regenerates `fly.toml` and strips the hand-written KS-TRACE comment block
+and setup walkthrough on every deploy unless manually restored afterward.
+This happened once, caught and restored in Session 012 (2026-07-10).
+**Recommend, as a follow-up:** move the setup walkthrough out of
+`fly.toml`'s comments and into a proper `docs/` file, since comments in a
+tool-regenerated config file are provably not a durable place to keep
+documentation.
+
+**Correction, same day (2026-07-13):** this ADR originally also claimed
+the drift had "happened again" as of 2026-07-13, based on a `git diff`
+run in the agent sandbox. **That second claim was false** — Yehor
+confirmed via his own `git status` / `git diff -- fly.toml` that
+`fly.toml` was clean, matching committed `HEAD`, the whole time. The
+sandbox's working-tree read was wrong, not the file. Left visible here
+rather than silently deleted, per this project's ADR-immutability
+convention — the real, single-occurrence risk from Session 012 above
+still stands and is the reason for the follow-up recommendation; only the
+second, 2026-07-13 recurrence claim is retracted. See
+`memory/STATE.md`'s "Working-tree state" section for the fuller
+tool-reliability finding this produced.
+
+**Status:** Accepted (retroactive, reconstructed from git archaeology,
+2026-07-13). Amended same day per correction above. Not yet reviewed by
+Yehor.
+
+---
+
+## ADR-030 | 2026-07-09 (retroactive, 2026-07-13) | GitHub App + Marketplace billing as the product shift
+
+**Decision:** Adopt a GitHub App installation model (not a personal
+access token) with per-installation, 1-hour-lived Installation Access
+Tokens (`github_app_auth.py`), and track installation/repo/purchase state
+in a new SQLite store (`installations_db.py`) keyed to GitHub Marketplace
+`marketplace_purchase` webhook events.
+
+**Evidence:** commit `0bb0286` — `installations_db.py` (188 lines,
+`installations` / `installation_repos` / `marketplace_purchases` tables,
+`SCHEMA_VERSION = 1`), `github_app_auth.py` (141 lines), `webhook.py`
+handling `installation`, `installation_repositories`, and
+`marketplace_purchase` event types.
+
+**Rationale (reconstructed from `github_app_auth.py`'s own docstring,
+the closest thing to a design doc found for this decision):** short-lived,
+installation-scoped tokens instead of a long-lived PAT is explicitly
+framed in the code as "the answer to enterprise due diligence." This is a
+real product-direction change from the original CLI-only design (Phases
+0-7): Patchward is no longer only a tool a developer runs locally against
+repos they already have credentials for — it's now a hosted product other
+people install and (eventually) pay for through GitHub as merchant of
+record. `webhook.py`'s own docstring is explicit that this file
+deliberately does not touch payment processing directly.
+
+**Known limitation, confirmed 2026-07-13:** `is_entitled()` gates whether
+a scan runs on a push event, but the Marketplace `marketplace_purchase`
+event handling in `webhook.py` (L215-230) does not yet distinguish
+`cancelled`/`pending_change` from `purchased`/`changed` beyond storing
+whatever `action` string GitHub sends as `status` — no explicit test was
+found confirming `is_entitled()` correctly treats a `cancelled` status as
+non-entitled. Flagged as an open item in BACKLOG.md, not asserted as
+broken (may well be correct — just not independently confirmed this
+session).
+
+**Status:** Accepted (retroactive, reconstructed from git archaeology,
+2026-07-13). Not yet reviewed by Yehor.
+
+---
+
+## ADR-031 | 2026-06-XX (scaffolded), retroactive 2026-07-13 | PyPI Trusted Publisher (OIDC) for release distribution
+
+**Decision:** Publish `patchward` to PyPI via GitHub Actions using OIDC
+Trusted Publishing (`pypa/gh-action-pypi-publish@release/v1`,
+`id-token: write`), not a stored `PYPI_API_TOKEN` secret. Workflow
+triggers on GitHub Release publish or manual dispatch.
+
+**Evidence:** `.github/workflows/publish.yml`, originally added in commit
+`4a211a0` ("ci: scaffold PyPI Trusted Publisher workflow (not yet
+active)" — commit predates the audited gap window), one-line updated in
+`0bb0286` to point at `pypi.org/p/patchward` instead of `/repomend`.
+
+**Rationale:** OIDC trusted publishing avoids a long-lived PyPI API token
+sitting in GitHub Secrets — consistent with the short-lived-credential
+posture adopted for GitHub App tokens in ADR-030.
+
+**UNVERIFIED, flagged explicitly (do not treat as done):** whether PyPI's
+own Trusted Publisher configuration for the `patchward` project has
+actually been registered on PyPI's side — this is a PyPI-side setting
+this session has no way to check — and whether this workflow has ever
+actually run end-to-end. No GitHub Release exists yet as of `d4569d4`.
+The workflow's own commit message ("not yet active") is the most honest
+status available and should be treated as still current until Yehor
+confirms otherwise.
+
+**Status:** Accepted (retroactive, reconstructed from git archaeology,
+2026-07-13). Not yet reviewed by Yehor.
+
+---
+
+## ADR-032 | 2026-07-13 | Unrecognized webhook events are acknowledged, not rejected
+
+**Decision:** `POST /webhooks/github` returns HTTP 200
+`{"status": "ignored", "event": event}` for any `X-GitHub-Event` value the
+handler doesn't explicitly branch on, rather than rejecting with a 4xx.
+
+**Evidence:** `src/patchward/webhook.py` L241-244, present since the
+event handler was first written in commit `0bb0286` (2026-07-09) — the
+behavior itself is not new, only its documentation as a decision is new.
+
+**Rationale:** GitHub disables a webhook endpoint after enough
+consecutive non-2xx responses. Since new event types can arrive that a
+given version of the receiver simply hasn't been built to act on yet
+(this is explicit in the code comment at the time it was written),
+rejecting unknown-but-legitimate events risks GitHub silently disabling
+the webhook — a worse failure mode than acknowledging and no-op'ing an
+event this version doesn't handle.
+
+**Explicitly considered and rejected alternative:** deny-by-default
+(reject unrecognized event types) — this was BUILD_PLAN's Phase 9
+Exposure Gate checklist's original assumption. Reviewed and declined by
+Yehor 2026-07-13: the GitHub-webhook-auto-disable risk outweighs the
+security benefit of rejecting unknown events, since `_verify_signature()`
+already runs before any event-type branching — an attacker without the
+webhook secret can't reach this code path regardless of which behavior is
+chosen here. The choice is about protocol robustness against GitHub's own
+future event types, not an authentication boundary.
+
+**Status:** Approved — signed by Yehor 2026-07-13.
