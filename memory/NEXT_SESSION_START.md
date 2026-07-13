@@ -141,6 +141,17 @@ Full detail and WSJF ordering for all of the above: `memory/BACKLOG.md`.
 - **Trust the file-reading tool over shell `cat`/`wc`/`diff` for
   integrity checks** — the sandbox's shell mount can lag behind the real
   file state; the file tool has not shown this problem this project.
+- **The agent's sandbox should not run `git status`/`git diff` against
+  this repo at all going forward — not just "don't trust the output."**
+  Confirmed this session: a sandbox `git status` call left a stale
+  `.git/index.lock` that then blocked Yehor's real `git add`/`git commit`
+  on his own machine with "Unable to create index.lock: File exists" —
+  because the sandbox and Yehor's machine share the same underlying
+  files. This is a step up from the earlier finding (unreliable *output*)
+  to a confirmed real *side effect* that breaks the human's own tools.
+  Restrict sandbox git usage to `git log`/`git ls-remote` (pure ref
+  reads, no index touched) only. If a stale lock does appear, the fix is
+  unchanged: `Remove-Item <path> -Force` on Yehor's machine.
 
 ## Suggested first move
 
