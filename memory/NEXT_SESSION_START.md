@@ -13,11 +13,17 @@ claim to be re-verified, not a source of truth.
 ## Housekeeping — confirm these before anything else
 
 1. **Confirm `main`'s SHA fresh.** Last known-good, independently
-   verified via `git ls-remote origin main` at close of Session 013:
-   `8b601e9384fa2a82e265c77078a4025c84901407`. Re-check — don't trust this
-   number once time has passed.
+   verified via `git ls-remote origin main` at the actual close of
+   Session 013 (after this file's own commit landed):
+   `afb6818511a689b13f93e6f5263e9a7f8aa477a5`. (Self-reference note: an
+   earlier draft of this file cited `8b601e9` — that was correct when
+   written, then went stale the instant Yehor committed this file as
+   part of a later commit. Caught and fixed before handoff, per this
+   skill's own warning about exactly this trap. Re-check the SHA anyway
+   — don't trust this number once time has passed either.)
 2. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`,
-   cheap and authoritative. Last confirmed OK 2026-07-13.
+   cheap and authoritative. Last confirmed OK 2026-07-13 (checked twice,
+   most recently after the final commit).
 3. **Confirm `.venv` still works before trusting any `uv run` failure as
    a code problem.** Session 013 found `.venv` had gone stale after the
    project directory's rename (uv's Windows trampoline launchers embed
