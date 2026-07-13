@@ -1,118 +1,151 @@
 # Patchward — Next Session Start Prompt
-Generated at close of Session 012 (2026-07-10), updated same session after
-the docs commit was pushed and one more hard-verification pass was run.
-Paste this whole file as your opening message to start the next session
-with full context restored.
+Generated at close of Session 013 (2026-07-13). Paste this whole file as
+your opening message to start the next session with full context restored.
 
 ---
 
-**Resume Patchward.** Read `memory/CONTEXT.md` and `memory/project_session_log.md`
-(Session 012 entry + addendum) first, in full. Do not assume anything below is
-still true without re-checking — verify, don't trust memory, per standing
-project rules.
+**Resume Patchward.** Read `memory/STATE.md`, `memory/BACKLOG.md`, and
+`memory/project_session_log.md` (Session 013 entry) first, in full. Do
+not assume anything below is still true without re-checking — verify,
+don't trust memory, per standing project rules. This file itself is a
+claim to be re-verified, not a source of truth.
 
 ## Housekeeping — confirm these before anything else
 
-1. **Confirm the git lock is actually gone.** It was deleted once already
-   this session (`Remove-Item .git\index.lock -Force`), but a follow-up
-   check from the sandbox side gave an inconsistent read (briefly reported
-   both "not found" and "still present" in the same check — almost
-   certainly sandbox-mount staleness, not a real re-appearance, but
-   unconfirmed). Run `Test-Path D:\Dev\Projects\Patchward\.git\index.lock`
-   on your own machine before your first git command of the session. If
-   it's `True`, delete it again.
-2. **Re-confirm Fly health and `main`'s SHA fresh** — don't trust this file.
-   `patchward-webhook.fly.dev/healthz` and `git ls-remote origin main` on
-   your machine are both cheap, both authoritative.
-3. **After any future `flyctl deploy`, check `git diff fly.toml` before
-   committing anything.** Found this session: Fly's CLI silently
-   regenerates fly.toml on deploy, stripping the hand-written setup
-   walkthrough and `KS-TRACE` documentation and replacing it with a bare
-   auto-generated version — same functional config, zero docs. Caught and
-   discarded via `git restore fly.toml` this session; nothing was lost, but
-   it'll happen again on the next deploy if unwatched.
+1. **Confirm `main`'s SHA fresh.** Last known-good, independently
+   verified via `git ls-remote origin main` at close of Session 013:
+   `8b601e9384fa2a82e265c77078a4025c84901407`. Re-check — don't trust this
+   number once time has passed.
+2. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`,
+   cheap and authoritative. Last confirmed OK 2026-07-13.
+3. **Confirm `.venv` still works before trusting any `uv run` failure as
+   a code problem.** Session 013 found `.venv` had gone stale after the
+   project directory's rename (uv's Windows trampoline launchers embed
+   absolute paths at install time) — `error: uv trampoline failed to
+   canonicalize script path` was the symptom, not a code bug. Fix if it
+   recurs: `Remove-Item -Recurse -Force .venv` then `uv sync --all-extras`
+   (the `--all-extras` flag matters — without it, the webhook test files
+   fail to collect). Rebuild after any future directory move/rename.
+4. **Do not trust this sandbox's `git status`/`git diff` for anything,
+   full stop** — not just for files edited earlier in the same session.
+   Session 013 found the sandbox reporting a `fly.toml` drift that didn't
+   exist on Yehor's real machine, and later showing nearly the entire
+   `src/patchward/` tree as falsely modified. `git log`/`git ls-remote`
+   (ref/object reads) remain trustworthy from the sandbox; working-tree
+   comparisons do not. Yehor's own machine is the only authority for
+   working-tree state.
+5. **Don't trust a tool's self-reported description of what it did —
+   check the actual artifact.** Session 013's Stage-1 test: Fix-Gen
+   reported a correct-sounding fix for one finding; the actual pushed
+   diff was objectively broken. Verified by reading `git diff` against
+   the real pushed branch, not by trusting the CLI's own summary. Apply
+   this same skepticism to any future Fix-Gen/Verifier output before
+   treating "VERIFIED" as truth.
 
-## Progress list — where things stand (verified fresh, not carried over from memory)
+## Progress list — where things stand (verified fresh at Session 013 close)
 
-- [x] Item #27 (webhook/billing commit `0bb0286` reachable from `main`) —
-      CLOSED. Confirmed by three independent Tier-0/1 sources at the time,
-      then re-confirmed a fourth time after the follow-up docs push.
-- [x] Fly deployment (`patchward-webhook.fly.dev`) — alive, healthz OK,
-      checked three times across the session, most recently just now.
-- [x] External PR/issue tracker re-checked live — all still open as of
-      2026-07-10 (Future AGI #1283, smolagents #2467, tablib #642, twisted
-      #12663/#12676/#12687).
-- [x] **Session 012 documentation is committed AND pushed** — commit
-      `222b018` on `main`, confirmed via Yehor's own push transcript (real
-      object transfer, not just a claim), `git ls-remote`
-      (`222b0189d203c6f27371b322a31212994a2ce375`), and `git log` showing
-      `HEAD -> main, origin/main` in agreement. This closes the loop that
-      was still open at the literal end of Session 012 — the docs existed
-      on disk but hadn't been pushed yet; they have been now. Includes:
-      `memory/CONTEXT.md` (record-gap flag + item #27 writeup),
-      `memory/project_session_log.md` (Session 012 entry + addendum),
-      `memory/deep_research_prompt_org_buildplan.md`,
-      `memory/BUILD_PLAN_2026-07-10.md`.
-- [ ] **`memory/BUILD_PLAN_2026-07-10.md` — safely in git history now, but
-      still awaiting your review and sign-off.** Being committed is not the
-      same as being approved — nothing in the plan has been executed. Read
-      it, edit anything you disagree with (the role name, the WSJF scoring,
-      the phase numbering — all of it is a proposal), then say go. First
-      concrete action in the plan is the half-day "State Reconstruction
-      Audit" (Part 3 of the plan).
-- [ ] `memory/project_open_tasks.md` — still NOT reconciled against the
-      Patchward rename or the Phase 1.3-1.5 webhook/billing work. Either do
-      this as part of the audit above, or explicitly decide it's not worth
-      doing and say so.
-- [ ] ClinInsight / Databutton LinkedIn DM replies — still unconfirmed as of
-      2026-07-10. Answer directly, no tool check possible.
-- [ ] **Backlog decision pending** — three-way tension: (a) authorized
-      end-to-end pipeline test (scan→fix→verify→PR, costs API credits, may
-      open a real PR), (b) Mirror Pass Tier 2, (c) callmed-landing rename.
-      `BUILD_PLAN_2026-07-10.md` §6 proposes: (a) staged — fixture/owned
-      repo first, real third-party second — then (c) opportunistically,
-      then (b) once (a) passes. Not yet approved by you.
-- [ ] Two small pre-existing items noticed but not investigated this
-      session, both unrelated to today's work: `tests/fixture_repo` shows
-      as a dirty git submodule, and `.dockerignore` is untracked. Neither
-      is urgent; worth a look whenever convenient.
+- [x] **Phase 8 (State Reconstruction Audit) — CLOSED.** `memory/STATE.md`,
+      `memory/BACKLOG.md`, ADR-027 through ADR-032, and the Consolidated
+      Keystone Report (`docs/keystones/consolidated_keystone_2026-06-23_to_2026-07-09.md`)
+      committed (`27d0ba3`) and tagged `state-audit-2026-07`. All content
+      still marked "not yet reviewed by Yehor" internally — landed and
+      pushed is not the same as approved.
+- [x] **Test suite re-verified on current `main`:** 421 passed, 2 skipped,
+      15 deselected, 90.01% coverage. Supersedes the old pre-rename "371
+      passed" figure everywhere it still appears in older docs.
+- [x] **Stage-1 E2E pipeline test — run and documented.** Full report:
+      `docs/keystones/stage1_e2e_test_2026-07-13.md`. Pipeline confirmed
+      working end-to-end (scan → Fix-Gen → Verifier → git push) post-rename.
+      3/5 findings reached "verified" status; 0 PRs opened (token
+      permission gap); of the 3 "verified" fixes, only 2 are actually
+      correct.
+- [ ] **BLOCKER — Verifier gate gap (BACKLOG item 3a, HIGH).** A Fix-Gen
+      output that deletes a needed import (code still calls it elsewhere)
+      passed all 3 Verifier gates as "VERIFIED." Structural gap, not a
+      fixture fluke: Gate 1's rescan goes clean because the deletion
+      silences the semgrep pattern; Gate 3's test-suite check goes clean
+      because nothing exercises the affected function. **Needs Yehor's
+      decision on approach** (three candidates sketched in the Stage-1
+      report: stronger Gate 1 call-site check / stronger Gate 3 coverage
+      requirement / constrain Fix-Gen's prompt against removing
+      referenced imports) before implementation. **Recommend this blocks
+      Stage 2 (third-party repo) and Mirror Pass Tier 2** until resolved.
+- [ ] `GITHUB_TOKEN` cannot create PRs (BACKLOG item 3b, MEDIUM) — pushes
+      succeed, `POST /pulls` returns 403. Check token permissions
+      (fine-grained: needs "Pull requests: write"; classic: check expiry).
+- [ ] CLI misreports failed PR creation as success (BACKLOG item 3c, LOW)
+      — `cli.py` L496-499, confirmed by direct code read, cheap fix.
+- [ ] "requires login" invalid branch name (BACKLOG item 3d) — root cause
+      not yet investigated, hypothesis only (semgrep registry auth
+      message leaking into fingerprint pipeline).
+- [ ] `patchward.toml.example` has the same config-loading defect just
+      fixed in the real `patchward.toml` (BACKLOG item 6a) — no
+      `repo_path` documented, wrong `[anthropic]` section that doesn't
+      match `config.py`'s actual schema.
+- [ ] `docs/architecture/patchward-webhook-billing-design.md` is cited by
+      three KS-TRACE comments but doesn't exist (BACKLOG item 6) —
+      recreate from the ADRs, or scrub the references. Undecided.
+- [ ] `memory/project_open_tasks.md` reconciliation (BACKLOG item 7) —
+      still not decided: fold into BACKLOG.md and archive, or keep
+      maintaining separately.
+- [ ] `runs/state.db` is tracked in git despite `.gitignore` listing it —
+      pre-existing gap, needs a `git rm --cached runs/state.db` cleanup
+      commit whenever convenient.
+- [ ] `tests/fixture_repo` remains a non-submodule embedded repo with its
+      own local diff — pre-existing, still not investigated, low urgency.
+- [ ] ClinInsight/Databutton LinkedIn DM replies — still unconfirmed, no
+      tool access to check, answer directly with Yehor.
+- [ ] PyPI Trusted Publisher — workflow scaffolded, PyPI-side
+      registration status still unconfirmed, no release tagged yet
+      (BACKLOG item 9).
+- [ ] Regulatory flags (CRA/GDPR classification) — needed before any paid
+      Marketplace listing, not before (BACKLOG item 12).
+- [ ] callmed-landing rename — cheap, zero-dependency, slot in whenever
+      (BACKLOG item 8).
 
-## Standing rules (unchanged, still binding)
+Full detail and WSJF ordering for all of the above: `memory/BACKLOG.md`.
 
-- Verify before reporting anything as done — re-fetch/re-check live state,
-  never trust a prior session's cached belief. (This exact mistake was
-  caught and corrected multiple times in this project already: item #27
-  itself, which reads count as ground truth during that investigation, and
-  — refined further this session — which *sandbox git commands specifically*
-  can be trusted, see below.)
+## Standing rules (unchanged unless noted, still binding)
+
+- Verify before reporting anything as done — re-fetch/re-check live
+  state, never trust a prior session's cached belief.
 - **Never run git writes against Patchward from the bash sandbox** — hand
-  git writes to Yehor to run on his own machine.
-- **Never paste or forward API keys/secrets through terminal output into
-  chat.**
-- Apply the trust-tier logic from `BUILD_PLAN_2026-07-10.md` Appendix B for
-  any external-state claim: unauthenticated/proxied reads (e.g.,
-  `api.github.com` from this sandbox) are Tier 2 and are NOT sufficient
-  alone for a gating decision — corroborate with a Tier 0/1 source
-  (`git ls-remote` on Yehor's machine, the authenticated GitHub web UI, a
-  push transcript, or a content-addressed hash match) before treating a
-  claim as confirmed. Re-confirmed again this session: `api.github.com`
-  was still serving a 3-commits-stale SHA even after a real, verified push
-  — this is a stable, repeatable unreliability, not a one-off.
-- **Refined finding on the sandbox's own git, tested this session:**
-  `git log` / `git ls-remote` (reading refs and objects) proved reliable —
-  they picked up Yehor's real commit correctly. `git status` / `git diff`
-  / `cat` / `wc` (reading working-tree state and file content) proved
-  **unreliable and did not self-correct**, even hours later and even after
-  a real commit landed — `memory/CONTEXT.md` still read as 73 stale lines
-  and still showed as "modified" via sandbox `git status` long after Yehor
-  had already committed and pushed it cleanly. **Practical rule: trust the
-  sandbox's `git log`/`git ls-remote` output; do not trust its `git
-  status`/`git diff`/`cat`/`wc` output for anything — always defer to
-  Yehor's own machine for those.**
+  git writes to Yehor to run on his own machine. This includes not just
+  `commit`/`push` but `restore`, `tag`, and anything else that mutates
+  refs or the working tree.
+- **Never paste or forward API keys/secrets through terminal output into chat.**
+- Apply the trust-tier logic from `BUILD_PLAN_2026-07-10.md` Appendix B:
+  Tier 0 (git hashes, `git ls-remote`, local exit codes) — accept as-is.
+  Tier 1 (authenticated direct reads, e.g. a direct HTTPS healthz probe)
+  — accept with evidence. Tier 2 (proxied/unauthenticated reads, e.g.
+  `api.github.com` from this sandbox) — never sufficient alone for a
+  gating decision.
+- **This sandbox's `git status`/`git diff` (working-tree comparisons)
+  cannot be trusted at all** — refined and hardened this session from the
+  earlier, narrower "don't trust it for same-session edits" rule. `git
+  log`/`git ls-remote` remain trustworthy.
+- **When a commit message is long or multi-line, write it to a file and
+  use `git commit -F <file>`, not inline `-m`** — avoids PowerShell
+  quoting risk. Delete the temp file after, and don't assume the delete
+  worked without checking.
+- **Diff anything `git status` flags that you didn't expect to have
+  changed, before staging it** — Session 013 found `uv.lock` modified for
+  a legitimate reason (webhook extras being locked for the first time)
+  only after actually diffing it, not assuming from the size of the change.
+- **Trust the file-reading tool over shell `cat`/`wc`/`diff` for
+  integrity checks** — the sandbox's shell mount can lag behind the real
+  file state; the file tool has not shown this problem this project.
 
 ## Suggested first move
 
-Ask directly: "Have you had a chance to read `BUILD_PLAN_2026-07-10.md`? Do
-you want to authorize the State Reconstruction Audit (Part 3), or should we
-start with the backlog item instead (E2E test / Mirror Pass Tier 2 /
-callmed-landing)?" — don't assume; the plan explicitly hasn't been signed off.
+Ask directly: "How do you want to close the Verifier gate gap (BACKLOG
+item 3a)? Three directions are on the table: (1) Gate 1 additionally
+confirms the specific dangerous call site is gone, not just that the
+scanner rule stops firing, (2) Gate 3 requires the modified file's own
+tests to cover the changed function, (3) constrain Fix-Gen's prompt to
+never remove an import still referenced elsewhere in the file. Pick one,
+some combination, or tell me if you see a better option — this is the
+one thing standing between here and Stage 2 or Mirror Pass Tier 2." Don't
+default to the smaller housekeeping items (`GITHUB_TOKEN` permissions,
+the CLI misreport bug) as "the next thing" just because they're easier —
+they're real but lower-stakes than this one.

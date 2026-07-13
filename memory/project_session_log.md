@@ -775,3 +775,126 @@ a "here's what changed" file list produced by this sandbox's git for
 files edited earlier in the same session. **Yehor's own `git status` /
 `git diff` on his real machine is the only reliable source** before
 staging or committing anything.
+
+---
+
+## Session 013 — 2026-07-13 (State Reconstruction Audit close + Stage-1 E2E test)
+
+**Status:** Session closed cleanly. Audit committed and tagged. Stage-1
+E2E test run, documented, and committed. One HIGH-severity product
+defect found and logged (not yet fixed). Two commits landed this
+session: `27d0ba3` (audit artifacts) and `8b601e9` (Stage-1 report +
+STATE/BACKLOG updates + `.dockerignore` + `uv.lock` webhook-extra lock).
+
+**Provenance:** all file content (STATE.md, BACKLOG.md, 6 ADRs,
+Consolidated Keystone Report, Stage-1 E2E report, this entry) drafted by
+Claude (agent); all git writes (restore, add, commit, push, tag) executed
+by Yehor on his own machine per standing rule. Commit messages drafted by
+the agent, written to a temp file and committed via `git commit -F` (not
+inline `-m`) per this session's own close-out discipline, to avoid
+PowerShell quoting risk on multi-line messages.
+
+**Done — State Reconstruction Audit (BUILD_PLAN Part 3):**
+- `memory/STATE.md`, `memory/BACKLOG.md`, ADR-027 through ADR-032, and
+  `docs/keystones/consolidated_keystone_2026-06-23_to_2026-07-09.md`
+  written, reviewed, committed (`27d0ba3`), tagged `state-audit-2026-07`
+- Self-correction, same day: an initially-reported `fly.toml` drift
+  (found via a sandbox `git diff`) turned out to be a false positive —
+  Yehor's own `git status`/`git diff` came back clean. Corrected in
+  STATE.md, ADR-029 (amended, not deleted, per this project's
+  ADR-immutability convention), and BACKLOG.md rather than silently
+  dropped. Produced a sharper finding than Session 012's: this sandbox's
+  `git status`/`git diff` against the working tree cannot be trusted at
+  all on this mount, independent of whether a file was edited this
+  session — only `git log`/`git ls-remote` (ref/object reads) remain
+  trustworthy from the sandbox side.
+
+**Done — Stage-1 E2E pipeline test (BACKLOG item 3):**
+- Pre-flight found and fixed a real, previously-undiscovered defect:
+  `patchward.toml` still had a `[repomend]` section header from before
+  the rename — `load_config()` reads `raw.get("patchward", {})`, so the
+  whole section (including the required `repo_path` field) was silently
+  dropped, meaning `patchward scan`/`fix` would have hard-failed at
+  config load. Also found `repo_path` pointing at a nonexistent path and
+  `[github].repo` defaulting to `"Patchward"` itself. Fixed directly
+  (local, gitignored file).
+- Found and corrected a second stale assumption: this project's own old
+  records (Session 002, `docs/intake_phase1.md`) documented the fixture's
+  three vulnerabilities as subprocess/md5/ssl-wrap-socket; the actual
+  committed fixture is subprocess/eval/hardcoded-password. Confirmed via
+  `git show HEAD` and a live dry-run scan before spending anything on the
+  wrong target.
+- `uv run patchward fix --repo tests\fixture_repo` executed by Yehor: 3
+  of 5 findings reached Fix-Gen+Verifier "verified" status; all 3
+  branches confirmed pushed to the real remote via `git ls-remote`
+  (Tier 0, not just trusting CLI output). Zero PRs opened.
+- **Defect found (HIGH):** of the 3 "verified" fixes, direct inspection
+  of the actual pushed diffs (not Fix-Gen's self-reported description)
+  confirmed only 2 are correct. The third deletes `import subprocess`
+  while `run_command()` still calls `subprocess.run(...)` on the same
+  branch — objectively broken, would raise `NameError` at runtime — and
+  the Verifier reported all three gates passing anyway. Root cause: Gate
+  1's rescan goes clean because removing the import silences the semgrep
+  pattern match; Gate 3's test-suite check goes clean because nothing in
+  the fixture's tests exercises `run_command()`. This is a structural gap
+  in the Verifier's coverage, not a fixture-specific fluke. Full writeup:
+  `docs/keystones/stage1_e2e_test_2026-07-13.md` §2.
+- **Defect found (MEDIUM):** `GITHUB_TOKEN` can push branches but cannot
+  create PRs — `POST /pulls` returned 403 three times. Classic signature
+  of a fine-grained PAT missing "Pull requests: write" or an
+  expired/revoked classic PAT.
+- **Defect found (LOW), confirmed by direct code read:** `cli.py`
+  L496-499 prints `[PR] Opened: {url}` unconditionally, without checking
+  `pr_dict['status']` — a 403/422 failure is misreported as success with
+  a blank URL.
+- **Open, root cause not yet confirmed:** one finding's branch name
+  contained the literal text "requires login" (invalid git ref, crashed
+  `git worktree add`). Hypothesis only — not yet investigated.
+
+**Known limitations, stated plainly (nothing softened):**
+- The Verifier gap (HIGH defect above) is documented, not fixed. Three
+  candidate fix directions are sketched in the Stage-1 report; none
+  chosen. Recommend this blocks Stage 2 (third-party repo) and Mirror
+  Pass Tier 2 until resolved — consistent with BUILD_PLAN §6's own logic,
+  not yet formally re-confirmed by Yehor as of this close.
+- `runs/state.db` is tracked in git despite `.gitignore` listing
+  `state.db`/`runs/` as ignored — pre-existing gap (ignore rules don't
+  retroactively untrack), not fixed this session, needs a separate
+  `git rm --cached` cleanup commit.
+- `tests/fixture_repo` remains a non-submodule embedded git repo with its
+  own local diff — pre-existing, carried forward again, still not
+  investigated.
+- `patchward.toml.example` (the committed Phase 7 distribution template)
+  has the same config gap that was just fixed in the real `patchward.toml`
+  — logged in BACKLOG item 6a, not fixed this session.
+- Every ADR and STATE.md claim from this session's audit is marked
+  "not yet reviewed by Yehor" — landed and pushed, but review/sign-off
+  is a separate, still-open step.
+
+**Methodology note:** this session's own close-out cross-consistency
+pass (Step 3 of the session-close process) caught STATE.md contradicting
+itself — its "Phase" and "Repo" sections still said the audit tag was
+"not yet created" and cited a pre-commit HEAD, both stale the moment the
+tag and commit actually landed earlier in the same session. Fixed before
+this close. Worth carrying forward as a standing discipline: a
+verification document needs the same close-out cross-check as the code
+it describes, not an exemption from it.
+
+**Accountability / sign-off:** the two commits (`27d0ba3`, `8b601e9`) are
+objectively landed and verified (Tier 0, `git ls-remote` confirms both).
+That is a fact, not a judgment call. **The substantive content — the
+audit's ADRs, the Verifier-gap defect triage, and BACKLOG's WSJF
+re-ordering — remains PENDING Yehor's review and sign-off**, exactly as
+every artifact in this session has said throughout. Landing the commit
+is not the same as approving what's in it.
+
+**Next step (gate stated plainly):** no further code changes until
+Yehor decides how to close the Verifier gap (three candidate directions
+in the Stage-1 report). Everything else on the backlog — `GITHUB_TOKEN`
+permissions, the CLI misreport fix, the "requires login" investigation,
+`runs/state.db` untracking — is independently actionable in the
+meantime, but Stage 2 and Mirror Pass Tier 2 specifically stay blocked.
+
+**Next session starts at:**
+See `memory/NEXT_SESSION_START.md` — read that file first (regenerated
+same session as this entry, reflects current verified state).
