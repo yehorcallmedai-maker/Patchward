@@ -6,14 +6,27 @@
 # everything else the audit produces.
 
 ## Phase
-Phase 8 — Reconciliation (State Reconstruction Audit), in progress —
-tag `state-audit-2026-07` not yet created (pending — see handoff note at
-bottom of this file) — 2026-07-13 — Claude (agent), pending Yehor confirmation.
+Phase 8 — Reconciliation (State Reconstruction Audit) — **CLOSED**.
+Tag `state-audit-2026-07` created and pushed, confirmed pointing at
+`27d0ba3b5d00427ca473c660b9932c994d2a33b4` via `git ls-remote origin
+refs/tags/state-audit-2026-07` (Tier 0) — 2026-07-13 — Yehor executed,
+agent verified. **Correction, same day:** this line previously said the
+tag was "not yet created" — that was true when first written, then went
+stale the moment the tag actually landed and this file was never updated
+to match. Left visible rather than silently fixed, per this project's
+established correction convention (see ADR-029's amendment). Session 013
+continued past the audit into Stage-1 E2E testing (see below) — Phase 9
+work has not formally started; treat Phase 8's closure as "audit
+artifacts landed," not "all Phase 8-adjacent questions answered."
 
 ## Repo
-`main` @ `d4569d40537b0f84d352a6ee25612a81a362a710` — confirmed via
-`git ls-remote origin main` matching local `git rev-parse HEAD` — Tier 0 —
-2026-07-13 — agent.
+`main` @ `27d0ba3b5d00427ca473c660b9932c994d2a33b4` — confirmed via
+`git ls-remote origin main`, matches the state-audit tag above — Tier 0 —
+2026-07-13 — agent. (Supersedes the earlier `d4569d4...` line in this
+file, which was the pre-audit-commit HEAD.) **Not yet current as of this
+close-out pass** — this session's post-audit work (STATE.md/BACKLOG.md
+updates, the Stage-1 report) is still uncommitted; see the session-close
+document for the pending commit.
 
 ## Deployed services
 `patchward-webhook.fly.dev` — `/healthz` → `{"status":"ok"}` — direct HTTPS
@@ -48,12 +61,27 @@ modified. `.dockerignore`, `docs/keystones/`, `memory/BACKLOG.md`,
 (new, as expected).
 
 ## Tests
-**UNVERIFIED as of 2026-07-13.** `uv run pytest --cov` has not been run this
-session (requires Windows per RULE-4, sandbox has no network for `uv`). The
-figure "371 passed, 89% coverage" in old memory files is a historical fact
-about the pre-rename (2026-06-23) state only — do not treat as current.
-**Action for Yehor:** run the suite and report count/coverage; this line
-gets promoted once you do.
+**421 passed, 2 skipped, 15 deselected — 90.01% coverage** (threshold 80%,
+reached) — `uv run pytest --cov`, run by Yehor on his own machine — Tier 0
+(local exit code + output, not proxied) — 2026-07-13 — Yehor. Supersedes
+the pre-rename "371 passed, 89%" figure in old memory files, which was a
+historical fact about the 2026-06-23 state only.
+
+**Environment defect found and fixed same day, worth carrying forward:**
+the first `uv run pytest --cov` attempt failed with `error: uv trampoline
+failed to canonicalize script path` — not a test failure. Root cause:
+`.venv/` had last been built 2026-06-23, before both the RepoMend→Patchward
+rename (`c27ea40`, 2026-07-07) and the outer project folder's rename to
+`D:\Dev\Projects\Patchward`. uv's Windows console-script launchers embed
+absolute paths at install time; the stale venv's launchers pointed at
+paths that no longer existed. **Fix:** `Remove-Item -Recurse -Force .venv`
+then `uv sync --all-extras` (the `--all-extras` flag matters — without it,
+`test_webhook.py`/`test_github_app_auth.py`/`test_installations_db.py`
+fail to collect, since the `webhook` optional-dependency group wouldn't be
+installed). `uv.lock` is tracked, so the rebuild pinned the same versions,
+not a different environment. **Action item for future sessions:** rebuild
+`.venv` after any future project directory move/rename, before trusting a
+`uv run` failure as a real code problem.
 
 ## Webhook security posture (`src/patchward/webhook.py`, commit `0bb0286`)
 - HMAC signature validation on `/webhooks/github`: implemented,
@@ -103,6 +131,67 @@ an external, PyPI-side setting this session cannot check) and whether the
 workflow has ever actually run. No release has been tagged as of
 `d4569d4`.
 
+## Local CLI config defect found and fixed (2026-07-13, pre-Stage-1 check)
+`patchward.toml` (local, gitignored, not in git history) still had a
+`[repomend]` top-level section header from before the rename.
+`config.py`'s `load_config()` reads `raw.get("patchward", {})` — with the
+old header, the entire section (`repo_path`, `semgrep_rules`, `db_path`,
+langfuse settings) was silently dropped, and `repo_path` is a required
+field with no default, so `patchward scan`/`patchward fix` would have
+hard-failed at config load — confirmed by reading `config.py` directly
+(Tier 0), not by running it and guessing. Also found: `repo_path` pointed
+at `D:/Dev/Projects/RepoMend` (doesn't exist — the project directory
+itself was renamed to Patchward), and `[github].repo` defaulted to
+`"Patchward"` — meaning an unmodified run would have targeted this repo
+itself for a PR, not an intended fixture. **Fixed directly** (safe — local
+file, not tracked by git): section header corrected to `[patchward]`,
+`repo_path` pointed at `tests/fixture_repo`, `[github].repo` set to
+`repomend-fixture`. Also worth noting: `patchward.toml.example` (the
+committed Phase 7 distribution deliverable, ADR-025) has the same
+`[patchward]`-section gap — it has no `repo_path` documented at all, and
+an unrelated `[anthropic]` section that doesn't match `config.py`'s
+actual schema. Not fixed this session (doesn't block Stage-1, since
+Stage-1 uses the real `patchward.toml`, not the example) — flagged in
+`memory/BACKLOG.md` as a real, separate defect.
+
+## Fixture repo vulnerability set — corrected from stale documentation
+Old memory files (Session 002, `docs/intake_phase1.md`) document the
+fixture's three planted vulnerabilities as subprocess-shell-true (L24),
+insecure-hash-md5 (L30), ssl-wrap-socket-deprecated (L37). **The actual
+committed content as of 2026-07-13** (`git show HEAD:vulnerable.py` in
+`tests/fixture_repo`, Tier 0) is subprocess-shell-true (L24),
+eval-on-untrusted-input (L30), hardcoded-password (L37) — a different
+pair at lines 30/37, changed at some undocumented point after Session 002
+(likely during the Phase 4 D-P4-02/D-P4-03 fixture repair, commit
+`6e77570`, which the session log describes only as a line-position/
+encoding fix, not a content change — the discrepancy itself wasn't
+logged at the time). Session 002's own scanner probe found `eval` and
+"hardcoded password assignment" as **non-firing** rules under `p/python`
+— meaning it's not yet confirmed whether the current fixture actually
+produces 3 semgrep findings or fewer. **Not asserting an answer either
+way — this needs an actual `patchward scan` dry run to confirm**, not
+another guess layered on top of the last one. `tests/fixture_repo`'s only
+local uncommitted change is a one-line, non-functional docstring edit
+("testing RepoMend" → "testing patchward") — confirmed via `git diff HEAD`
+— which doesn't affect what a git-worktree-based scan would see (worktree
+checkout reads from `HEAD`, not the dirty working copy).
+
+## Stage-1 E2E test — run and documented, 2026-07-13
+Full report: `docs/keystones/stage1_e2e_test_2026-07-13.md`. 3/5 findings
+verified by Fix-Gen+Verifier; all 3 branches confirmed pushed to the real
+`repomend-fixture` remote via `git ls-remote` (Tier 0); 0 PRs opened
+(GitHub API 403 on PR creation — token permission gap). Of the 3
+"verified" fixes, direct inspection of the pushed diffs (not just
+Fix-Gen's self-reported description) confirmed 2 are correct and 1 is
+objectively broken (deletes a needed import, function would raise
+`NameError` at runtime) despite passing all 3 Verifier gates — a real,
+structural gap in Gate 1/Gate 3 coverage, not a fixture-specific fluke.
+See `memory/BACKLOG.md` items 3a-3d for the four concrete follow-ups this
+produced. Pipeline itself (scan → Fix-Gen → Verifier → git push) is
+confirmed working end-to-end post-rename; the PR-opening step and the
+Verifier's correctness guarantee both need attention before Stage 2 or
+wider exposure.
+
 ## Known UNVERIFIED (do not treat as fact until promoted)
 - Full test suite count/coverage post-rename — needs Yehor to run on Windows
 - `fly.toml` restore — approved, not yet executed
@@ -113,10 +202,8 @@ workflow has ever actually run. No release has been tagged as of
   still unconfirmed, no tool access to check)
 
 ---
-**Handoff note on the audit tag:** `git tag state-audit-2026-07 HEAD` is a
-git write and per standing project rule is not run from the agent sandbox.
-Recommend Yehor create this tag once he's reviewed and committed this
-audit's file set (STATE.md, the 6 new ADRs, the Consolidated Keystone
-Report, BACKLOG.md) — tagging the resulting commit, not the current
-`d4569d4`, so the tag actually marks "audit complete" rather than
-"audit started."
+**Handoff note on the audit tag — RESOLVED 2026-07-13:** the tag was
+created and pushed by Yehor after reviewing and committing the audit's
+file set, per the recommendation this note originally made. Verified via
+`git ls-remote` (see "Repo" section above). Left in place as a record of
+the recommendation that was followed, not as an open action item.
