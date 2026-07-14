@@ -1061,3 +1061,43 @@ claim, not yet Yehor-reviewed. The 36/36 sandbox pass is real (Tier 0)
 but scoped to one test file in an ad hoc Python 3.10 environment — it is
 evidence the logic is sound, not a substitute for the real suite on the
 real `.venv`.
+
+### Session 014 addendum 2 — same session, continued (BACKLOG 3b closed, no code change)
+
+Progress list continued to the last Yehor-only item blocking Stage 2:
+`GITHUB_TOKEN` PR-creation failure (3b).
+
+**Diagnosis, done evidence-first rather than by inspection of secrets:**
+confirmed the token is a fine-grained PAT (93 chars, `github_pat_`
+prefix — fine-grained tokens don't expose scopes via the
+`X-OAuth-Scopes` response header the way classic `ghp_` tokens do, so
+this had to be checked at `github.com/settings/tokens?type=beta`
+directly rather than via API). A read-only `GET /user` call (Bearer
+auth, token never echoed) returned `200`, ruling out expiry/revocation
+as the cause. The token's permissions page, inspected directly via
+screenshot (not self-reported), showed **Contents: Read and write** and
+**Metadata: Read-only** but no **Pull requests** permission at all —
+the exact, sufficient explanation for three `403`s on `POST /pulls` in
+the Stage-1 run with successful pushes otherwise.
+
+**Fix:** Yehor added **Pull requests: Read and write** to the existing
+token in place via the GitHub UI (no regeneration, so `.env` needed no
+change). Verified with a deliberately-invalid live call — `POST /pulls`
+with identical `head`/`base` (`main`/`main`) to guarantee no PR is
+actually created — which returned `422 "No commits between main and
+main"` rather than `403`. A `422` on content validation, reached only
+after permission checks pass, is the correct signature of a now-working
+permission; a `403` would have meant the edit didn't take.
+
+**Full end-to-end confirmation (a real fix branch producing a real
+merged PR) is deferred to Stage 2 (item 18)**, which was the only thing
+still blocked on this item. Stage 2 is now unblocked pending Yehor's
+decision to run it.
+
+**Progress-list status after this addendum:** every agent-executable
+BACKLOG item from this session's list is now closed (3a, 3c, 3d, 6, 6a,
+7, and now 3b). Remaining open items are all Yehor-only or explicitly
+out of scope: PyPI Trusted Publisher confirmation (item 9),
+`runs/state.db` cleanup (low-priority git write), `callmed-landing`
+rename (different repo, out of scope), and Stage 2 itself (now
+unblocked, awaiting Yehor's go-ahead).

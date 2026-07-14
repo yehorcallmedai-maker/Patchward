@@ -213,6 +213,13 @@ wider exposure.
   (see BACKLOG item 6). The "real loss vs. speculative reference"
   question is now moot either way, since the resolution doesn't depend
   on which explanation is true.
+- `GITHUB_TOKEN` PR-creation permission — RESOLVED 2026-07-14: token was
+  a fine-grained PAT missing the Pull Requests repository permission
+  (Contents and Metadata only). Confirmed via `GET /user` (200, token
+  live) and a direct visual check of the token's permissions page.
+  Yehor added Pull requests: Read and write in place (no regeneration).
+  Verified via a live `POST /pulls` call returning `422` (validation
+  error on content, not `403` on permission) — see BACKLOG item 3b.
 - PyPI-side Trusted Publisher configuration status
 - ClinInsight/Databutton LinkedIn DM replies (carried from Session 012,
   still unconfirmed, no tool access to check)

@@ -90,12 +90,33 @@ was found in `pipeline.py`, so this is a real feature addition, not a
 one-liner; broadening Gate 1's rescan; converting Gate 3 to a
 confidence signal rather than a blocking gate.
 
-## 3b. `GITHUB_TOKEN` cannot create PRs (NEW, MEDIUM)
-Branches push successfully; `POST /pulls` returns 403 three times in the
+## 3b. `GITHUB_TOKEN` cannot create PRs (CLOSED 2026-07-14 — token permission fixed, no code change)
+Branches push successfully; `POST /pulls` returned 403 three times in the
 Stage-1 run. Classic signature of a token with contents-write but not
-pull-request-write permission (fine-grained PAT) or an expired/revoked
-classic PAT. **Owner:** Yehor — check/regenerate `GITHUB_TOKEN`
-permissions. See `docs/keystones/stage1_e2e_test_2026-07-13.md` §3.
+pull-request-write permission.
+
+**Root cause confirmed:** the `GITHUB_TOKEN` is a fine-grained PAT
+(`github_pat_...`, 93 chars) named "RepoMend", scoped to
+`yehorcallmedai-maker/repomend-fixture`. `GET /user` returned 200 (token
+live, not expired/revoked). Its Repository permissions had **Contents:
+Read and write** and **Metadata: Read-only**, but no **Pull requests**
+permission at all — verified visually at
+`github.com/settings/tokens?type=beta`, screenshot inspected directly
+(not self-reported).
+
+**Fix:** Yehor added **Pull requests: Read and write** to the existing
+token via the GitHub UI (Edit → Add permissions → Update). No token
+regeneration needed — editing permissions in place does not change the
+token string, so `.env` required no change.
+
+**Verified:** a live `POST /repos/.../pulls` call with `head=main,
+base=main` (deliberately no diff, to avoid creating a real PR) returned
+`422 "No commits between main and main"` — the correct validation
+failure for a *permitted* request with no content, as opposed to the
+`403` a permissions failure would produce. This confirms the token can
+now reach PR-creation logic. Full end-to-end confirmation (an actual fix
+branch producing a real PR) is deferred to item 18 (Stage 2 E2E test),
+which this item was blocking.
 
 ## 3c. CLI misreports failed PR creation as success (CLOSED 2026-07-14, commit `190fb01`)
 `cli.py` L496-499 printed `[PR] Opened: {url}` unconditionally, without
