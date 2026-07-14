@@ -493,10 +493,32 @@ def fix(
                                         finding=finding,
                                         run_log=run_log,
                                     )
-                                    typer.echo(
-                                        f"  [PR] Opened: "
-                                        f"{pr_dict['url']}"
-                                    )
+                                    # BACKLOG 3c: pr_dict['status'] can be
+                                    # "opened", "already_open" (idempotent —
+                                    # see pr_publisher._create_pr), or
+                                    # "api_error" (403/422/unexpected — url
+                                    # is blank). Previously this printed
+                                    # "[PR] Opened: " unconditionally, so a
+                                    # 403 looked identical to success with a
+                                    # blank URL. Confirmed in the 2026-07-13
+                                    # Stage-1 E2E test.
+                                    pr_status = pr_dict.get("status", "")
+                                    if pr_status == "opened":
+                                        typer.echo(
+                                            f"  [PR] Opened: "
+                                            f"{pr_dict['url']}"
+                                        )
+                                    elif pr_status == "already_open":
+                                        typer.echo(
+                                            f"  [PR] Already open: "
+                                            f"{pr_dict['url']}"
+                                        )
+                                    else:
+                                        typer.echo(
+                                            f"  [PR] Failed to open "
+                                            f"(status={pr_status!r})",
+                                            err=True,
+                                        )
                                 except Exception as pr_exc:
                                     typer.echo(
                                         f"  [PR] Publish failed: "
