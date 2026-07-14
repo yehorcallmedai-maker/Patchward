@@ -901,14 +901,19 @@ same session as this entry, reflects current verified state).
 
 ---
 
-## Session 014 — 2026-07-14 (Verifier gate gap — decision + implementation drafted)
+## Session 014 — 2026-07-14 (Verifier gate gap — decided, implemented, committed, closed)
 
-**Status:** In progress, session not closed. Housekeeping re-verified
-fresh (main SHA had drifted two commits past `NEXT_SESSION_START.md`'s
-claimed `afb6818` — both were self-referential docs-only fixes to that
-same file, `8406395` and `40023db`; no code drift. Tag, Fly health
-confirmed. `.venv` health could not be checked from this sandbox — Linux
-mount, Windows-specific trampoline defect, needs Yehor's own machine).
+**Status:** CLOSED. BACKLOG 3a resolved end to end: diagnosed, fixed,
+tested twice (sandbox + Yehor's real `.venv`), committed (`b2559a5`),
+pushed, and confirmed live on `origin/main` via `git ls-remote`.
+
+**Housekeeping, re-verified fresh at session start:** main SHA had
+drifted two commits past `NEXT_SESSION_START.md`'s claimed `afb6818` —
+both were self-referential docs-only fixes to that same file, `8406395`
+and `40023db`; no code drift. Tag and Fly health confirmed. `.venv`
+health could not be checked from the sandbox (Linux mount,
+Windows-specific trampoline defect) — Yehor confirmed it directly on his
+own machine mid-session (`uv run python -c "print('venv OK')"` → OK).
 
 **Decision made on BACKLOG 3a** (the session's stated blocker): rather
 than pick blind between the three candidates sketched in the Stage-1
@@ -921,7 +926,7 @@ finding location literally is the `import subprocess` statement), which
 is exactly the shape of the actual Stage-1 defect. Full reasoning
 recorded in `memory/BACKLOG.md` item 3a.
 
-**Implemented (drafted, not yet committed):**
+**Implemented and committed (`b2559a5`, pushed to `origin/main`):**
 - `src/patchward/verifier.py`: new `_removed_import_still_referenced()`
   static method (AST-based — parses the removed import statement and the
   post-edit file, checks for remaining `Name`/`Attribute` references;
@@ -950,21 +955,106 @@ signature and `VerifierResult`/`GateResult` shapes are unchanged — the
 new `_out_of_bounds_lines` parameter has a default, so this is
 backward-compatible for every consumer.
 
-**Not done / explicitly deferred, not bundled into this fix:**
-- Full 421+ test suite has NOT been re-run against the real `.venv` —
-  that must happen on Yehor's machine before commit (see ready-to-paste
-  commands provided in chat this session).
+**Completed after the initial draft, same session:**
+- Full suite re-run by Yehor against the real `.venv`: **431 passed, 2
+  skipped, 15 deselected, 90.25% coverage** (up from 90.01%; the 10 new
+  tests fully account for the delta, zero regressions across the other
+  ~20 test files).
+- Diff reviewed line-by-line against what was described (matched
+  exactly — no "tool self-report vs. reality" gap this time).
+- Staged only the 4 intended files; `runs/state.db` and
+  `tests/fixture_repo` (pre-existing, unrelated drift) correctly left
+  out, per standing rule to scrutinize anything `git status` flags
+  unexpectedly before staging.
+- **Commit/push detour, worth carrying forward as a standing note:**
+  first commit attempt (`6e3cba7`) landed with a stray UTF-8 BOM
+  character prepended to the subject line — `Set-Content -Encoding
+  utf8` in Windows PowerShell writes a BOM by default, and `git commit
+  -F` embedded it literally. Fix attempt #1 (`-Encoding utf8NoBOM`)
+  failed outright — that encoding name doesn't exist in Windows
+  PowerShell 5.1's `Set-Content` (only the older `.NET`
+  `FileSystemCmdletProviderEncoding` enum: `Ascii`, `UTF8`, `Unicode`,
+  etc.). Fix attempt #2 (multi-line heredoc paste, again) got mangled by
+  the terminal — the `@"` here-string opener didn't register, so
+  PowerShell tried to execute every line of the commit message as its
+  own command, producing a wall of `CommandNotFoundException` errors.
+  **What actually worked:** base64-encode the full message in the
+  sandbox (single unbroken line, zero shell metacharacters, immune to
+  heredoc/quoting corruption), then decode and write it via
+  `[System.IO.File]::WriteAllText(..., New-Object
+  System.Text.UTF8Encoding($false))` directly — bypasses `Set-Content`'s
+  limited encoding enum entirely and writes a clean UTF-8 file with no
+  BOM. `git commit --amend -F` on that file produced a clean subject
+  line. **Standing heuristic for future sessions on this machine:** do
+  not hand multi-line heredoc blocks for anything with backticks,
+  parens, or colons in it — use the base64 + `WriteAllText` pattern
+  instead, first time, not as a fallback after two failures.
+- `git push origin main` initially returned `fatal: User cancelled
+  dialog` once (likely a GCM browser-auth popup interrupted by the
+  tangled paste); the retry, run alone with nothing else queued,
+  succeeded cleanly and was confirmed via `git ls-remote origin main`
+  matching local HEAD exactly (`b2559a586225a837f2bb7a745466b6cedad204d2`).
+
+**Explicitly deferred, not bundled into this fix (unchanged from the
+earlier draft):**
 - Excluding purely-informational bandit rules (B404) from Fix-Gen's
   candidate findings — no existing filter mechanism found in
-  `pipeline.py`; this is a real feature addition, not folded into today's
-  fix.
+  `pipeline.py`; this is a real feature addition.
 - Gate 1 rescan broadening and converting Gate 3 to a soft confidence
   signal — both considered and explicitly deferred, reasoning in
   `memory/BACKLOG.md` item 3a.
-- No git writes performed by the agent — `verifier.py` and
-  `test_verifier.py` are modified directly on the mounted working tree
-  (not via sandbox git), awaiting Yehor's review, full-suite run, and
-  commit.
+- BACKLOG 3b (`GITHUB_TOKEN` can't create PRs), 3c (CLI misreport), 3d
+  (`"requires login"` branch name root cause) — untouched this session,
+  still open.
+
+**Next session starts at:** see `memory/NEXT_SESSION_START.md`
+(regenerated same session as this entry — note: session continued past
+this point in the same conversation rather than ending here; see
+addendum below).
+
+---
+
+### Session 014 addendum — same session, continued (BACKLOG 3c closed, commit `190fb01`)
+
+After the close-out above, Yehor asked to keep working down the fresh
+progress list rather than end the session. Set up 10 tracked tasks
+covering every open `BACKLOG.md` item, tagged by owner (agent-executable
+now vs. Yehor-only external actions vs. out of scope this session), with
+Stage 2 explicitly blocked on 3b.
+
+**Closed BACKLOG 3c** (CLI misreport bug) — `cli.py`'s PR-publish
+success message now branches on `pr_dict['status']` instead of printing
+"[PR] Opened" unconditionally. Full reasoning in `memory/BACKLOG.md`
+item 3c.
+
+**Notable defect-in-the-tooling, not in the code:** verifying this edit
+from the sandbox produced a false `SyntaxError` — `python -m py_compile`
+via bash sandbox reported an unclosed paren at a line that, per the Read
+tool, was complete and correct. Root cause: `stat` showed the sandbox's
+mounted copy of `cli.py` had an mtime of 2026-07-07 (days stale) and was
+byte-truncated at 623 of the file's real 677 lines, cut off mid-statement
+at exactly the reported error line. `verifier.py` had synced correctly
+earlier the same session via the same mount, so this is file-specific
+staleness, not a blanket mount failure — not chased further, consistent
+with the project's existing "don't trust the sandbox shell for
+file/working-tree state" rule, now confirmed to extend beyond
+`git status`/`diff` to plain file reads. Resolved by trusting the Read
+tool's view (which was correct) and having Yehor run the real
+`py_compile` directly — one command, instant, authoritative.
+
+Both commits this addendum covers landed clean the first time (no
+BOM/heredoc detour this round — the base64 + `WriteAllText` pattern
+established earlier in the session worked correctly on both), confirmed
+via `git ls-remote` matching local HEAD:
+- `190fb01b765d4ba20247a3278ae59544a2c17952` — BACKLOG 3c fix.
+
+**Still open from the progress list, unchanged:** 3b (`GITHUB_TOKEN`,
+Yehor-only), 3d (branch-name investigation, TBD), 6a (`patchward.toml.example`,
+next up — agent-executable), 6 (architecture doc decision, needs Yehor's
+pick), 7 (`project_open_tasks.md`, needs Yehor's pick), 8
+(`callmed-landing` — different repo, out of scope this session), 9
+(PyPI, Yehor-only), `runs/state.db` cleanup (Yehor-only, git write),
+Stage 2 (blocked on 3b).
 
 **Accountability:** this session's diagnosis (Gate 2, not Gate 1/3) is a
 claim, not yet Yehor-reviewed. The 36/36 sandbox pass is real (Tier 0)

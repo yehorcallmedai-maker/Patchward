@@ -30,7 +30,7 @@ correction appended to ADR-029. Retained here (rather than deleted) as a
 record that this line item was opened and closed same-day, not silently
 dropped.
 
-## 3a. Verifier gate gap — broken fix passed all 3 gates (DECIDED, implementation drafted 2026-07-14, PENDING Yehor's test + commit)
+## 3a. Verifier gate gap — broken fix passed all 3 gates (CLOSED 2026-07-14, commit `b2559a5`)
 **WSJF: highest — this blocks everything downstream.** Stage-1 E2E
 (below) found a Fix-Gen output that deletes a needed import while the
 code that uses it is untouched — objectively broken (`NameError` at
@@ -66,14 +66,21 @@ primary fix because it's advisory, not enforced — an LLM can still
 ignore it; the Gate 2 static check is enforced regardless of what
 Fix-Gen produces.
 
-**Status:** code change + regression test (reproducing the exact
-Stage-1 shape) + 8 new unit tests for the helper drafted and verified
-in an isolated sandbox venv (Python 3.10, source-only, no git writes):
-36/36 `test_verifier.py` tests pass. **Not yet committed** — needs
-Yehor to re-run the full suite against the real `.venv` and commit per
-standing rule (all git writes happen on his machine). See
-`memory/project_session_log.md` Session 014 entry for the full
-walkthrough and ready-to-paste commands.
+**Status: CLOSED.** Code change + regression test (reproducing the exact
+Stage-1 shape) + 8 new unit tests for the helper first verified in an
+isolated sandbox venv (36/36 `test_verifier.py` tests pass), then
+re-verified by Yehor against the real `.venv` on his own machine: full
+suite **431 passed, 2 skipped, 15 deselected, 90.25% coverage** (up
+from 90.01% pre-fix; the 10 new tests fully account for the delta, no
+regressions elsewhere). Committed `b2559a5` and pushed to `origin/main`
+— confirmed via `git ls-remote origin main` matching local HEAD exactly.
+See `memory/project_session_log.md` Session 014 entry for the full
+walkthrough, including a mid-session PowerShell heredoc/BOM detour
+(commit initially landed with a stray UTF-8 BOM character in the
+subject line from `Set-Content -Encoding utf8`; fixed via
+`git commit --amend` using a base64-encoded, single-line-paste-safe
+message after two consecutive heredoc-paste corruptions on this
+terminal — worth carrying forward as a standing note, see below).
 
 **Deferred, not forgotten (separate follow-ups, not bundled into this
 fix):** excluding purely-informational bandit rules like B404 (whose
@@ -90,11 +97,35 @@ pull-request-write permission (fine-grained PAT) or an expired/revoked
 classic PAT. **Owner:** Yehor — check/regenerate `GITHUB_TOKEN`
 permissions. See `docs/keystones/stage1_e2e_test_2026-07-13.md` §3.
 
-## 3c. CLI misreports failed PR creation as success (NEW, LOW)
-`cli.py` L496-499 prints `[PR] Opened: {url}` unconditionally, without
-checking `pr_dict['status']` — a 403/422 failure prints as if it
-succeeded, just with a blank URL. Confirmed by direct code read. Cheap
-fix. **Owner:** Claude (agent), straightforward one-condition fix.
+## 3c. CLI misreports failed PR creation as success (CLOSED 2026-07-14, commit `190fb01`)
+`cli.py` L496-499 printed `[PR] Opened: {url}` unconditionally, without
+checking `pr_dict['status']` — a 403/422 failure printed as if it
+succeeded, just with a blank URL. Confirmed by direct code read.
+
+**Fix:** now branches on `pr_dict['status']`: `"opened"` → `[PR]
+Opened: {url}`; `"already_open"` (idempotent case from
+`pr_publisher._create_pr`) → `[PR] Already open: {url}`; anything else
+(`"api_error"` or any future unexpected value) → `[PR] Failed to open
+(status=...)`, printed to stderr. `cli.py` is excluded from this
+project's unit-coverage requirement (`pyproject.toml` `omit` list —
+integration-tested only, no `test_cli.py`), so no new unit test was
+added; verified by direct code read plus a real `py_compile` on
+Yehor's machine.
+
+**Notable this session:** the sandbox's bash mount served a
+byte-for-byte stale copy of `cli.py` (file `stat` showed a
+2026-07-07 mtime — days before today's edit, and the file was
+truncated mid-statement at line 624 of 677) when asked to verify the
+edit, producing a false `SyntaxError`. `verifier.py` synced correctly
+earlier the same session, so this isn't a universal mount failure —
+likely file-specific caching. Resolved by trusting the Read tool
+(already an established rule for `git status`/`diff`; this extends it
+to plain file reads too) and having Yehor run the real compile check
+directly. Worth carrying forward: **don't assume a sandbox-side
+compile/test failure on a just-edited file is real without an
+independent check on the real machine** — same spirit as the existing
+"don't trust a tool's self-report" rule, one layer earlier in the
+pipeline.
 
 ## 3d. Investigate "requires login" invalid branch name (NEW, unconfirmed root cause)
 One finding (semgrep subprocess-shell-true) produced a branch name
