@@ -174,6 +174,16 @@ rounds of drift accumulate. Somewhere between those extremes.
       ("still a draft"), resolved via `gh pr ready` then `gh pr merge
       --squash --delete-branch`. Stage 2's full loop (scan → fix →
       verify → push → PR → human review → merge) is now complete.
+- [ ] **NEW — BACKLOG item 14: stray pre-rename branches on `ssh-audit`.**
+      Found during final close-out verification (fresh clone + `git
+      ls-remote`): two branches (`repomend/fix-bandit.B110-1fdaef`,
+      `repomend/fix-bandit.B311-6323af`) dated 2026-06-29, using the old
+      `repomend/` prefix, never logged anywhere in this project's
+      memory before now. Undocumented earlier run of the tool against
+      this repo. Owner: Yehor — only he can confirm origin/intent; not
+      investigated further. See BACKLOG item 14 for full detail
+      including a real data point for item 13 (Fix-Gen historically DID
+      produce a fix for the B311 finding today's run declined).
 - [x] **`future-agi-contribution/` directory — relocated, not a
       Patchward concern.** Was a separate, actively-managed OSS-
       contribution project's working directory (own `.strategy/

@@ -537,6 +537,34 @@ can resolve).
 
 ---
 
+## 14. Stray pre-rename branches on `ssh-audit` (NEW 2026-07-14 — found during Stage 2 close-out verification, undocumented)
+While independently re-verifying PR #1's merge (fresh clone of `ssh-audit`,
+`git ls-remote`), found two branches with no relationship to Stage 2:
+`repomend/fix-bandit.B110-1fdaef` and `repomend/fix-bandit.B311-6323af`,
+both dated **2026-06-29** — three weeks before this session, using the
+pre-rename `repomend/` branch prefix. `ssh-audit` does not appear
+anywhere in `memory/project_session_log.md` before today — this is a
+genuinely undocumented, unlogged run of the tool (RepoMend-era) against
+this repo. No associated PRs confirmed (unauthenticated GitHub API
+returns nothing for this account's PR list — same restriction seen all
+session; inconclusive, not confirmed-absent — check via `gh pr list
+--repo yehorcallmedai-maker/ssh-audit --state all` to be certain).
+
+**Notable data point, not just housekeeping:** the `B311` branch shows a
+real fix was produced historically for the exact finding today's Stage 2
+run declined (Fix-Gen exhausted `max_turns` without `submit_fix` — see
+item 13). Not asserted as a regression — could be a prompt/model change,
+a different Fix-Gen version, or simple non-determinism — but worth
+keeping in mind if item 13 is ever picked up: this is evidence Fix-Gen
+*can* produce a fix for this exact finding, so "declined" isn't
+necessarily "unfixable."
+
+**Owner:** Yehor — only he can confirm whether this was an intentional
+earlier test (and if so, whether the stray branches should be deleted)
+or something else entirely. Not investigated further this session —
+disclosed rather than silently found-and-ignored, per this project's
+own convention.
+
 ## Deferred, not forgotten
 - **[REMOVED 2026-07-14]** ClinInsight/Databutton LinkedIn DM replies —
   carried in this list since Session 012 (2026-07-10). Decision this
