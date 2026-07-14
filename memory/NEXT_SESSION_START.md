@@ -198,15 +198,20 @@ rounds of drift accumulate. Somewhere between those extremes.
       investigated further. See BACKLOG item 14 for full detail
       including a real data point for item 13 (Fix-Gen historically DID
       produce a fix for the B311 finding today's run declined).
-- [x] **`future-agi-contribution/` directory — relocated, not a
-      Patchward concern.** Was a separate, actively-managed OSS-
-      contribution project's working directory (own `.strategy/
-      STRATEGY.md`), nested inside Patchward's tree by circumstance —
-      untracked by Patchward's git throughout, verified via direct file
-      read as genuine (not an error/security concern). Moved to
-      `D:\Dev\Projects\future-agi-contribution` — verified gone from
-      Patchward's tree via `Test-Path`. That project continues in its
-      own session; no further action here.
+- [x] **`future-agi-contribution/` directory — stays nested in
+      Patchward's tree, untracked. Not a Patchward concern.** A separate
+      project's working directory (an OSS-contribution effort, own
+      `.strategy/STRATEGY.md`). Initially relocated out to
+      `D:\Dev\Projects\future-agi-contribution` this session — **that
+      move was reversed.** The other session was still actively running
+      independently; after the move, it found nothing at the original
+      nested path, treated that as data loss, and rebuilt its memory
+      there from scratch — producing a more complete, more current
+      record than the relocated copy ever saw. The nested copy is
+      authoritative; the relocated duplicate has been deleted. If a
+      future session considers moving this directory again: confirm no
+      other session depends on the current path first — this is
+      exactly the mistake made once already today.
 
 Full detail and WSJF ordering for all of the above: `memory/BACKLOG.md`.
 

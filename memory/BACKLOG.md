@@ -511,6 +511,27 @@ Relocated to `D:\Dev\Projects\future-agi-contribution` (verified via
 at the new location) — no other action taken, that project continues in
 its own session.
 
+**Correction, same day:** the relocation above was wrong and has been
+reversed. The Future AGI session was still actively running, independent
+of this one, with its own memory of the original nested path. After this
+session moved the directory out, that other session found nothing at
+its remembered path, treated it as data loss, and rebuilt its memory
+file from scratch back at the original nested location — then kept
+working there, producing a more complete, more current record
+(including a `SESSION_CLOSE_2026-07-14.md` this pass's copy never saw).
+Discovered when the directory reappeared in `git status` after the
+move; confirmed via `Get-ChildItem` on both paths (nested copy: newer,
+larger, includes the session-close file; relocated copy: frozen at the
+pre-continuation state) and a direct read of the nested `STRATEGY.md`
+confirming it matches the more recent, more detailed record. **Lesson:**
+relocating a directory that might be a live dependency of a different,
+concurrently-running session risks exactly this kind of silent fork —
+should have flagged the possibility rather than treating the move as
+purely a Patchward-side hygiene call. The stale duplicate at
+`D:\Dev\Projects\future-agi-contribution` is being deleted; the nested
+copy inside Patchward's tree is being kept and remains untracked by
+this repo's git, as it was throughout.
+
 ## 13. Fix-Gen lacks an explicit "not a real issue, decline" path (NEW, LOW-MEDIUM — surfaced by Stage 2)
 **WSJF: low-medium — real gap, not urgent.** Stage 2 showed Fix-Gen
 correctly avoiding bad fixes on 4 by-design findings, but the *mechanism*
