@@ -25,6 +25,7 @@ from patchward.pr_publisher import PRPublisher
 from patchward.run_log import RunLog
 from patchward.scanner import run_all_scanners
 from patchward.verifier import Verifier
+from patchward.worktree_common import sanitize_branch_component
 
 if TYPE_CHECKING:
     from patchward.config import RepomendConfig, RepoConfig
@@ -160,10 +161,14 @@ async def run_repo_pipeline(
                 findings_attempted += 1
 
                 # uuid suffix prevents branch-name collision across
-                # findings in the same repo (assumption §KS-P7-04)
+                # findings in the same repo (assumption §KS-P7-04).
+                # BACKLOG 3d: repo.repo and rule_id are not guaranteed
+                # valid git ref components (rule_id comes from scanner
+                # output) — sanitize before they become part of the
+                # branch name.
                 finding_id = (
-                    f"{repo.repo}"
-                    f"-{finding['rule_id'][:20]}"
+                    f"{sanitize_branch_component(repo.repo)}"
+                    f"-{sanitize_branch_component(finding['rule_id'][:20])}"
                     f"-{uuid.uuid4().hex[:6]}"
                 )
                 finding_pr_url: str | None = None

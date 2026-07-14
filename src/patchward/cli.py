@@ -27,6 +27,7 @@ from patchward.scanner import run_all_scanners
 from patchward.subagent import ScannerSubagent
 from patchward.verifier import Verifier
 from patchward.worktree import require_git_version, worktree_context
+from patchward.worktree_common import sanitize_branch_component
 from patchward import tracing
 
 app = typer.Typer(
@@ -357,7 +358,14 @@ def fix(
             for finding in findings:
                 import uuid as _uuid
                 _base_id = finding["fingerprint"] or finding["rule_id"]
-                finding_id = f"{_base_id}-{_uuid.uuid4().hex[:6]}"
+                # BACKLOG 3d: _base_id comes straight from scanner
+                # output (semgrep SARIF fingerprint/rule_id) and is not
+                # guaranteed to be a valid git ref component — sanitize
+                # before it becomes part of the branch name.
+                finding_id = (
+                    f"{sanitize_branch_component(_base_id)}"
+                    f"-{_uuid.uuid4().hex[:6]}"
+                )
                 rule_id = finding["rule_id"]
                 file_path = finding["file_path"]
 

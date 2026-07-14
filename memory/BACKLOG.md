@@ -127,13 +127,54 @@ independent check on the real machine** — same spirit as the existing
 "don't trust a tool's self-report" rule, one layer earlier in the
 pipeline.
 
-## 3d. Investigate "requires login" invalid branch name (NEW, unconfirmed root cause)
+## 3d. Investigate "requires login" invalid branch name (crash CLOSED 2026-07-14; upstream root cause still unconfirmed)
 One finding (semgrep subprocess-shell-true) produced a branch name
 containing the literal text "requires login", an invalid git ref
-(contains a space), crashing `git worktree add`. Hypothesis (not yet
-confirmed): semgrep's `p/python` registry pack triggered a login-gated
-request whose message leaked into the fingerprint/finding-id pipeline.
-Needs investigation before being treated as understood. **Owner:** TBD.
+(contains a space), crashing `git worktree add`.
+
+**Root cause still unconfirmed** — traced as far as `sarif.py`'s SARIF
+normalization reading semgrep's `partialFingerprints`/`fingerprints`
+fields verbatim into `finding_id` (`cli.py`/`pipeline.py`), but couldn't
+reproduce the actual semgrep behavior without live network access to
+the `p/python` registry pack. The original hypothesis (a login-gated
+registry request's message leaking into the fingerprint) remains
+plausible but unverified.
+
+**The crash itself is fixed regardless of that root cause.** Neither
+`cli.py` nor `pipeline.py` validated that `finding_id` (built from
+scanner-provided fingerprint/rule_id text) was safe to embed in a git
+branch name before calling `git worktree add`. Added
+`sanitize_branch_component()` to `worktree_common.py` (this project's
+designated single source of truth for shared git primitives, per its
+own docstring) — strips/replaces characters git-check-ref-format
+forbids (space, `~^:?*[]\`), strips leading/trailing `.`/`-`, collapses
+`..` sequences, caps length, and falls back to a safe placeholder if
+sanitization would produce an empty string (callers always append a
+uuid suffix after, so the fallback only needs to be non-empty). Wired
+into both `cli.py`'s and `pipeline.py`'s `finding_id` construction.
+8 new unit tests in `test_worktree.py` (`TestSanitizeBranchComponent`
+section), including a direct regression test reproducing the exact
+"requires login" string. Full suite re-verified by Yehor: 439 passed,
+2 skipped, 90.30% coverage, 0 failures.
+
+**Also found and fixed along the way:** `test_config.py`'s
+`test_toml_example_parses_cleanly` had to be updated — its own design
+prepended a second `[patchward]` block on the (correct) assumption
+that the example file had none, which was true before BACKLOG 6a's fix
+landed. Against the now-fixed example (which correctly has its own
+`[patchward]` section), that produced a duplicate-TOML-table error.
+This was the test being stale relative to 6a's fix, not a new defect —
+updated to substitute the placeholder `repo_path` value instead of
+injecting a second section. Worth noting: this test's original
+docstring asserted the missing `[patchward]` section was "intentional
+— users set repo_path via CLI flag or scan command," which directly
+contradicted this project's own BACKLOG 6a/STATE.md finding that it
+was a real, harmful defect. Caught here because running the full suite
+after a fix is exactly how a stale test's wrong assumption surfaces.
+
+**Owner:** Claude (agent) implemented and verified via Yehor's full
+suite run; root-cause investigation of the semgrep-side anomaly itself
+remains TBD if it recurs.
 
 ## 3. Stage 1 — E2E pipeline test against an owned repo — COMPLETE, result documented
 Full report: `docs/keystones/stage1_e2e_test_2026-07-13.md`. Headline:

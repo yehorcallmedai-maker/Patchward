@@ -13,6 +13,8 @@ Test categories:
   4. worktree_context() — finally-block invariant under clean exit, exception,
      KeyboardInterrupt; path routing invariant
   5. Working branch invariant — no git checkout issued on original repo
+  6. sanitize_branch_component() — BACKLOG 3d, scanner-provided text made
+     safe for use as a git branch-name component
 
 Note on patch targets: require_git_version, git_worktree_add, and git_worktree_remove
 live in patchward.worktree_common (single source of truth per C-P3-10). Tests that
@@ -38,6 +40,7 @@ from patchward.worktree import (
     require_git_version,
     worktree_context,
 )
+from patchward.worktree_common import sanitize_branch_component
 
 
 # ---------------------------------------------------------------------------
@@ -333,3 +336,64 @@ def test_scan_id_is_unique_across_contexts(tmp_path: Path) -> None:
     assert len(scan_ids) == 2
     assert scan_ids[0] != scan_ids[1], "Each context must use a unique scan_id"
     assert len(scan_ids[0]) == 8, "scan_id must be 8 hex characters (uuid4.hex[:8])"
+
+
+# ---------------------------------------------------------------------------
+# 6. sanitize_branch_component() — BACKLOG 3d
+# ---------------------------------------------------------------------------
+
+def test_sanitize_leaves_clean_input_untouched() -> None:
+    """A rule_id-shaped string is already ref-safe — no change."""
+    assert (
+        sanitize_branch_component("python.lang.security.audit.subprocess-shell-true")
+        == "python.lang.security.audit.subprocess-shell-true"
+    )
+
+
+def test_sanitize_replaces_spaces() -> None:
+    """
+    BACKLOG 3d regression: reproduces the exact Stage-1 failure — a
+    fingerprint containing "requires login" (a space) crashed
+    `git worktree add` with an invalid ref. Must become ref-safe.
+    """
+    result = sanitize_branch_component("requires login")
+    assert " " not in result
+    assert result == "requires-login"
+
+
+def test_sanitize_strips_leading_trailing_dots_and_hyphens() -> None:
+    assert sanitize_branch_component("...leading-dots") == "leading-dots"
+    assert sanitize_branch_component("trailing-dots...") == "trailing-dots"
+    assert sanitize_branch_component("--edges--") == "edges"
+
+
+def test_sanitize_collapses_double_dots() -> None:
+    """Git disallows '..' anywhere in a ref, not just at the edges."""
+    result = sanitize_branch_component("weird..sequence")
+    assert ".." not in result
+
+
+def test_sanitize_caps_length() -> None:
+    long_input = "x" * 200
+    result = sanitize_branch_component(long_input, max_length=50)
+    assert len(result) <= 50
+
+
+def test_sanitize_replaces_git_special_characters() -> None:
+    """git-check-ref-format forbids ~ ^ : ? * [ \\ and control chars."""
+    result = sanitize_branch_component("weird~name^with:bad?chars*here[x]back\\slash")
+    for forbidden in ("~", "^", ":", "?", "*", "[", "]", "\\"):
+        assert forbidden not in result
+
+
+def test_sanitize_falls_back_when_result_would_be_empty() -> None:
+    """An input that sanitizes to nothing must still return a non-empty,
+    ref-safe fallback — callers append a uuid suffix for uniqueness, so
+    the fallback itself doesn't need to be unique, just non-empty."""
+    assert sanitize_branch_component("") == "finding"
+    assert sanitize_branch_component("...") == "finding"
+    assert sanitize_branch_component("~^:?*[]\\") == "finding"
+
+
+def test_sanitize_custom_fallback() -> None:
+    assert sanitize_branch_component("", fallback="scan") == "scan"

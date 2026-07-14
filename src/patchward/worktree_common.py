@@ -70,6 +70,39 @@ def require_git_version(min_version: tuple[int, int] = (2, 5)) -> None:
         )
 
 
+def sanitize_branch_component(
+    value: str, *, max_length: int = 50, fallback: str = "finding"
+) -> str:
+    """
+    Sanitize a string for safe use as a git branch-name component.
+
+    Scanner-provided fields (e.g. semgrep SARIF ``fingerprint``/
+    ``rule_id``) are not validated as git-ref-safe before this project
+    embeds them in branch names like ``patchward/fix-{finding_id}``.
+    BACKLOG 3d: one Stage-1 finding produced a fingerprint containing
+    the literal text "requires login" (contains a space — an invalid
+    git ref), crashing ``git worktree add`` with exit 255. The exact
+    reason semgrep produced that text is still unconfirmed (see
+    BACKLOG 3d), but this function closes the crash regardless of the
+    upstream cause: replace every run of characters outside
+    ``[A-Za-z0-9._-]`` with a single ``-``, strip leading/trailing
+    ``-``/``.`` (git disallows a ref starting or ending with ``.``),
+    collapse any ``..`` sequence (disallowed anywhere in a git ref),
+    and cap the length so an unexpectedly long scanner string can't
+    produce an unwieldy branch name. Never returns an empty string —
+    callers always append a uuid suffix after this for uniqueness, so
+    the fallback only needs to be non-empty and ref-safe, not unique
+    on its own.
+
+    # KS-TRACE: BACKLOG-3d
+    """
+    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "-", value)
+    cleaned = cleaned.strip("-.")
+    cleaned = re.sub(r"\.{2,}", "-", cleaned)
+    cleaned = cleaned[:max_length].strip("-.")
+    return cleaned or fallback
+
+
 def git_worktree_add(
     repo_path: Path, worktree_path: Path, branch: str
 ) -> None:

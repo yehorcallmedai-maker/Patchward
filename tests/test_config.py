@@ -481,26 +481,39 @@ def test_max_findings_per_repo_negative_raises(
 def test_toml_example_parses_cleanly(tmp_path: Path) -> None:
     """
     patchward.toml.example loads without ValidationError or SystemExit
-    when a valid repo_path is injected. (AC-P7-07)
+    when repo_path is pointed at a real directory. (AC-P7-07)
 
-    The example file has no [patchward] section (intentionally — users
-    set repo_path via CLI flag or scan command).  We inject a minimal
-    [patchward] block pointing at tmp_path so load_config() can
-    validate repo_path existence without touching the rest of the
-    example content.
+    BACKLOG 6a (2026-07-14): the example now correctly ships its own
+    [patchward] section with repo_path present as a placeholder. Before
+    this fix, the example had no [patchward] section at all — this
+    test's previous version treated that as intentional and prepended
+    its own [patchward] block, but that framing was wrong: a new user
+    following the old template verbatim hit a hard config-load failure
+    (repo_path is required, no default), exactly the defect BACKLOG 6a
+    describes. Prepending a second [patchward] block against the fixed
+    file now produces a duplicate-table TOML error, which is what
+    caught this test being stale rather than the fix being wrong.
+    Updated to substitute the placeholder repo_path value with tmp_path
+    instead of injecting a second section.
     """
     example = (
         Path(__file__).parent.parent / "patchward.toml.example"
     )
     assert example.exists(), "patchward.toml.example not found"
     base = example.read_text(encoding="utf-8")
-    injected = (
-        f'[patchward]\nrepo_path = "{tmp_path.as_posix()}"\n'
-        + base
+    placeholder = 'repo_path = "/absolute/path/to/your/repo"'
+    assert placeholder in base, (
+        "expected placeholder repo_path line not found in "
+        "patchward.toml.example — has its format changed? Update this "
+        "test's substitution to match."
+    )
+    injected = base.replace(
+        placeholder, f'repo_path = "{tmp_path.as_posix()}"'
     )
     toml = tmp_path / "patchward.toml"
     toml.write_text(injected, encoding="utf-8")
     cfg = load_config(toml)
+    assert cfg.repo_path == tmp_path
     assert cfg.github.owner == "your-github-username"
     assert cfg.batch.max_concurrent == 3
     assert cfg.batch.max_findings_per_repo == 5
