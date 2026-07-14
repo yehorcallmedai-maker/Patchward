@@ -221,8 +221,10 @@ wider exposure.
   Verified via a live `POST /pulls` call returning `422` (validation
   error on content, not `403` on permission) — see BACKLOG item 3b.
 - PyPI-side Trusted Publisher configuration status
-- ClinInsight/Databutton LinkedIn DM replies (carried from Session 012,
-  still unconfirmed, no tool access to check)
+- **[REMOVED 2026-07-14]** ClinInsight/Databutton LinkedIn DM replies —
+  decided this session (see `BACKLOG.md` "Deferred, not forgotten") that
+  this doesn't belong in Patchward's engineering memory at all; removed
+  visibly rather than silently, not because it was resolved.
 
 ---
 **Handoff note on the audit tag — RESOLVED 2026-07-13:** the tag was

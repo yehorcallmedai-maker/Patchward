@@ -335,23 +335,68 @@ as 7a/7b below, explicitly flagged as pre-pivot ideas rather than
 freshly-scoped priorities.
 **Owner:** Claude (agent) decided and executed; Yehor reviews per usual.
 
-## 7a. Structured PR template (folded from `project_open_tasks.md` KS-P5-04)
-**WSJF: unscored — relevance not reconfirmed.** Pre-rename RepoMend-era
-idea (2026-06-22): PR body should carry intent, diff summary, risk
-class, and evidence/test-log links — five gates per PR. Never
-implemented; not superseded by anything found in the current codebase
-during this session's reading of `pr_publisher.py`. Whether this still
-matters given the product's pivot toward a GitHub App/Marketplace model
-(ADR-030) rather than the original CLI-first roadmap is an open
-question — flagged here rather than silently dropped, not asserted as
-still a priority. **Owner:** Yehor to decide if/when to prioritize.
+## 7a. Structured PR template (CLOSED 2026-07-14 — already substantively implemented)
+**Correction to this item's own prior entry:** the 2026-07-14 note above
+said direct reading of `pr_publisher.py` found this "never implemented."
+A closer read this pass (full read of `_build_pr_body()`, not just a
+grep) found that's wrong — `pr_publisher.py` already renders a
+five-section PR body template (Finding / Fix / Verification Evidence /
+Diff / Test Output, `_build_pr_body()` L228-286) per ADR-018/ADR-019 and
+constraints C-P5-04 through C-P5-12. This satisfies the pre-rename ask
+(intent, diff summary, evidence/test-log links) in substance, just not
+labeled "risk class" as its own section. **Not a real gap — folded into
+7b below**, since the one missing piece (`risk_class`) is the same data
+gap that item already covers. No separate action needed.
 
-## 7b. Risk-class escalation routing (folded from `project_open_tasks.md` KS-P5-05)
-**WSJF: unscored — relevance not reconfirmed.** Same provenance and
-same caveat as 7a: pre-rename idea (low/medium/high risk-class routing
-for fixes), never implemented, not found superseded elsewhere, relevance
-to the current product direction unconfirmed. **Owner:** Yehor to decide
-if/when to prioritize.
+## 7b. Surface `risk_class` in the PR body (RESCOPED 2026-07-14 from "risk-class escalation routing")
+**WSJF: low-medium — cheap (data already exists), not urgent, real.**
+Original folded item asked for "risk-class escalation routing." Direct
+grep across `src/` for `risk_class` found the classification itself
+already exists and is computed: `fix_gen.py`'s `_risk_class_for_severity()`
+(L88-94, satisfies AC-P3-08) maps SARIF severity to `HIGH`/`MEDIUM`/`LOW`,
+stored on `FixResult.risk_class` and serialized into the run-log PR dict
+(L269, L279). **The gap is narrower than originally scoped:** this value
+is never read anywhere outside `fix_gen.py` — `pr_publisher.py`'s PR body
+template doesn't display it, and no code path gates any behavior on it.
+"Escalation routing" implies automated action (e.g., blocking something
+for HIGH-risk fixes); nothing that ambitious is needed yet — the real,
+concrete task is: (1) add a `risk_class` line to `_build_pr_body()`'s
+Finding section so a human reviewer actually sees it, (2) separately
+decide, as a product question and not an engineering one, whether any
+behavior should gate on it later. **Owner:** Claude (agent) can implement
+(1) as a small, testable change (touches `pr_publisher.py` +
+`test_pr_publisher.py`) whenever prioritized; (2) is Yehor's call, not
+scheduled.
+
+## 7c. `.dockerignore` untracked (CORRECTED 2026-07-14 — claim was false, already tracked)
+**Correction, same day:** this entry originally claimed `.dockerignore`
+was untracked and decided to track it. That check was incomplete — it
+confirmed the file's content and that `.gitignore` doesn't exclude it,
+but never actually ran `git ls-files` to check whether it was tracked,
+which is the one check that would have caught the real answer.
+`git ls-files --error-unmatch .dockerignore` confirms it **is** tracked,
+committed in `8b601e9` ("Stage-1 E2E test report + BACKLOG/STATE
+updates, lock webhook extras") and unmodified since. There was no real
+gap here — the `git add .dockerignore` run as part of this pass's
+commit batch staged nothing, exactly as it should for an already-tracked,
+unmodified file. Left visible rather than silently fixed, per this
+project's established correction convention (see ADR-029's amendment,
+BACKLOG item 2). **No action was actually needed.**
+
+## 7d. `tests/fixture_repo` dirty submodule (2026-07-14 — decision: commit the one-liner, pending fresh Pass 2)
+STATE.md's 2026-07-13 finding: the submodule's only local change is a
+one-line, non-functional docstring edit ("testing RepoMend" → "testing
+patchward"), confirmed harmless (worktree-based scans read from `HEAD`,
+not the dirty working copy). That finding is a year — sorry, a session —
+old and wasn't re-verified fresh this pass (sandbox `git diff` on this
+mount is not trustworthy per standing rule). **Decision: commit it**
+rather than leave it permanently dirty (a permanently-dirty submodule
+makes every future `git status` check harder to audit — "is this the
+known-harmless diff, or something new?" shouldn't require re-deriving
+the answer each session) — **conditional on Yehor's fresh `git status`/
+`git diff` inside `tests/fixture_repo` matching the prior claim exactly**
+before committing. See commit instructions in `project_session_log.md`'s
+Session 014 addendum 3.
 
 ## 8. callmed-landing rename
 **WSJF: low-medium, near-zero job size, zero downstream dependency.**
@@ -392,10 +437,17 @@ can resolve).
 ---
 
 ## Deferred, not forgotten
-- ClinInsight/Databutton LinkedIn DM replies — unconfirmed since
-  2026-07-10, no tool access to check, answer directly with Yehor.
-- Two pre-existing housekeeping items, low urgency: `tests/fixture_repo`
-  shows as a dirty git submodule; `.dockerignore` is untracked.
+- **[REMOVED 2026-07-14]** ClinInsight/Databutton LinkedIn DM replies —
+  carried in this list since Session 012 (2026-07-10). Decision this
+  pass: this has no relationship to Patchward's code or repo — it's a
+  personal/business follow-up that was drifting into an engineering
+  backlog with no mechanism to ever resolve it here (no tool access to
+  check LinkedIn from this project). Removed visibly, per this project's
+  own correction convention (nothing is silently deleted) — it belongs
+  in Yehor's own task tracking, not `BACKLOG.md`.
+- `tests/fixture_repo` dirty submodule and `.dockerignore` untracked —
+  both promoted out of this deferred list and given real decisions this
+  session: see items 7c and 7d above.
 - Sandbox git lock quirk (watch-only, no action needed unless it starts
   blocking something): `.git/index.lock` (Session 012) and
   `.git/objects/maintenance.lock` (Session 013) have both appeared and

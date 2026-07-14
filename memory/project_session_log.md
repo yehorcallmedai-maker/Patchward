@@ -1101,3 +1101,58 @@ out of scope: PyPI Trusted Publisher confirmation (item 9),
 `runs/state.db` cleanup (low-priority git write), `callmed-landing`
 rename (different repo, out of scope), and Stage 2 itself (now
 unblocked, awaiting Yehor's go-ahead).
+
+### Session 014 addendum 3 — same session, continued (closed every remaining pinned decision, no code change)
+
+Yehor asked to run `/session-strategy-synthesis` again specifically to
+close every item still sitting as an open question rather than a scored,
+owned decision. Five found: BACKLOG 7a/7b (unscored since folded from
+`project_open_tasks.md`), `.dockerignore` untracked, `tests/fixture_repo`
+dirty, and the ClinInsight/Databutton item.
+
+**7a (structured PR template) — corrected and closed.** The 2026-07-14
+entry for this item claimed reading `pr_publisher.py` found no
+implementation. A full read of `_build_pr_body()` this pass (not just a
+grep, which is what the prior pass actually did) found that claim was
+wrong: a five-section PR template (Finding/Fix/Verification
+Evidence/Diff/Test Output) already exists per ADR-018/019. Correcting a
+prior session's own claim visibly rather than silently, per this
+project's convention.
+
+**7b (risk-class escalation routing) — rescoped, not closed.** Grep for
+`risk_class` across `src/` found `fix_gen.py` already computes and
+stores it (AC-P3-08, `_risk_class_for_severity()`), but it's referenced
+nowhere else — never shown in the PR body, never gates any behavior.
+Rescoped from vague "escalation routing" to the concrete, now-evidence-
+backed gap: show the already-computed value in the PR body; treat any
+actual behavior-gating as a separate, later product decision.
+
+**7c (`.dockerignore`) — the "untracked" claim was itself wrong,
+corrected same session.** Read its content and confirmed `.gitignore`
+didn't exclude it, then decided to track it — but never ran the one
+check that actually answers the question, `git ls-files`. Running
+`git add .dockerignore` as part of this pass's commit staged nothing;
+`git ls-files --error-unmatch .dockerignore` then confirmed it's been
+tracked since commit `8b601e9`, unmodified. Corrected visibly in
+`BACKLOG.md` rather than leaving the wrong claim standing. **Lesson
+carried forward: "is it tracked" needs `git ls-files` specifically —
+reading file content and checking `.gitignore` for an exclusion rule
+are both necessary but not sufficient to answer that question.**
+
+**7d (`tests/fixture_repo` dirty submodule) — decided: commit the
+known-harmless one-liner**, conditional on a fresh Pass 2 check (this
+session didn't re-verify the diff itself — sandbox `git diff` on this
+mount isn't trustworthy, and the prior finding was from 2026-07-13).
+
+**ClinInsight/Databutton item — removed from Patchward's engineering
+memory, visibly.** It had no relationship to this codebase and was
+never going to resolve inside a project memory file with no LinkedIn
+access — decided it was drifting a personal/business task into an
+engineering backlog, the same dual-source-of-truth risk the State
+Reconstruction Audit exists to catch. Removed with a visible marker in
+both `STATE.md` and `BACKLOG.md`, not silently dropped.
+
+**Nothing committed yet as of this addendum** — 7c/7d require one fresh
+verification + a submodule-level commit on Yehor's machine before the
+memory-file updates land, so they're batched together in the next
+copy-paste block rather than split into two round-trips.
