@@ -121,6 +121,35 @@ class TestPRPublisher:
                         "## Diff", "## Test Output"):
             assert section in body, f"Missing section: {section}"
 
+    def test_build_pr_body_shows_risk_class(self, tmp_path: Path) -> None:
+        """_build_pr_body() surfaces FixResult.risk_class in the Finding
+        section (BACKLOG 7b) — the value is already computed by fix_gen.py
+        (AC-P3-08) but was never displayed to a human reviewer before."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy()
+        publisher = PRPublisher(cfg, proxy, http_client=MagicMock())
+        fix = _make_verified_fix()
+        fix.risk_class = "HIGH"
+        body = publisher._build_pr_body(
+            fix, _make_verifier_result(), _make_finding()
+        )
+        assert "**Risk class:** HIGH" in body
+
+    def test_build_pr_body_risk_class_falls_back_to_unknown(
+        self, tmp_path: Path
+    ) -> None:
+        """An unset (empty-string default) risk_class renders as
+        'unknown' rather than a blank field."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy()
+        publisher = PRPublisher(cfg, proxy, http_client=MagicMock())
+        fix = _make_verified_fix()
+        assert fix.risk_class == ""
+        body = publisher._build_pr_body(
+            fix, _make_verifier_result(), _make_finding()
+        )
+        assert "**Risk class:** unknown" in body
+
     @patch("patchward.pr_publisher.git_push_branch")
     def test_create_pr_draft_true(
         self, mock_push: MagicMock, tmp_path: Path

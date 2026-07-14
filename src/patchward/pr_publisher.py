@@ -255,11 +255,14 @@ class PRPublisher:
             if fix_result.files_modified else "no files recorded"
         )
 
+        risk_class = getattr(fix_result, "risk_class", "") or "unknown"
+
         sections = [
             "## Finding",
             f"- **Rule:** `{rule_id}`",
             f"- **File:** `{file_path}` lines {line_start}–{line_end}",
             f"- **Severity:** {severity}",
+            f"- **Risk class:** {risk_class}",
             f"- **Message:** {message}",
             "",
             "## Fix",
