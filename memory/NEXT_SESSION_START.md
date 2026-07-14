@@ -28,7 +28,7 @@ file is written, treat it as stale until explicitly redone.
 
 1. **Confirm `main`'s SHA fresh.** Last known-good, independently
    verified via `git ls-remote origin main` at the actual close of this
-   pass: `234cbc2a17ff1e1db3d0b31f6d3febaede4cb5fd`. Confirmed matching
+   pass: `53cd052b161b8b3fa2b62e5892f5eb3ad4441dfd`. Confirmed matching
    local HEAD on Yehor's machine the same session (`git push` +
    `git ls-remote` + `git log -1` all agreed). Re-check anyway.
 2. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`,
@@ -39,11 +39,10 @@ file is written, treat it as stale until explicitly redone.
    actually fails (`Remove-Item -Recurse -Force .venv` then
    `uv sync --all-extras`).
 4. **Re-run the full test suite before trusting it.** Last real number:
-   **439 passed, 2 skipped, 90.30% coverage**, from BACKLOG 3d's fix
-   (Yehor's `.venv`, real machine). Everything since (3b, 6, 7 closures)
-   was documentation-only — no source file changed — so this number is
-   *expected* to still hold, but it has not been re-run since and should
-   not be cited as freshly confirmed until it is.
+   **441 passed, 2 skipped, 90.31% coverage**, from BACKLOG 7b's fix
+   (Yehor's `.venv`, real machine, this session's final test run). Any
+   session after this one should still re-confirm rather than cite this
+   number cold.
 5. **This sandbox's `git status`/`git diff` (working-tree comparisons)
    cannot be trusted at all** — unchanged from prior sessions. `git
    log`/`git ls-remote` (ref/object reads) remain trustworthy. Restrict
@@ -132,11 +131,11 @@ rounds of drift accumulate. Somewhere between those extremes.
 - [x] **BACKLOG 7a (structured PR template) — corrected and closed.**
       `pr_publisher.py` already implements a five-section PR body
       template; a prior grep-only pass wrongly claimed it didn't exist.
-- [ ] **BACKLOG 7b (risk-class in PR body) — rescoped, still open.**
-      `fix_gen.py` already computes `risk_class` (AC-P3-08) but nothing
-      displays or gates on it. Concrete next step if prioritized: add it
-      to `pr_publisher.py`'s `_build_pr_body()` Finding section + update
-      `test_pr_publisher.py`. Small, not urgent, not scheduled.
+- [x] **BACKLOG 7b (risk-class in PR body) — CLOSED, commit `53cd052`.**
+      `_build_pr_body()` now shows `**Risk class:**` in the Finding
+      section (falls back to `unknown`). 441 passed, 90.31% coverage.
+      No behavior-gating added — that's a separate, unscheduled product
+      decision.
 - [x] **`.dockerignore` — the "untracked" claim was itself wrong,
       corrected.** It's been tracked since `8b601e9`. No action needed.
 - [x] **ClinInsight/Databutton LinkedIn DM item — removed from

@@ -348,25 +348,31 @@ labeled "risk class" as its own section. **Not a real gap — folded into
 7b below**, since the one missing piece (`risk_class`) is the same data
 gap that item already covers. No separate action needed.
 
-## 7b. Surface `risk_class` in the PR body (RESCOPED 2026-07-14 from "risk-class escalation routing")
-**WSJF: low-medium — cheap (data already exists), not urgent, real.**
-Original folded item asked for "risk-class escalation routing." Direct
-grep across `src/` for `risk_class` found the classification itself
-already exists and is computed: `fix_gen.py`'s `_risk_class_for_severity()`
-(L88-94, satisfies AC-P3-08) maps SARIF severity to `HIGH`/`MEDIUM`/`LOW`,
-stored on `FixResult.risk_class` and serialized into the run-log PR dict
-(L269, L279). **The gap is narrower than originally scoped:** this value
-is never read anywhere outside `fix_gen.py` — `pr_publisher.py`'s PR body
-template doesn't display it, and no code path gates any behavior on it.
-"Escalation routing" implies automated action (e.g., blocking something
-for HIGH-risk fixes); nothing that ambitious is needed yet — the real,
-concrete task is: (1) add a `risk_class` line to `_build_pr_body()`'s
-Finding section so a human reviewer actually sees it, (2) separately
-decide, as a product question and not an engineering one, whether any
-behavior should gate on it later. **Owner:** Claude (agent) can implement
-(1) as a small, testable change (touches `pr_publisher.py` +
-`test_pr_publisher.py`) whenever prioritized; (2) is Yehor's call, not
-scheduled.
+## 7b. Surface `risk_class` in the PR body (CLOSED 2026-07-14, commit `53cd052`)
+**Rescoped, then closed, same session.** Original folded item asked for
+"risk-class escalation routing." Investigation found the classification
+itself already existed (`fix_gen.py`'s `_risk_class_for_severity()`,
+AC-P3-08 — `HIGH`/`MEDIUM`/`LOW` from SARIF severity, stored on
+`FixResult.risk_class`), but was never displayed anywhere a human
+reviewer would see it. Rescoped from vague "escalation routing" to the
+concrete gap: display it.
+
+**Done:** `pr_publisher.py`'s `_build_pr_body()` now includes a
+`**Risk class:**` line in the Finding section (falls back to `unknown`
+if unset). Two new tests in `test_pr_publisher.py`
+(`test_build_pr_body_shows_risk_class`,
+`test_build_pr_body_risk_class_falls_back_to_unknown`) cover both cases.
+Full suite re-verified by Yehor: **441 passed, 2 skipped, 90.31%
+coverage** (up from 439/90.30% — the 2 new tests fully account for the
+delta, no regressions). Sandbox `py_compile` produced a false
+`SyntaxError` on this just-edited file (same stale-mount pattern as
+`cli.py` earlier this session) — resolved by trusting the Read tool's
+view, confirmed correct, and verifying compile+tests on Yehor's real
+machine instead.
+
+**Deliberately not done:** no behavior gates on `risk_class` yet (e.g.,
+blocking or extra review for HIGH-risk fixes) — that's a separate
+product decision, not scheduled, Yehor's call if/when it matters.
 
 ## 7c. `.dockerignore` untracked (CORRECTED 2026-07-14 — claim was false, already tracked)
 **Correction, same day:** this entry originally claimed `.dockerignore`
