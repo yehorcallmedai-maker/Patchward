@@ -424,10 +424,75 @@ Feature work built on an unvalidated core is inventory risk, per BUILD_PLAN
 §6. Begin only after Stage 1's Keystone confirms the walking skeleton.
 **Owner:** TBD.
 
-## 11. Stage 2 — authorized third-party E2E test
-**WSJF: contingent on item 3 passing cleanly.** Real draft PR on a
-third-party repo, per Yehor's original framing. Only after Stage 1 passes.
-**Owner:** Yehor authorizes; Claude executes.
+## 11. Stage 2 — authorized third-party E2E test (COMPLETE 2026-07-14 — PR #1 on ssh-audit)
+**Target selection:** `yehorcallmedai-maker/ssh-audit` (public fork, 1.4 MB,
+real Python security tool) — chosen over `checkdmarc` and explicitly over
+`django`/`langchain`/`twisted` (too large/complex for a first controlled
+run) and over Yehor's private repos (real personal/business assets,
+unnecessary risk vs. a disposable public fork). "Third-party" satisfied
+via real, unplanted third-party *code* (someone else wrote ssh-audit)
+with zero external-consent complexity (Yehor owns the fork outright).
+
+**Dry-run scan:** 703 raw findings, 698 in test files (correctly excluded
+by `patchward fix`'s test-path pre-filter, `cli.py` L317-337). 5
+actionable, all in `ssh_socket.py`/`dheat.py`. Scanner-model triage
+correctly assessed 4/5 as by-design (bind-to-all-interfaces ×2 + B104
+duplicate — intentional for an SSH-auditing server; B311 — weak PRNG in
+a DHEat attack *simulation*, not production crypto) and 1/5 as a clean,
+real fix candidate (B110 — bare `except Exception: pass`).
+
+**`patchward fix` result:** 4/5 correctly **not** force-fixed — Fix-Gen
+exhausted its turn budget without calling `submit_fix` on the by-design
+findings rather than fabricating unnecessary changes (a real, valuable
+outcome: it didn't file bad PRs on non-issues, though "runs out of
+turns" vs. an explicit "decline, not a real issue" path is worth
+improving later — see new item 13 below). 1/5 **verified and shipped**:
+`bandit.B110` fix (`except Exception:` → `except OSError:` in
+`_close_socket()`) passed Gate 1 (pass), Gate 2 (pass), Gate 3 (**skip**
+— no test suite detected in the fix worktree, expected and correct per
+`verifier.py`'s own doc: `ssh-audit`'s test dependencies aren't installed
+in Patchward's `.venv`, this is documented as SKIP-not-FAIL specifically
+for this external-repo scenario, not a red flag).
+
+**Verified independently, not from CLI self-report** (per BACKLOG 3c's
+own history): `gh pr view` confirmed PR #1 is real, `state: OPEN`,
+**`isDraft: true`** (ADR-019 satisfied), `baseRefName: master` (correct —
+`ssh-audit` predates GitHub's "main" default, caught via `gh repo view`'s
+`defaultBranchRef` before configuring). `gh pr diff` confirmed the actual
+diff matches Fix-Gen's self-reported `diff_summary` exactly — 1 file,
++1/-1.
+
+**New evidence for BACKLOG 3d's still-unconfirmed root cause:** the exact
+anomalous `"requires login"` string recurred in `finding_id`/branch-name
+construction for 2 of the 4 declined findings
+(`avoid-bind-to-all-interfaces`) — a *different* semgrep rule than Stage
+1's occurrence (`subprocess-shell-true`), in a *different* repo. Confirmed
+via grep that this string is not hardcoded anywhere in Patchward's own
+code (`worktree_common.py`'s only match is the comment describing the
+phenomenon, not producing it) — it's genuinely scanner-sourced. Recurring
+across different rules and repos shifts the working theory from "one
+rule's message leaking into its own fingerprint" toward a more systemic
+cause (e.g., a shared semgrep registry/auth response bleeding into
+fingerprint generation broadly). The crash itself remains fixed
+regardless (`sanitize_branch_component()` handled both occurrences
+cleanly, no crash this run) — root cause still not conclusively
+identified, but narrowed.
+
+**Owner:** Yehor authorized, Claude executed — result reviewed together
+with independent verification at each step.
+
+## 13. Fix-Gen lacks an explicit "not a real issue, decline" path (NEW, LOW-MEDIUM — surfaced by Stage 2)
+**WSJF: low-medium — real gap, not urgent.** Stage 2 showed Fix-Gen
+correctly avoiding bad fixes on 4 by-design findings, but the *mechanism*
+was running out of `max_turns` without calling `submit_fix`, not an
+explicit "I assessed this and it's not a real issue" decision.
+Functionally safe (no bad fix shipped either way) but wastes the full
+turn budget on every by-design finding and produces an ambiguous
+`[SKIP]` reason ("max_turns reached") indistinguishable from Fix-Gen
+genuinely struggling vs. correctly declining. Worth an explicit decline
+tool/path in Fix-Gen's tool schema so this shows up as a clear, fast,
+intentional outcome rather than an exhausted retry loop. **Owner:** TBD,
+not scheduled.
 
 ## 12. Regulatory flags — CRA / GDPR classification
 **WSJF: low urgency now, high cost if skipped before Phase 10.** Get

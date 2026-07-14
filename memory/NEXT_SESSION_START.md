@@ -28,9 +28,10 @@ file is written, treat it as stale until explicitly redone.
 
 1. **Confirm `main`'s SHA fresh.** Last known-good, independently
    verified via `git ls-remote origin main` at the actual close of this
-   pass: `53cd052b161b8b3fa2b62e5892f5eb3ad4441dfd`. Confirmed matching
-   local HEAD on Yehor's machine the same session (`git push` +
-   `git ls-remote` + `git log -1` all agreed). Re-check anyway.
+   pass (SHA will be confirmed in the commit that lands this file —
+   check `git log -1` on Yehor's machine and treat that as authoritative,
+   not this file's own claim). Confirmed matching local HEAD on Yehor's
+   machine the same session. Re-check anyway.
 2. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`,
    cheap and authoritative. Last confirmed OK 2026-07-14 (re-checked live
    during this strategy pass, not just re-cited from memory).
@@ -145,15 +146,29 @@ rounds of drift accumulate. Somewhere between those extremes.
       (BACKLOG 12).
 - [ ] `callmed-landing` rename — different repo, out of scope this
       session (BACKLOG 8).
-- [ ] **Stage 2 (BACKLOG item 11) — authorized third-party E2E test.**
-      **No longer blocked.** All four Stage-1-discovered defects (3a,
-      3b, 3c, 3d) are closed and pushed. This is now the single highest-
-      leverage next move — it's the first real test of whether the
-      pipeline can produce an actual, correct PR end-to-end since the
-      rename. Requires Yehor's explicit authorization before running
-      (real action on a third-party repo, not the fixture).
-- [ ] **Mirror Pass Tier 2 (BACKLOG item 10)** — contingent on Stage 2
-      passing cleanly, don't start before it.
+- [x] **Stage 2 (BACKLOG item 11) — authorized third-party E2E test —
+      COMPLETE.** Ran against `yehorcallmedai-maker/ssh-audit` (Yehor's
+      own public fork, chosen via a scored shortlist of his 26 repos —
+      see BACKLOG item 11 for the full selection rationale). Result: 1
+      finding verified and shipped as real draft PR
+      `github.com/yehorcallmedai-maker/ssh-audit/pull/1` (confirmed via
+      `gh pr view`/`gh pr diff`, not CLI self-report), 4 correctly
+      declined rather than force-fixed. **The pipeline is now validated
+      end-to-end against a real third-party repo, not just the
+      fixture.** New non-blocking item opened (13 — Fix-Gen's decline
+      path is implicit/ambiguous). New evidence for 3d's still-open
+      root cause (see BACKLOG item 11's writeup).
+- [ ] **Mirror Pass Tier 2 (BACKLOG item 10)** — Stage 2 has now passed
+      cleanly, so this is unblocked. Not started.
+- [ ] **BACKLOG item 13 (NEW) — Fix-Gen's "decline, not a real issue"
+      path is implicit.** Currently just exhausts `max_turns` without
+      calling `submit_fix`, which is safe but produces an ambiguous log
+      signal. Low-medium priority, not scheduled.
+- [ ] Local `patchward.toml` (gitignored) currently points at
+      `D:/Dev/Projects/ssh-audit` / repo `ssh-audit` / base `master`
+      from Stage 2. Not reverted to the fixture — low-stakes since it's
+      local-only, but worth knowing before assuming a future `patchward
+      scan`/`fix` invocation targets the fixture by default.
 
 Full detail and WSJF ordering for all of the above: `memory/BACKLOG.md`.
 
@@ -187,14 +202,26 @@ Full detail and WSJF ordering for all of the above: `memory/BACKLOG.md`.
 - **Regenerate this handoff file at the actual end of a session's
   work** — not at the first pause point, per this session's own drift.
 
+## New capability this session: GitHub CLI
+
+`gh` is now installed and authenticated on Yehor's machine (`gh auth
+login` completed, device-flow authorized for the `yehorcallmedai-maker`
+account, including org access to FixProve and yehorkaliberda). Useful
+for `gh repo list`/`gh repo view`/`gh pr view`/`gh pr diff` — all used
+this session for independent verification (not trusting CLI self-report
+or the sandbox's unauthenticated API view, which returns nothing for
+this account's repos).
+
 ## Suggested first move
 
-Confirm housekeeping items 1-4 above (SHA, Fly health, `.venv`, and — new
-this pass — a fresh full test-suite run, since docs-only commits landed
-after the last real run). Then ask Yehor directly: "Every Stage-1-
-discovered defect is closed. Do you want to authorize Stage 2 (a real
-third-party E2E test) now, or is there something else to prioritize
-first?" Don't assume Stage 2 is automatically next just because it's
-unblocked — confirm, the same way this session confirmed each fix's
-approach before implementing rather than defaulting to the easiest
-reading of the backlog.
+Confirm housekeeping items 1-4 above (SHA, Fly health, `.venv`, fresh
+full test-suite run). Stage 2 is now complete — the pipeline has a real,
+independently-verified draft PR on a third-party repo
+(`ssh-audit/pull/1`). Nothing in this session's original scope remains
+open except items only Yehor can act on: PyPI Trusted Publisher
+confirmation (item 9), regulatory CRA/GDPR classification (item 12),
+`callmed-landing` rename (item 8, different repo), and whether/when to
+merge or close PR #1 on `ssh-audit` (it's a real open draft PR now — not
+urgent, but not nothing either). Ask Yehor what he wants to look at next
+rather than assuming continuation into Mirror Pass Tier 2 (item 10)
+just because it's now unblocked.

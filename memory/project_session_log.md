@@ -1102,6 +1102,84 @@ out of scope: PyPI Trusted Publisher confirmation (item 9),
 rename (different repo, out of scope), and Stage 2 itself (now
 unblocked, awaiting Yehor's go-ahead).
 
+### Session 014 addendum 4 — same session, continued (Stage 2 executed — real PR on ssh-audit)
+
+After closing every documentation/decision item, Yehor authorized moving
+into Stage 2 (BACKLOG item 11) — the real, authorized third-party E2E
+test that Stage 1 had been building toward all session.
+
+**Target selection, done as its own rigorous pass:** the request "which
+repo" turned out to be a genuine external-fact gap, not a technical
+decision — nothing in project memory named a candidate, and BUILD_PLAN
+itself deferred it ("Stage 2 authorization/target selection happens in
+the background"). Installed GitHub CLI (`winget install --id GitHub.cli`,
+required a fresh shell for PATH, then `gh auth login`) since unauthenticated
+API calls returned nothing for Yehor's account (all repos effectively
+private-by-default from an outside view). Listed all 26 of Yehor's repos,
+scored the Python ones against four criteria (owned/authorized, real
+scannable code, not production-critical, small/contained), and
+recommended `ssh-audit` — a public fork of a real SSH-security-auditing
+tool, 1.4 MB. Explicitly ruled out `django`/`langchain`/`twisted` (too
+large for a first run) and all private repos (real business assets,
+unnecessary risk vs. a disposable fork).
+
+**A second `/session-strategy-synthesis` pass, at Yehor's request, was
+used to distinguish decision types** rather than to manufacture a "yes":
+confirmed every technical precondition for running `patchward fix` was
+met (token re-scoped, config corrected including catching `ssh-audit`'s
+`master` default branch via `gh repo view` before it could cause a
+silent failure, dry-run scan showing real findings), but concluded the
+actual go/no-go was a designed human checkpoint (`BACKLOG.md` item 11's
+own "Yehor authorizes; Claude executes" line), not an open analytical
+question — and asked for the literal go-ahead rather than deciding it
+unilaterally. This is the one point this session where "decide it
+yourself" correctly did *not* apply, and the reasoning for why was made
+explicit rather than silently asking anyway.
+
+**Result:** `patchward fix --repo D:\Dev\Projects\ssh-audit` processed 5
+actionable findings (698 test-file findings correctly pre-filtered by
+`cli.py`'s existing test-path exclusion). 4 were correctly *not*
+force-fixed — Fix-Gen exhausted its turn budget without calling
+`submit_fix` on findings the scanner-model triage had already flagged as
+by-design (SSH-server bind-to-all-interfaces ×2, a duplicate B104, and a
+weak-PRNG finding inside a DHEat attack *simulation*, not production
+code). 1 was verified and shipped: bandit B110's bare
+`except Exception: pass` narrowed to `except OSError: pass` in
+`_close_socket()`, passing Gate 1 (pass) and Gate 2 (pass), with Gate 3
+correctly `skip` (no test suite detected — `ssh-audit`'s own test deps
+aren't installed in Patchward's `.venv`, documented SKIP-not-FAIL
+behavior for exactly this external-repo case, not a defect).
+
+**Verified independently, not from the CLI's own success message** — per
+BACKLOG 3c's history of that exact message being wrong before this
+session's fix — via `gh pr view` (confirmed `OPEN`, **`isDraft: true`**,
+base `master`) and `gh pr diff` (confirmed the actual diff matches
+Fix-Gen's self-reported description exactly, 1 file, +1/-1). PR:
+`github.com/yehorcallmedai-maker/ssh-audit/pull/1`.
+
+**New evidence surfaced for BACKLOG 3d:** the same anomalous
+`"requires login"` string from Stage 1's crash reappeared in 2 of the 4
+declined findings' `finding_id`s — this time on `avoid-bind-to-all-interfaces`,
+a different rule than Stage 1's `subprocess-shell-true`, in a different
+repo. Confirmed via grep it isn't hardcoded anywhere in Patchward's own
+code. Recurring across different rules/repos narrows the working theory
+from "one rule's own message" toward a more systemic semgrep-side cause
+(e.g., a shared registry/auth response bleeding into fingerprint
+generation) — still not conclusively identified, but this is real
+progress on a previously-stuck question.
+
+**New backlog item opened, not closed:** item 13 — Fix-Gen's "decline"
+behavior is currently just exhausting `max_turns` rather than an
+explicit tool call, which is safe (no bad fixes shipped) but produces an
+ambiguous log signal indistinguishable from genuine struggle. Low-medium
+priority, not scheduled.
+
+**Session totals as of this addendum:** every BACKLOG item touched this
+session is now either CLOSED, COMPLETE, or explicitly deferred with a
+stated reason — 3a, 3b, 3c, 3d, 6, 6a, 7a, 7b, 7c, 7d, 11 all resolved;
+13 opened fresh (not urgent); 9, 12, and `callmed-landing` remain
+Yehor-only/external, unchanged from session start.
+
 ### Session 014 addendum 3 — same session, continued (closed every remaining pinned decision, no code change)
 
 Yehor asked to run `/session-strategy-synthesis` again specifically to

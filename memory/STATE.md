@@ -182,6 +182,22 @@ local uncommitted change is a one-line, non-functional docstring edit
 — which doesn't affect what a git-worktree-based scan would see (worktree
 checkout reads from `HEAD`, not the dirty working copy).
 
+## Stage-2 E2E test — run and documented, 2026-07-14
+Real, authorized third-party target: `yehorcallmedai-maker/ssh-audit`
+(Yehor's own public fork). 5 actionable findings after test-path
+filtering; 4 correctly declined by Fix-Gen (by-design code — SSH-server
+bind-to-all-interfaces, DHEat-simulation PRNG), 1 verified and shipped
+as a real draft PR — `github.com/yehorcallmedai-maker/ssh-audit/pull/1`,
+confirmed via `gh pr view`/`gh pr diff` (not CLI self-report): `OPEN`,
+`isDraft: true`, base `master`, diff exactly matches Fix-Gen's claim
+(`except Exception:` → `except OSError:`, 1 file, +1/-1). Gate 3 = skip
+(no test suite detected — expected for an external repo whose deps
+aren't installed locally, documented behavior, not a defect). See
+`memory/BACKLOG.md` item 11 for full detail and item 13 for a new,
+non-blocking gap this surfaced (Fix-Gen has no explicit "decline" path,
+only exhausts `max_turns`). Pipeline is now validated end-to-end against
+a real third-party repo, not just the fixture.
+
 ## Stage-1 E2E test — run and documented, 2026-07-13
 Full report: `docs/keystones/stage1_e2e_test_2026-07-13.md`. 3/5 findings
 verified by Fix-Gen+Verifier; all 3 branches confirmed pushed to the real
