@@ -28,34 +28,48 @@ file is written, treat it as stale until explicitly redone.
 
 1. **Confirm `main`'s SHA fresh.** Last known-good, independently
    verified via `git ls-remote origin main` at the actual close of this
-   pass (SHA will be confirmed in the commit that lands this file —
-   check `git log -1` on Yehor's machine and treat that as authoritative,
-   not this file's own claim). Confirmed matching local HEAD on Yehor's
-   machine the same session. Re-check anyway.
-2. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`,
+   session: `7225a12fba859e0f61e6b70e956ef491cba5b87d`. Confirmed
+   matching local HEAD on Yehor's machine, `git ls-remote`, and a fresh
+   independent sandbox `git log` — three methods, same session, all
+   agreed. Re-check anyway; this file's own claims have gone stale
+   mid-session before (see the Drift note above and Session 013/014's
+   logs).
+2. **Check for a stuck `.git/index.lock` / `.git/objects/maintenance.lock`
+   before your first git command.** The sandbox's own mount shows both
+   present as of this session's close (0-byte files, consistent with
+   the known quirk documented in `BACKLOG.md`'s "Deferred, not
+   forgotten" section — a mount permission boundary, not real
+   corruption, seen self-resolving in Sessions 012 and 013). **This has
+   not been confirmed as actually blocking anything on Yehor's real
+   machine** — check `git status` there first. If it genuinely blocks a
+   real git command: `Remove-Item .git\index.lock -Force` (and the
+   `maintenance.lock` equivalent if needed) on Yehor's own machine, per
+   the established pattern. Don't assume it's already resolved just
+   because it has been twice before.
+3. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`,
    cheap and authoritative. Last confirmed OK 2026-07-14 (re-checked live
    during this strategy pass, not just re-cited from memory).
-3. **Confirm `.venv` still works** — last confirmed OK by Yehor directly
+4. **Confirm `.venv` still works** — last confirmed OK by Yehor directly
    on his own machine 2026-07-14. Re-check anyway; rebuild only if it
    actually fails (`Remove-Item -Recurse -Force .venv` then
    `uv sync --all-extras`).
-4. **Re-run the full test suite before trusting it.** Last real number:
+5. **Re-run the full test suite before trusting it.** Last real number:
    **441 passed, 2 skipped, 90.31% coverage**, from BACKLOG 7b's fix
    (Yehor's `.venv`, real machine, this session's final test run). Any
    session after this one should still re-confirm rather than cite this
    number cold.
-5. **This sandbox's `git status`/`git diff` (working-tree comparisons)
+6. **This sandbox's `git status`/`git diff` (working-tree comparisons)
    cannot be trusted at all** — unchanged from prior sessions. `git
    log`/`git ls-remote` (ref/object reads) remain trustworthy. Restrict
    sandbox git usage to those two.
-6. **Sandbox file reads can also be stale on recently-edited files** —
+7. **Sandbox file reads can also be stale on recently-edited files** —
    confirmed this session (`cli.py` served truncated/days-old from the
    bash mount while `verifier.py` synced fine same session — file-specific,
    not universal). Trust the Read tool's view; verify compile/tests on
    Yehor's real machine, not the sandbox.
-7. **Don't trust a tool's self-reported description of what it did —
+8. **Don't trust a tool's self-reported description of what it did —
    check the actual artifact.**
-8. **PowerShell heredoc paste is unreliable on this machine for
+9. **PowerShell heredoc paste is unreliable on this machine for
    multi-line strings** (backticks/parens/colons, or plain multi-line
    `if/elseif/else`). Confirmed multiple times this session in both
    forms. **Working pattern:** base64-encode the text in the sandbox
