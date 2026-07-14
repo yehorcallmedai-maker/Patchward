@@ -1,18 +1,49 @@
-[anthropic]
-# Your Anthropic API key. Set here or via ANTHROPIC_API_KEY env var.
-# Get one at: https://console.anthropic.com
-api_key = ""
+# Patchward configuration template — copy this file to patchward.toml
+# and fill in your values.
+#
+# Sections read by config.py's load_config(): [patchward], [github],
+# [batch], [models], [verifier], [fix_gen], and [[repos]] (all
+# top-level — none of them nest inside another). There is no
+# [anthropic] section; see the note under [patchward] below. Any
+# section or field not in this list is silently ignored, not an
+# error — a typo here will not fail loudly.
+
+[patchward]
+# Path to the repository to scan (override with --repo flag).
+# REQUIRED — no default. load_config() hard-fails at startup if this
+# path does not exist on disk.
+repo_path = "/absolute/path/to/your/repo"
+
+# Semgrep ruleset to apply.
+semgrep_rules = "p/python"
+
+# SQLite state store path (relative to project root).
+db_path = "runs/state.db"
+
+# Langfuse OTel tracing (cloud free tier) — optional.
+# Set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY as environment
+# variables if tracing_enabled is true; they are not set in this file.
+langfuse_host = "https://cloud.langfuse.com"
+tracing_enabled = true
+
+# Your Anthropic API key. There is NO separate [anthropic] section —
+# set this via the ANTHROPIC_API_KEY environment variable instead
+# (recommended; keeps the key out of this file and out of version
+# control), or uncomment the line below to set it directly here.
+# anthropic_api_key = ""
 
 [github]
 # GitHub repository to open PRs against (single-repo mode).
-# In multi-repo mode, use [[repos]] entries below instead.
+# In multi-repo mode, use [[repos]] entries below instead — each
+# entry overrides these defaults field-by-field.
 owner = "your-github-username"
 repo = "your-repo-name"
 base_branch = "main"
 
 [batch]
-# Maximum number of repos processed concurrently.
-# Default 3 is conservative for Anthropic Tier 1 rate limits.
+# Maximum number of repos processed concurrently (asyncio.Semaphore).
+# Default 3 is conservative for Anthropic Tier 1 rate limits
+# (~40k TPM for Sonnet; 3 concurrent Fix-Gen calls ~= 12k TPM).
 # Raise to 5-10 if you have Tier 2+ API access.
 max_concurrent = 3
 
@@ -22,34 +53,37 @@ max_concurrent = 3
 max_findings_per_repo = 5
 
 [models]
-# Model used for scanner triage (read-only, cheap).
+# Model used for scanner triage and Gate 1 rescans (fast/cheap).
 scanner_model = "claude-haiku-4-5-20251001"
 
-# Model used for fix generation and verification.
-# Opus is automatically used for HIGH/CRITICAL severity findings.
+# Model used for Fix-Gen and Gate 2/3 semantic reasoning.
+# Override per-run with: patchward fix --model <string>
 fix_model = "claude-sonnet-4-6"
 
 [verifier]
-# Timeout in seconds for scanner re-runs in Gate 1.
+# Timeout in seconds for scanner re-runs in Gate 1 and the test-suite
+# run in Gate 3.
 timeout_seconds = 120
 
-# Maximum lines a fix is allowed to touch outside the
-# vulnerability range. Import-block edits are always permitted.
-# Set to 0 for strict mode (vulnerability lines only).
-max_out_of_bounds_lines = 0
+[fix_gen]
+# Maximum agentic turns Fix-Gen is allowed before giving up on a
+# finding. Reaching this limit is a clean failure (no branch
+# persisted) — not a sign anything is broken.
+max_turns = 10
 
-# [[repos]] — multi-repo mode. Remove [github] section above
-# when using this. Each entry overrides [github] defaults
-# for that specific repo.
+# [[repos]] — multi-repo mode (ADR-022). Add one entry per repository.
+# Remove or ignore [github] above if every repo sets owner/repo itself;
+# otherwise [github]'s values are used as the default for any field an
+# entry omits. Only 'path' is required per entry if [github].owner and
+# [github].repo are set.
 #
 # [[repos]]
-# path = "/absolute/path/to/your/repo"
-# owner = "your-github-username"
-# repo = "your-repo-name"
-# base_branch = "main"
+# path        = "/absolute/path/to/repo-alpha"
+# owner       = "your-github-username"   # optional if set in [github]
+# repo        = "repo-alpha"
+# base_branch = "main"                   # optional, defaults to [github].base_branch
 #
 # [[repos]]
-# path = "/absolute/path/to/another/repo"
-# owner = "your-github-username"
-# repo = "another-repo-name"
+# path        = "/absolute/path/to/repo-beta"
+# repo        = "repo-beta"              # inherits owner from [github]
 # base_branch = "develop"

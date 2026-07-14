@@ -186,17 +186,40 @@ already done — do not re-implement it. Real remaining items:
 **Owner:** Claude (agent) for implementation, Yehor reviews line-by-line
 per BUILD_PLAN §2's security-boundary rule.
 
-## 6a. Fix `patchward.toml.example` (Phase 7 distribution deliverable)
+## 6a. Fix `patchward.toml.example` (CLOSED 2026-07-14, pending commit)
 **WSJF: medium — real defect in a committed, user-facing artifact, cheap
-to fix.** The example config that shipped in ADR-025/Phase 7 has no
+to fix.** The example config that shipped in ADR-025/Phase 7 had no
 `[patchward]` section and no `repo_path` field at all (the single most
 critical required field for single-repo mode), plus a nonfunctional
 `[anthropic]` section that doesn't match `config.py`'s actual schema
 (`anthropic_api_key` comes from the env var, not a toml section). A new
 user following this template would hit the exact same hard config-load
-failure this session found and fixed in the real `patchward.toml`. Found
-2026-07-13 while preparing the Stage-1 E2E test; see `memory/STATE.md`.
-**Owner:** Claude (agent) to rewrite, Yehor to review.
+failure Session 013 found and fixed in the real `patchward.toml`. Found
+2026-07-13 while preparing the Stage-1 E2E test.
+
+**Rewritten 2026-07-14.** Direct read of `config.py` surfaced a third,
+previously uncatalogued defect in the same file: the old example
+documented `max_out_of_bounds_lines` under `[verifier]`, a field that
+does not exist on `VerifierConfig` at all — pydantic's default
+`extra='ignore'` behavior means this was always silently dropped, a
+phantom option that looked configurable but did nothing. New version:
+adds the required `[patchward]` section with `repo_path` front and
+center and a clear "REQUIRED, no default" comment; removes the bogus
+`[anthropic]` section, replacing it with an in-context comment on
+`anthropic_api_key` (env var recommended, toml override documented);
+removes `max_out_of_bounds_lines`; adds the previously-undocumented
+`[fix_gen]` section (`max_turns`, real schema, has a default but worth
+surfacing). Top-level section structure (`[patchward]`, `[github]`,
+`[batch]`, `[models]`, `[verifier]`, `[fix_gen]`, `[[repos]]` — none
+nested) now matches `config.py`'s actual `load_config()` exactly.
+
+**Verified, not just eyeballed:** copied `config.py` and the new
+example into an isolated sandbox venv, filled in only `repo_path` (the
+one edit the file's own instructions ask a new user to make), and ran
+the real `load_config()` against it end to end — every field resolved
+correctly, including the `[[repos]]` single-repo fallback list, no
+`ValidationError`. **Owner:** Claude (agent) rewrote; Yehor to review
+before commit.
 
 ## 6. `docs/architecture/patchward-webhook-billing-design.md` decision
 **WSJF: low, but cheap to resolve.** Three KS-TRACE code comments cite this
