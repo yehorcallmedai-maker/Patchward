@@ -6,11 +6,12 @@
 GitHub App authentication: JWT signing and Installation Access Token
 exchange.
 
-This is the actual trust mechanism the Marketplace build plan (P1.3 in
-docs/architecture/patchward-webhook-billing-design.md) calls out as the
-answer to enterprise due diligence — every scan run uses a token scoped
-to exactly one installation, valid for at most one hour, generated fresh
-from the App's private key rather than a long-lived PAT.
+This is the actual trust mechanism this project's GitHub App +
+Marketplace billing model (ADR-030 in memory/architectural_decisions.md)
+relies on as the answer to enterprise due diligence — every scan run
+uses a token scoped to exactly one installation, valid for at most one
+hour, generated fresh from the App's private key rather than a
+long-lived PAT.
 
 Nothing in this module touches disk for the private key. The key is read
 once from an environment variable at process start (set as a platform

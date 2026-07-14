@@ -1,6 +1,6 @@
 # KS-TRACE: P1-WEBHOOK-02 | assumption: SQLite is sufficient for v0
-# install/billing-state volume (per docs/architecture/
-# patchward-webhook-billing-design.md §6d: narrow v0 before a
+# install/billing-state volume (see ADR-030 in
+# memory/architectural_decisions.md — narrow v0 before a
 # managed Postgres migration) | test: test_installations_db.py
 """
 Persistence for GitHub App installations, their installed repos, and
@@ -10,8 +10,9 @@ Mirrors the style of db.py (stdlib sqlite3, explicit DDL, a bumped
 SCHEMA_VERSION for migrations) rather than introducing a new ORM or
 a Postgres dependency for the first version of the webhook service.
 Swapping this module out for a Postgres-backed one later (once install
-volume justifies it — see design doc §6b) should not require changing
-webhook.py's call sites, only this file's internals.
+volume justifies it — see ADR-030 in memory/architectural_decisions.md)
+should not require changing webhook.py's call sites, only this file's
+internals.
 """
 from __future__ import annotations
 

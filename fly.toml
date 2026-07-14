@@ -1,5 +1,5 @@
 # Fly.io deployment config for the webhook receiver.
-# KS-TRACE: P1-WEBHOOK-05 — see docs/architecture/patchward-webhook-billing-design.md §2
+# KS-TRACE: P1-WEBHOOK-05 — see ADR-029 in memory/architectural_decisions.md
 #
 # This deploys ONLY src/patchward/webhook.py (via docker/webhook.Dockerfile).
 # It does not replace the local CLI (patchward scan|fix|batch), which keeps

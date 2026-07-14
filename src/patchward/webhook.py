@@ -4,15 +4,15 @@
 """
 GitHub App + Marketplace webhook receiver.
 
-This is the v0 scope agreed in docs/architecture/patchward-webhook-billing-
-design.md: a single receiver that (a) verifies every inbound webhook's
+This is the v0 scope (see ADR-030 in memory/architectural_decisions.md):
+a single receiver that (a) verifies every inbound webhook's
 signature before touching the payload, (b) keeps installation/repo/
 purchase state in installations_db.py, and (c) triggers the existing
 scan -> fix-gen -> verify -> PR pipeline (pipeline.run_repo_pipeline) for
 a repo using a freshly-minted, 1-hour Installation Access Token instead
 of a long-lived PAT.
 
-Deliberately NOT in this version (see design doc §6d):
+Deliberately NOT in this version (see ADR-030):
   - A real task queue. Scan runs are dispatched via FastAPI's
     BackgroundTasks, which is fine for a handful of installations but
     will need to move to a proper queue (e.g. Redis + arq, or SQS) once

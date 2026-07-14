@@ -262,20 +262,75 @@ correctly, including the `[[repos]]` single-repo fallback list, no
 `ValidationError`. **Owner:** Claude (agent) rewrote; Yehor to review
 before commit.
 
-## 6. `docs/architecture/patchward-webhook-billing-design.md` decision
-**WSJF: low, but cheap to resolve.** Three KS-TRACE code comments cite this
-file by path; it does not exist in the repo. Either recreate it from the
-now-written ADR-028/ADR-030 content, or scrub the dead references so future
-readers don't go looking for a file that isn't there.
-**Owner:** Claude (agent), Yehor picks which option.
+## 6. `docs/architecture/patchward-webhook-billing-design.md` decision (CLOSED 2026-07-14 — scrubbed, not recreated)
+**Decision: scrub, don't recreate.** ADR-028 and ADR-030 (the two
+decisions this phantom file would have covered — FastAPI/Uvicorn/PyJWT
+webhook stack, and the GitHub App + Marketplace billing model) each
+explicitly state they were "reconstructed... no separate design doc
+found in the repo" — meaning the ADRs already are the complete,
+canonical record of the facts this file would have contained. Writing
+a new `docs/architecture/` file with the same information would create
+a second source of truth for the same decisions, with no mechanism to
+keep them in sync if either is amended later — exactly the kind of
+drift this project's ADR-immutability convention and the State
+Reconstruction Audit exist to prevent. Recreating the doc would also
+just be citation-satisfying theater: it produces no new information,
+only a second copy of what ADR-028/029/030 already say.
 
-## 7. `project_open_tasks.md` reconciliation
-**WSJF: low.** File still ends "PROJECT COMPLETE — RepoMend v0.1.0",
-last updated 2026-06-23, no mention of the rename or webhook work. Two
-options: fold remaining open items into this BACKLOG.md and archive the
-old file as RepoMend-era history, or keep maintaining it separately. Needs
-an explicit decision, not further drift.
-**Owner:** Yehor to decide, Claude to execute either way.
+**Done:** all three KS-TRACE comments citing the dead path
+(`installations_db.py` L1-4, `github_app_auth.py` L9-10, `fly.toml`
+L2) rewritten to point at the correct ADR in
+`memory/architectural_decisions.md` instead. Note on `fly.toml`
+specifically: ADR-029 already documents that `flyctl deploy`
+regenerates this file and strips hand-written comments unless manually
+restored — this fix may not be durable across the next deploy, same
+known fragility as the rest of that file's comments, not a new risk
+introduced here.
+
+**Owner:** Claude (agent) decided and implemented, pending Yehor's
+review/commit like everything else this session.
+
+## 7. `project_open_tasks.md` reconciliation (CLOSED 2026-07-14 — folded and archived)
+**Decision: fold + archive**, not keep maintaining separately.
+Rationale: the file is ~95% a fully-signed-off historical record
+(Phases 0-7, all `[x]`), ends "PROJECT COMPLETE — RepoMend v0.1.0", and
+points at `D:\Dev\Projects\RepoMend` — a directory that no longer
+exists post-rename. `BACKLOG.md` has already functioned as this
+project's sole active task tracker all session; maintaining two
+parallel tracking files with no clear boundary between them is exactly
+the dual-source-of-truth risk the State Reconstruction Audit exists to
+eliminate.
+
+**Done:** archive banner added to the top of `project_open_tasks.md`
+marking it historical, pointing to `BACKLOG.md` as the active tracker.
+Of its unchecked items: `D-P5-01` (confirm end-to-end PR creation with
+a working `GITHUB_TOKEN`) is already substantively covered by items 3b
+and 18 below — not duplicated. `KL-P6-01`, the `conftest.py`
+`load_dotenv()` call, and two forward-looking Phase 6/7 placeholder
+bullets were all confirmed already implemented elsewhere in that same
+file (checkboxes just never flipped) — no action needed. Two items had
+no equivalent anywhere in current `BACKLOG.md` and are folded forward
+as 7a/7b below, explicitly flagged as pre-pivot ideas rather than
+freshly-scoped priorities.
+**Owner:** Claude (agent) decided and executed; Yehor reviews per usual.
+
+## 7a. Structured PR template (folded from `project_open_tasks.md` KS-P5-04)
+**WSJF: unscored — relevance not reconfirmed.** Pre-rename RepoMend-era
+idea (2026-06-22): PR body should carry intent, diff summary, risk
+class, and evidence/test-log links — five gates per PR. Never
+implemented; not superseded by anything found in the current codebase
+during this session's reading of `pr_publisher.py`. Whether this still
+matters given the product's pivot toward a GitHub App/Marketplace model
+(ADR-030) rather than the original CLI-first roadmap is an open
+question — flagged here rather than silently dropped, not asserted as
+still a priority. **Owner:** Yehor to decide if/when to prioritize.
+
+## 7b. Risk-class escalation routing (folded from `project_open_tasks.md` KS-P5-05)
+**WSJF: unscored — relevance not reconfirmed.** Same provenance and
+same caveat as 7a: pre-rename idea (low/medium/high risk-class routing
+for fixes), never implemented, not found superseded elsewhere, relevance
+to the current product direction unconfirmed. **Owner:** Yehor to decide
+if/when to prioritize.
 
 ## 8. callmed-landing rename
 **WSJF: low-medium, near-zero job size, zero downstream dependency.**

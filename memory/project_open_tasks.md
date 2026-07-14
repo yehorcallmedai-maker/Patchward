@@ -1,6 +1,30 @@
 # RepoMend — Open Tasks
 _Last updated: 2026-06-23_
 
+---
+**ARCHIVED 2026-07-14 (BACKLOG item 7).** This file is a historical
+record of the pre-rename RepoMend v0.1.0 build (Phases 0-7, all signed
+off by Yehor). It predates the 2026-07-07 rename to Patchward and the
+subsequent GitHub App/Marketplace product pivot (ADR-030), and its
+final line still points at `D:\Dev\Projects\RepoMend`, a directory that
+no longer exists. **Active task tracking has been `memory/BACKLOG.md`
+since this session** — do not treat anything below as a live task list.
+
+Two items below were still unchecked and not already covered anywhere
+in the current `BACKLOG.md`; they've been folded forward as BACKLOG
+items 13/14, explicitly flagged as pre-pivot ideas whose relevance to
+the current GitHub-App-focused product has not been reconfirmed (do
+not treat them as freshly-scoped current priorities just because
+they're now in the active backlog). One other unchecked item
+(`D-P5-01`, confirming end-to-end PR creation with a working
+`GITHUB_TOKEN`) is already substantively covered by today's live
+BACKLOG items 3b/Stage 2 — not duplicated here. The remaining
+unchecked items (`KL-P6-01` multi-finding batching, the `conftest.py`
+`load_dotenv()` call, and two forward-looking `Phase 6`/`Phase 7`
+placeholder bullets) were confirmed already done elsewhere in this same
+file — just never had their checkboxes flipped — and needed no action.
+---
+
 ## Phase 0 — COMPLETE ✅ (Keystone Report approved by Yehor 2026-06-10)
 
 - [x] KS-P0-01: Phase 0 INTAKE contract — SIGNED

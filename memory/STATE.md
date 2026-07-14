@@ -106,19 +106,25 @@ not a different environment. **Action item for future sessions:** rebuild
   happened** — Tier 0 (absence confirmed by file read, no CI job found for
   it) — 2026-07-13 — agent. Open item, see BACKLOG.md.
 
-## Known documentation gap
-`src/patchward/github_app_auth.py`, `installations_db.py`, and
-`webhook.py` all cite `docs/architecture/patchward-webhook-billing-design.md`
-by path in KS-TRACE header comments (e.g. "P1.3 in
-docs/architecture/patchward-webhook-billing-design.md"). **This file does
-not exist in the repo** — `docs/architecture/` directory is absent —
-confirmed via `ls docs/architecture` (No such file or directory) — Tier 0 —
-2026-07-13 — agent. Either the design doc was written outside version
-control and never committed, or the KS-TRACE comments were written
-speculatively and the doc never materialized. Not blocking — the code
-itself is self-documenting enough to have reconstructed ADR-028/030 from
-git archaeology alone — but worth a decision: recreate the doc from the
-ADRs, or scrub the dead references. Flagged in BACKLOG.md.
+## Known documentation gap — RESOLVED 2026-07-14 (scrubbed, not recreated)
+`src/patchward/github_app_auth.py`, `installations_db.py`, `webhook.py`,
+and `fly.toml` cited `docs/architecture/patchward-webhook-billing-design.md`
+by path — five total citations across four files, not the three
+originally counted (the earlier "three" figure missed `fly.toml`'s and
+undercounted `installations_db.py`, which had two separate citations).
+This file never existed in the repo — `docs/architecture/` directory is
+absent — confirmed via `ls docs/architecture` (No such file or
+directory) — Tier 0 — 2026-07-13 — agent.
+
+**Decision (2026-07-14):** scrub, don't recreate. ADR-028 and ADR-030
+each explicitly document that they were reconstructed from git
+archaeology *because* no separate design doc was found — meaning the
+ADRs already are the canonical, complete record of what this file would
+have said. A recreated `docs/architecture/` file would just be a second
+copy of the same facts, with no mechanism to stay in sync if either ADR
+is later amended. All five citations rewritten to point at
+`memory/architectural_decisions.md`'s ADR-029/ADR-030 instead of the
+dead path. See `memory/BACKLOG.md` item 6 for full reasoning.
 
 ## PyPI Trusted Publisher CI
 `.github/workflows/publish.yml` exists — triggers on GitHub Release
@@ -194,9 +200,19 @@ wider exposure.
 
 ## Known UNVERIFIED (do not treat as fact until promoted)
 - Full test suite count/coverage post-rename — needs Yehor to run on Windows
-- `fly.toml` restore — approved, not yet executed
-- Whether the `docs/architecture/patchward-webhook-billing-design.md`
-  gap is a real loss or a speculative reference that was never fulfilled
+  (RESOLVED 2026-07-13/14: 421 then 439 passed on Yehor's real machine
+  across this session and the next — see Tests section above and
+  BACKLOG 3a/3c/3d)
+- `fly.toml` restore — this line was stale: BACKLOG item 2 already
+  closed this 2026-07-13 as a false positive (no restore was ever
+  needed; Yehor's own `git status`/`diff` showed the file was never
+  modified). Left uncorrected until now — caught while touching this
+  section for an unrelated reason, not itself investigated fresh.
+- `docs/architecture/patchward-webhook-billing-design.md` — RESOLVED
+  2026-07-14: decision made to scrub references rather than recreate
+  (see BACKLOG item 6). The "real loss vs. speculative reference"
+  question is now moot either way, since the resolution doesn't depend
+  on which explanation is true.
 - PyPI-side Trusted Publisher configuration status
 - ClinInsight/Databutton LinkedIn DM replies (carried from Session 012,
   still unconfirmed, no tool access to check)
