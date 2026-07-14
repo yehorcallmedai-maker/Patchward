@@ -169,6 +169,20 @@ rounds of drift accumulate. Somewhere between those extremes.
       from Stage 2. Not reverted to the fixture — low-stakes since it's
       local-only, but worth knowing before assuming a future `patchward
       scan`/`fix` invocation targets the fixture by default.
+- [x] **PR #1 on `ssh-audit` — squash-merged, branch deleted.** Was
+      draft (ADR-019); `gh pr merge` initially failed as expected
+      ("still a draft"), resolved via `gh pr ready` then `gh pr merge
+      --squash --delete-branch`. Stage 2's full loop (scan → fix →
+      verify → push → PR → human review → merge) is now complete.
+- [x] **`future-agi-contribution/` directory — relocated, not a
+      Patchward concern.** Was a separate, actively-managed OSS-
+      contribution project's working directory (own `.strategy/
+      STRATEGY.md`), nested inside Patchward's tree by circumstance —
+      untracked by Patchward's git throughout, verified via direct file
+      read as genuine (not an error/security concern). Moved to
+      `D:\Dev\Projects\future-agi-contribution` — verified gone from
+      Patchward's tree via `Test-Path`. That project continues in its
+      own session; no further action here.
 
 Full detail and WSJF ordering for all of the above: `memory/BACKLOG.md`.
 

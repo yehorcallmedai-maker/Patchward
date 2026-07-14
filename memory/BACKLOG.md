@@ -481,6 +481,36 @@ identified, but narrowed.
 **Owner:** Yehor authorized, Claude executed — result reviewed together
 with independent verification at each step.
 
+**Post-close-out follow-up (same day):** PR #1 sat as a draft after the
+Stage 2 run — per ADR-019/ADR-003 (always draft, never auto-merge),
+merging is a deliberate human action, not something the pipeline does.
+Re-verified the diff was still unchanged via a third, independent method
+(`patch-diff.githubusercontent.com`, distinct from both `gh pr view` and
+the GitHub API) before recommending merge — Yehor's own repo, no
+external stakeholder, fix confirmed correct, no reason to leave it open
+indefinitely. `gh pr merge` initially failed ("Pull Request is still a
+draft" — expected, GitHub blocks merging drafts directly); resolved via
+`gh pr ready` then `gh pr merge --squash --delete-branch`. Squash-merged,
+branch deleted. Stage 2's full loop (scan → fix → verify → push → PR →
+human review → merge) is now complete end to end, not just up through
+PR creation.
+
+**Unrelated housekeeping caught in the same pass:** a `future-agi-contribution/`
+directory was found nested inside Patchward's folder tree (untracked by
+this repo's git throughout the session — correctly isolated, never
+staged). Verified via direct file read: it's a genuine, separate,
+actively-managed project (an OSS contribution effort to
+`future-agi/future-agi`, with its own `.strategy/STRATEGY.md` memory and
+session history) that happened to be created inside Patchward's
+directory rather than its own. Not a Patchward concern content-wise —
+duplicating analysis of it here would risk exactly the
+dual-source-of-truth problem this project's own conventions exist to
+avoid (same pattern as `project_open_tasks.md` vs `BACKLOG.md`).
+Relocated to `D:\Dev\Projects\future-agi-contribution` (verified via
+`Test-Path`: gone from Patchward's tree, present with its memory intact
+at the new location) — no other action taken, that project continues in
+its own session.
+
 ## 13. Fix-Gen lacks an explicit "not a real issue, decline" path (NEW, LOW-MEDIUM — surfaced by Stage 2)
 **WSJF: low-medium — real gap, not urgent.** Stage 2 showed Fix-Gen
 correctly avoiding bad fixes on 4 by-design findings, but the *mechanism*
