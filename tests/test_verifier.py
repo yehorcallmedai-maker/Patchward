@@ -9,7 +9,8 @@ Tests for patchward.verifier (Phase 4 — KS-P4-02).
 Test organisation:
   Structural (AC-P4-01)         — 2 tests
   Gate 1 unit (AC-P4-02/03)     — 4 tests
-  Gate 2 unit (AC-P4-04/05)     — 6 tests
+  Gate 2 unit (AC-P4-04/05)     — 8 tests
+  _removed_import_still_referenced unit (BACKLOG 3a) — 8 tests
   Gate 3 unit (AC-P4-06/07)     — 5 tests
   False positive (AC-P4-08/09)  — 3 tests
   Run log dict (AC-P4-10)       — 2 tests
@@ -337,6 +338,120 @@ class TestGate2DiffInBounds:
                 line_end=8,
             )
         assert result.status == FAIL
+
+    def test_gate2_fail_when_removed_import_still_referenced(self, tmp_path):
+        """
+        BACKLOG 3a regression — reproduces the 2026-07-13 Stage-1 defect:
+        Fix-Gen deleted `import subprocess` (the flagged bandit B404 line)
+        while `subprocess.run(...)` remained live elsewhere in the same
+        file. Gate 2 previously PASSED this outright because the deleted
+        line fell inside the nominal vuln range ([1, 1]) and any import-
+        statement removal was unconditionally exempted. Must now FAIL.
+        """
+        pre = "import subprocess\n\n\n\nsubprocess.run(cmd, shell=True)\n"
+        post = "import shlex\n\n\n\nsubprocess.run(cmd, shell=True)\n"
+        wt = self._make_worktree(tmp_path, pre, post)
+
+        with patch("subprocess.run", return_value=self._mock_git_show(pre)):
+            v = Verifier()
+            result = v._gate_2_diff_in_bounds(
+                worktree_path=wt,
+                file_path="file.py",
+                line_start=1,
+                line_end=1,
+            )
+        assert result.status == FAIL, (
+            "Gate 2 must reject an import removal whose bound name is "
+            "still referenced elsewhere in the post-edit file, even when "
+            "the removal happens on the flagged vulnerability line itself "
+            f"(got {result.status}: {result.reason})"
+        )
+
+    def test_gate2_pass_when_removed_import_genuinely_unused(self, tmp_path):
+        """
+        Contrast case for the BACKLOG 3a fix: removing an import that has
+        zero remaining references anywhere in the post-edit file is a
+        legitimate fix (the true-positive B404 case) and must still PASS —
+        the new check must not reject every import removal, only unsafe ones.
+        """
+        pre = "import subprocess\nx = 1\n"
+        post = "x = 1\n"
+        wt = self._make_worktree(tmp_path, pre, post)
+
+        with patch("subprocess.run", return_value=self._mock_git_show(pre)):
+            v = Verifier()
+            result = v._gate_2_diff_in_bounds(
+                worktree_path=wt,
+                file_path="file.py",
+                line_start=1,
+                line_end=1,
+            )
+        assert result.status == PASS, (
+            f"Genuinely-unused import removal should still PASS, got "
+            f"{result.status}: {result.reason}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# _removed_import_still_referenced — BACKLOG 3a unit tests
+# ---------------------------------------------------------------------------
+
+class TestRemovedImportStillReferenced:
+    """
+    Direct unit tests for the AST-based helper added to close BACKLOG 3a.
+    Covers the conservative fallback paths as well as the common cases,
+    since a false "not referenced" verdict here is exactly the failure
+    mode this fix exists to prevent.
+    """
+
+    def test_returns_false_when_name_unused(self):
+        assert Verifier._removed_import_still_referenced(
+            "import subprocess", "x = 1\n"
+        ) is False
+
+    def test_returns_true_when_name_still_used(self):
+        assert Verifier._removed_import_still_referenced(
+            "import subprocess", "subprocess.run(['ls'])\n"
+        ) is True
+
+    def test_respects_alias_bound_name_not_original(self):
+        """`import subprocess as sp` binds `sp`, not `subprocess`."""
+        assert Verifier._removed_import_still_referenced(
+            "import subprocess as sp", "sp.run(['ls'])\n"
+        ) is True
+        assert Verifier._removed_import_still_referenced(
+            "import subprocess as sp", "subprocess.run(['ls'])\n"
+        ) is False
+
+    def test_from_import_multiple_names(self):
+        assert Verifier._removed_import_still_referenced(
+            "from os import path, sep", "print(path.join('a'))\n"
+        ) is True
+        assert Verifier._removed_import_still_referenced(
+            "from os import path, sep", "x = 1\n"
+        ) is False
+
+    def test_star_import_is_conservative(self):
+        """Bound names can't be enumerated -> assume still referenced."""
+        assert Verifier._removed_import_still_referenced(
+            "from os import *", "x = 1\n"
+        ) is True
+
+    def test_unparseable_import_line_is_conservative(self):
+        assert Verifier._removed_import_still_referenced(
+            "not a valid import (((", "x = 1\n"
+        ) is True
+
+    def test_unparseable_post_file_is_conservative(self):
+        assert Verifier._removed_import_still_referenced(
+            "import subprocess", "def broken(:\n"
+        ) is True
+
+    def test_non_import_statement_is_conservative(self):
+        """Defensive: if the "import line" isn't actually one, don't guess."""
+        assert Verifier._removed_import_still_referenced(
+            "x = 1", "x = 1\n"
+        ) is True
 
 
 # ---------------------------------------------------------------------------

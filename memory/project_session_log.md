@@ -898,3 +898,76 @@ meantime, but Stage 2 and Mirror Pass Tier 2 specifically stay blocked.
 **Next session starts at:**
 See `memory/NEXT_SESSION_START.md` — read that file first (regenerated
 same session as this entry, reflects current verified state).
+
+---
+
+## Session 014 — 2026-07-14 (Verifier gate gap — decision + implementation drafted)
+
+**Status:** In progress, session not closed. Housekeeping re-verified
+fresh (main SHA had drifted two commits past `NEXT_SESSION_START.md`'s
+claimed `afb6818` — both were self-referential docs-only fixes to that
+same file, `8406395` and `40023db`; no code drift. Tag, Fly health
+confirmed. `.venv` health could not be checked from this sandbox — Linux
+mount, Windows-specific trampoline defect, needs Yehor's own machine).
+
+**Decision made on BACKLOG 3a** (the session's stated blocker): rather
+than pick blind between the three candidates sketched in the Stage-1
+report, read `src/patchward/verifier.py` directly first. That changed
+the diagnosis: the real mechanism is Gate 2 (`_out_of_bounds_lines`),
+not Gate 1 or Gate 3. Gate 2 unconditionally exempted any removed
+import-statement line from its out-of-bounds check — including when the
+removed line *is* the flagged vulnerability line itself (bandit B404's
+finding location literally is the `import subprocess` statement), which
+is exactly the shape of the actual Stage-1 defect. Full reasoning
+recorded in `memory/BACKLOG.md` item 3a.
+
+**Implemented (drafted, not yet committed):**
+- `src/patchward/verifier.py`: new `_removed_import_still_referenced()`
+  static method (AST-based — parses the removed import statement and the
+  post-edit file, checks for remaining `Name`/`Attribute` references;
+  conservative on any parse ambiguity). `_out_of_bounds_lines` now calls
+  it for every removed import line, in-range or out-of-range, and only
+  permits the removal when it returns False. `_gate_2_diff_in_bounds`
+  passes the full post-edit file content through.
+- `tests/test_verifier.py`: two new `TestGate2DiffInBounds` tests
+  (regression reproducing the exact Stage-1 shape — import removed on
+  the flagged line, call site untouched elsewhere — must FAIL; contrast
+  test — genuinely-unused import removal — must still PASS) plus a new
+  `TestRemovedImportStillReferenced` class (8 unit tests covering the
+  helper directly, including all three conservative-fallback paths).
+
+**Verified this session (Tier 0, sandbox-isolated, no git writes):**
+copied the repo to a scratch `/tmp` location outside the mounted
+directory (never touched the real `.venv` or ran git write commands
+against the mount, per standing rule), built a throwaway Python 3.10 venv
+there (network couldn't fetch Python 3.12 in this sandbox — ran the test
+file directly against stdlib-only imports instead, which `verifier.py`
+and its test file don't exceed), ran `pytest tests/test_verifier.py`:
+**36/36 pass.** Confirmed via grep that only three files import
+`Verifier`/`VerifierResult` (`pipeline.py`, `cli.py`, `pr_publisher.py`),
+none call the changed private methods directly, and the public `verify()`
+signature and `VerifierResult`/`GateResult` shapes are unchanged — the
+new `_out_of_bounds_lines` parameter has a default, so this is
+backward-compatible for every consumer.
+
+**Not done / explicitly deferred, not bundled into this fix:**
+- Full 421+ test suite has NOT been re-run against the real `.venv` —
+  that must happen on Yehor's machine before commit (see ready-to-paste
+  commands provided in chat this session).
+- Excluding purely-informational bandit rules (B404) from Fix-Gen's
+  candidate findings — no existing filter mechanism found in
+  `pipeline.py`; this is a real feature addition, not folded into today's
+  fix.
+- Gate 1 rescan broadening and converting Gate 3 to a soft confidence
+  signal — both considered and explicitly deferred, reasoning in
+  `memory/BACKLOG.md` item 3a.
+- No git writes performed by the agent — `verifier.py` and
+  `test_verifier.py` are modified directly on the mounted working tree
+  (not via sandbox git), awaiting Yehor's review, full-suite run, and
+  commit.
+
+**Accountability:** this session's diagnosis (Gate 2, not Gate 1/3) is a
+claim, not yet Yehor-reviewed. The 36/36 sandbox pass is real (Tier 0)
+but scoped to one test file in an ad hoc Python 3.10 environment — it is
+evidence the logic is sound, not a substitute for the real suite on the
+real `.venv`.

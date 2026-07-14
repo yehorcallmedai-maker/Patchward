@@ -15,6 +15,13 @@ regardless of intermediate failures (ADR-016).
 Gate sequence:
   Gate 1 — Re-scan clean:  same rule_id no longer fires on the patched file.
   Gate 2 — Diff in bounds: all edits fall within [line_start, line_end] of file_path.
+                           A removed import outside that range is only permitted
+                           when it is provably unreferenced elsewhere in the
+                           post-edit file (AST-checked, not assumed) — see
+                           _removed_import_still_referenced. Closes the defect
+                           found in the 2026-07-13 Stage-1 E2E test, where a
+                           still-used `import subprocess` was deleted and every
+                           gate passed anyway (BACKLOG 3a).
   Gate 3 — Test suite:     suite detected → must pass; not detected → SKIP (not FAIL).
 
 "Verified" = Gate 1 PASS + Gate 2 PASS + Gate 3 (PASS or SKIP).
@@ -423,8 +430,10 @@ class Verifier:
             lineterm="",
         ))
 
+        post_file_content = "".join(post_edit_lines)
         touched_vuln, out_of_bounds = self._out_of_bounds_lines(
             diff, line_start, line_end,
+            post_file_content=post_file_content,
         )
 
         if not touched_vuln:
@@ -444,11 +453,77 @@ class Verifier:
         return GateResult(PASS)
 
     @staticmethod
+    def _removed_import_still_referenced(import_line: str, post_file_content: str) -> bool:
+        """
+        Determine whether a removed import statement's bound name(s) are still
+        referenced anywhere in the post-edit file.
+
+        Uses `ast` rather than a substring/regex scan, so a comment or string
+        literal that happens to contain the module name cannot produce a false
+        positive, and a real remaining call site (e.g. `subprocess.run(...)`
+        after `import subprocess` was deleted) cannot be missed the way a naive
+        text search could be.
+
+        Conservative by construction — returns True (treat as "still
+        referenced", i.e. unsafe to auto-permit the removal) whenever the
+        answer can't be established with confidence:
+          - the removed line isn't parseable as an import statement,
+          - it's a `from X import *` (bound names can't be enumerated),
+          - the post-edit file itself doesn't parse as valid Python.
+
+        Returns False only when the import parses cleanly, every bound name
+        is enumerable, and none of them appear anywhere in the post-edit file
+        — i.e. removal is provably safe.
+
+        Added 2026-07-14 to close BACKLOG 3a: the 2026-07-13 Stage-1 E2E test
+        found Fix-Gen delete `import subprocess` while `run_command()` on the
+        same branch still called `subprocess.run(...)` — Gate 2 previously
+        exempted *any* removed import line unconditionally, so this passed
+        straight through and the Verifier marked the whole patch VERIFIED.
+
+        # KS-TRACE: AC-P4-04, AC-P4-05, D-P4-01, BACKLOG-3a
+        """
+        import ast
+
+        try:
+            parsed = ast.parse(import_line.strip())
+            import_node = parsed.body[0]
+        except (SyntaxError, IndexError):
+            return True  # unparseable — conservative
+
+        bound_names: list[str] = []
+        if isinstance(import_node, ast.Import):
+            for alias in import_node.names:
+                bound_names.append(alias.asname or alias.name.split(".")[0])
+        elif isinstance(import_node, ast.ImportFrom):
+            for alias in import_node.names:
+                if alias.name == "*":
+                    return True  # star import — can't enumerate, conservative
+                bound_names.append(alias.asname or alias.name)
+        else:
+            return True  # not actually an import statement — conservative
+
+        try:
+            post_tree = ast.parse(post_file_content)
+        except SyntaxError:
+            return True  # can't parse post-edit file — conservative
+
+        referenced: set[str] = set()
+        for node in ast.walk(post_tree):
+            if isinstance(node, ast.Name):
+                referenced.add(node.id)
+            elif isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+                referenced.add(node.value.id)
+
+        return any(name in referenced for name in bound_names)
+
+    @staticmethod
     def _out_of_bounds_lines(
         diff: list[str],
         line_start: int,
         line_end: int,
         import_block_end: int = 0,
+        post_file_content: str = "",
     ) -> tuple[bool, set[int]]:
         """
         Parse a unified diff and return (touched_vuln, out_of_bounds).
@@ -467,7 +542,14 @@ class Verifier:
 
         Allowed zones for '-' lines:
           - Pre-edit position within [line_start, line_end] → permitted.
-          - Content is a Python import statement → permitted (rare: removing old import).
+          - Content is a Python import statement AND
+            `_removed_import_still_referenced` returns False (the removed
+            name is provably unused elsewhere in the post-edit file) →
+            permitted. **Changed 2026-07-14 (BACKLOG 3a):** previously any
+            removed import line was permitted unconditionally regardless of
+            whether the file still used it — that gap let a Fix-Gen output
+            delete a live `import subprocess` while `subprocess.run(...)`
+            was still called on the same branch, and Gate 2 passed it.
           - Everything else is out of bounds — checked per line, NOT per hunk.
             (Diff hunks can bundle an unrelated nearby removal together with the
             vulnerability removal when they fall within difflib's context window;
@@ -479,7 +561,7 @@ class Verifier:
 
         Unified diff hunk header: @@ -PRE_START[,PRE_COUNT] +POST_START[,POST_COUNT] @@
 
-        # KS-TRACE: AC-P4-04, AC-P4-05, D-P4-01
+        # KS-TRACE: AC-P4-04, AC-P4-05, D-P4-01, BACKLOG-3a
         """
         import re
 
@@ -518,15 +600,34 @@ class Verifier:
 
             elif line.startswith("-"):
                 content = line[1:]
+                is_import = import_re.match(content) is not None
+                unsafe_import_removal = is_import and Verifier._removed_import_still_referenced(
+                    content, post_file_content,
+                )
+
                 if line_start <= pre_line <= line_end:
                     touched_vuln = True
-                elif not import_re.match(content):
-                    # Removal outside the vulnerability range and not an
-                    # import statement — out of bounds, even if this line
-                    # sits inside a hunk that also touches the vulnerability.
+                    if unsafe_import_removal:
+                        # BACKLOG 3a — the flagged line itself was "fixed" by
+                        # deleting an import that's still referenced elsewhere
+                        # in the post-edit file. Being inside the nominal vuln
+                        # range does not make this a safe replacement: the
+                        # 2026-07-13 Stage-1 defect was exactly this shape
+                        # (bandit B404's flagged line IS the `import
+                        # subprocess` statement; deleting it there passed
+                        # every prior check while `subprocess.run(...)`
+                        # remained live elsewhere in the same file).
+                        out_of_bounds.add(pre_line)
+                else:
+                    # Removal outside the vulnerability range. Out of bounds
+                    # unless it's an import statement AND that import is
+                    # provably unreferenced elsewhere in the post-edit file
+                    # (BACKLOG 3a — an unconditional import exemption here
+                    # previously let a still-used import be deleted silently).
                     # (`in_vuln_hunk` is intentionally NOT consulted here —
                     # see docstring above.)
-                    out_of_bounds.add(pre_line)
+                    if not is_import or unsafe_import_removal:
+                        out_of_bounds.add(pre_line)
                 pre_line += 1
 
             else:

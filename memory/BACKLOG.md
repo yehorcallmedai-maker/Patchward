@@ -30,21 +30,58 @@ correction appended to ADR-029. Retained here (rather than deleted) as a
 record that this line item was opened and closed same-day, not silently
 dropped.
 
-## 3a. Verifier gate gap — broken fix passed all 3 gates (NEW, HIGH)
+## 3a. Verifier gate gap — broken fix passed all 3 gates (DECIDED, implementation drafted 2026-07-14, PENDING Yehor's test + commit)
 **WSJF: highest — this blocks everything downstream.** Stage-1 E2E
 (below) found a Fix-Gen output that deletes a needed import while the
 code that uses it is untouched — objectively broken (`NameError` at
 runtime) — and the Verifier marked it `VERIFIED` with all 3 gates
-passing. Full writeup: `docs/keystones/stage1_e2e_test_2026-07-13.md`
-§2. This is a structural gap, not a fixture quirk: Gate 1 misses it
-because removing an import can silence a semgrep rule without fixing the
-underlying call; Gate 3 misses it because the fixture's test suite
-doesn't exercise the affected function. Recommend blocking Stage 2
-(third-party repo) and Mirror Pass Tier 2 until this is addressed, per
-BUILD_PLAN §6's own "don't build on an unvalidated core" logic.
-**Owner:** needs Yehor's decision on approach (stronger Gate 1 call-site
-check vs. stronger Gate 3 coverage requirement vs. constraining Fix-Gen's
-prompt to never remove a still-referenced import) before implementation.
+passing. Full writeup: `docs/keystones/stage1_e2e_test_2026-07-13.md` §2.
+
+**Decision (2026-07-14):** direct code inspection of `verifier.py`
+(not just the Stage-1 report's summary) showed the real mechanism is
+Gate 2, not Gate 1: `_out_of_bounds_lines` unconditionally exempted any
+removed import-statement line, whether inside the nominal vuln range
+(bandit B404's flagged line *is* the import statement itself, so this is
+where the actual defect lived) or outside it — with zero check for
+whether the removed name was still referenced anywhere else in the
+post-edit file. Implemented: `_removed_import_still_referenced()`
+(AST-based, not regex/substring — parses the removed import and the
+post-edit file, checks `Name`/`Attribute` references; conservative on
+any ambiguity: unparseable line, star import, or unparseable post-edit
+file all count as "still referenced," i.e. rejected). Gate 2 now only
+permits an import removal — in-range or out-of-range — when this
+returns False.
+
+**Why Gate 2 and not the other two candidates:** Gate 1 rescanning the
+same rule_id can't distinguish "vulnerability fixed" from "the rule's
+own trigger condition was deleted" for a rule like B404 whose entire
+definition is "this import exists" — broadening Gate 1 would need a
+bigger, riskier redesign (rescanning beyond the single rule_id). Gate 3
+(require coverage of the changed function) was deferred: real third-party
+Stage 2 targets will have uneven test coverage, and making it a hard
+gate risks blocking legitimate fixes to exactly the neglected code that
+most needs patching — better as a future confidence signal than a
+blocking gate. A Fix-Gen prompt constraint alone was rejected as the
+primary fix because it's advisory, not enforced — an LLM can still
+ignore it; the Gate 2 static check is enforced regardless of what
+Fix-Gen produces.
+
+**Status:** code change + regression test (reproducing the exact
+Stage-1 shape) + 8 new unit tests for the helper drafted and verified
+in an isolated sandbox venv (Python 3.10, source-only, no git writes):
+36/36 `test_verifier.py` tests pass. **Not yet committed** — needs
+Yehor to re-run the full suite against the real `.venv` and commit per
+standing rule (all git writes happen on his machine). See
+`memory/project_session_log.md` Session 014 entry for the full
+walkthrough and ready-to-paste commands.
+
+**Deferred, not forgotten (separate follow-ups, not bundled into this
+fix):** excluding purely-informational bandit rules like B404 (whose
+only possible "fix" is deleting the thing it flags) from Fix-Gen's
+candidate findings at the pipeline level — no existing filter mechanism
+was found in `pipeline.py`, so this is a real feature addition, not a
+one-liner; broadening Gate 1's rescan; converting Gate 3 to a
+confidence signal rather than a blocking gate.
 
 ## 3b. `GITHUB_TOKEN` cannot create PRs (NEW, MEDIUM)
 Branches push successfully; `POST /pulls` returns 403 three times in the
