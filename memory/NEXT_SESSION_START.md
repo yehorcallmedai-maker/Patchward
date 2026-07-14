@@ -28,7 +28,7 @@ file is written, treat it as stale until explicitly redone.
 
 1. **Confirm `main`'s SHA fresh.** Last known-good, independently
    verified via `git ls-remote origin main` at the actual close of this
-   pass: `66bb9c095597eb1db19b6777bf92bb7c5d9ee6bb`. Confirmed matching
+   pass: `234cbc2a17ff1e1db3d0b31f6d3febaede4cb5fd`. Confirmed matching
    local HEAD on Yehor's machine the same session (`git push` +
    `git ls-remote` + `git log -1` all agreed). Re-check anyway.
 2. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`,
@@ -63,6 +63,21 @@ file is written, treat it as stale until explicitly redone.
    `[System.IO.File]::WriteAllText(path, [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($b64)), (New-Object System.Text.UTF8Encoding($false)))`
    on Yehor's machine. For conditionals, write the whole thing on one
    line instead of a multi-line block.
+
+## Drift note 2 — this file went stale a second time within the same session
+
+Regenerated again after `/session-strategy-synthesis` was run a further
+time to close every remaining "pinned decision": BACKLOG 7a (structured
+PR template — corrected, was already implemented), 7b (risk-class
+routing — rescoped to a concrete, scoped gap), 7c (`.dockerignore` —
+the "untracked" claim was itself wrong, corrected visibly), 7d
+(`tests/fixture_repo`'s one-line docstring diff — committed after fresh
+Pass 2 verification), `runs/state.db` (untracked from git), and the
+ClinInsight/Databutton item (removed from engineering memory, it never
+belonged here). Current HEAD: `234cbc2`. **Pattern to actually break
+next time:** regenerate this file once, at the point work stops for
+real — not proactively after every sub-pass, and not so late that two
+rounds of drift accumulate. Somewhere between those extremes.
 
 ## Progress list — where things stand (verified fresh at this pass)
 
@@ -109,13 +124,24 @@ file is written, treat it as stale until explicitly redone.
       Trusted Publisher registration exists and that
       `.github/workflows/publish.yml` has actually run at least once via
       `workflow_dispatch`.
-- [ ] `runs/state.db` tracked despite `.gitignore` — pre-existing,
-      low priority, needs `git rm --cached runs/state.db` on Yehor's
-      machine whenever convenient (real git write).
-- [ ] `tests/fixture_repo` — pre-existing dirty embedded repo, still not
-      investigated, low urgency.
-- [ ] ClinInsight/Databutton LinkedIn DM replies — still unconfirmed,
-      no tool access, answer directly with Yehor.
+- [x] **`runs/state.db` — untracked from git**, commit `234cbc2`.
+- [x] **`tests/fixture_repo` — one-line docstring diff committed**
+      (submodule commit `3984504`, parent pointer bumped in `234cbc2`),
+      after a fresh Pass 2 `git status`/`git diff` confirmed it matched
+      the prior harmless-diff claim exactly.
+- [x] **BACKLOG 7a (structured PR template) — corrected and closed.**
+      `pr_publisher.py` already implements a five-section PR body
+      template; a prior grep-only pass wrongly claimed it didn't exist.
+- [ ] **BACKLOG 7b (risk-class in PR body) — rescoped, still open.**
+      `fix_gen.py` already computes `risk_class` (AC-P3-08) but nothing
+      displays or gates on it. Concrete next step if prioritized: add it
+      to `pr_publisher.py`'s `_build_pr_body()` Finding section + update
+      `test_pr_publisher.py`. Small, not urgent, not scheduled.
+- [x] **`.dockerignore` — the "untracked" claim was itself wrong,
+      corrected.** It's been tracked since `8b601e9`. No action needed.
+- [x] **ClinInsight/Databutton LinkedIn DM item — removed from
+      Patchward's engineering memory entirely** (visibly, not silently
+      — see `BACKLOG.md`). It never belonged in this project's tracker.
 - [ ] Regulatory flags (CRA/GDPR) — needed before paid listing, not now
       (BACKLOG 12).
 - [ ] `callmed-landing` rename — different repo, out of scope this
