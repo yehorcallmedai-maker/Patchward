@@ -532,7 +532,7 @@ purely a Patchward-side hygiene call. The stale duplicate at
 copy inside Patchward's tree is being kept and remains untracked by
 this repo's git, as it was throughout.
 
-## 13. Fix-Gen lacks an explicit "not a real issue, decline" path (NEW, LOW-MEDIUM — surfaced by Stage 2)
+## 13. Fix-Gen lacks an explicit "not a real issue, decline" path (CLOSED 2026-07-15)
 **WSJF: low-medium — real gap, not urgent.** Stage 2 showed Fix-Gen
 correctly avoiding bad fixes on 4 by-design findings, but the *mechanism*
 was running out of `max_turns` without calling `submit_fix`, not an
@@ -540,10 +540,71 @@ explicit "I assessed this and it's not a real issue" decision.
 Functionally safe (no bad fix shipped either way) but wastes the full
 turn budget on every by-design finding and produces an ambiguous
 `[SKIP]` reason ("max_turns reached") indistinguishable from Fix-Gen
-genuinely struggling vs. correctly declining. Worth an explicit decline
-tool/path in Fix-Gen's tool schema so this shows up as a clear, fast,
-intentional outcome rather than an exhausted retry loop. **Owner:** TBD,
-not scheduled.
+genuinely struggling vs. correctly declining.
+
+**Selected via `/session-strategy-synthesis`, 2026-07-15** — of the three
+unscheduled options open at session start (this item, Mirror Pass Tier 2
+/ item 10, or a no-op), item 10 was ruled out on its own WSJF terms: grep
+across every memory file and `src/` found zero design spec anywhere
+beyond its one-line BACKLOG/BUILD_PLAN entry (`Job Size: Large`,
+`WSJF: lowest for now`) — its real first step would be a scoping
+conversation with Yehor, not code, so it couldn't produce a testable
+session outcome today. This item was concrete, scoped, and already had a
+named mechanism and a named file, so it was chosen without re-asking.
+
+**Implemented:** new `decline_fix` tool in Fix-Gen's schema (`fix_gen.py`)
+— requires `reason` + `confidence`, and the system prompt now instructs
+the model to call it (after at least one `read_file`) when a finding is
+by-design/false-positive, instead of exhausting `max_turns` silently.
+`FixResult` gained `declined: bool` and `decline_reason: str`.
+`pipeline.py`'s batch status is now `"declined"` (not the generic
+`"fix_failed"`) when `fix_result.declined` is true. `cli.py` prints
+`[DECLINED] <reason>` instead of the ambiguous `[SKIP] ...max_turns
+reached`, and logs `declined`/`decline_reason` in the run log record.
+
+**Real bug caught and fixed during this same pass, not a separate
+follow-up:** the first test run (448 total collected, 2 failed) hit the
+*exact same failure class* this codebase already documented once
+(2026-07-08, `project_open_tasks.md #25`, preserved verbatim in
+`_make_fix_result()`'s own comment in `test_orchestrator.py`): an unset
+`MagicMock` attribute auto-vivifies as a truthy, non-JSON-serializable
+object. Two test mocks predating the new `declined`/`decline_reason`
+fields — `_make_fix_result()` and one inline `MagicMock()` in
+`TestRunLogThreaded.test_run_log_record_on_fix_failure` — hit it again.
+Production was never affected (the real `FixResult` dataclass always
+defaults `declined=False` correctly); only the test mocks needed the new
+fields set explicitly. Fixed both. **Worth carrying forward as a
+standing heuristic, now proven twice in the same codebase:** any new
+field added to `FixResult` (or any dataclass mocked via a bare
+`MagicMock()` in this test suite, not `spec=`'d) must be added explicitly
+to every existing untyped mock construction site, not assumed safe by
+default — grep for the class's mock-builder helpers and any inline
+`MagicMock()` construction before considering a dataclass field addition
+complete.
+
+**Verified:** Yehor ran the real suite twice on his own machine (`.venv`,
+Windows) — first run: 2 failed (the mock gap above), 446 passed; second
+run after the fix: **448 passed, 2 skipped, 15 deselected, 90.46%
+coverage** (up from 441/90.31% pre-session — the 7 new tests across
+`test_fix_gen.py` and `test_async_pipeline.py` fully account for the
+delta). Commits: `docs: correct stale SHA/lock claims in
+NEXT_SESSION_START.md`, then `feat(fix-gen): add explicit decline_fix
+tool path (BACKLOG 13)`.
+
+**Not done, flagged rather than silently skipped:** `cli.py`'s new
+`[DECLINED]` echo branch has no dedicated unit test — no `tests/test_cli.py`
+file exists in this repo at all (checked via `Glob`, confirmed absent),
+so there was no existing harness/convention to extend without building
+one from scratch. `pipeline.py` and `fix_gen.py`'s decline logic are
+both covered. Also flagged, not fixed: `.claude/agents/fix-gen.md` is a
+stale legacy template — still says "RepoMend", still describes an
+"ESCALATE signal" that was never actually implemented as a tool anywhere
+in `fix_gen.py`. It appears to be a distribution/setup artifact
+("SETUP NOTE: Copy this file to .claude/agents/fix-gen.md") rather than
+the live prompt (the real one is `_FIX_GEN_SYSTEM_PROMPT`, embedded
+directly in `fix_gen.py`, which is what was actually updated) — but this
+wasn't independently confirmed unused, just observed to be inconsistent.
+**Owner:** TBD if it's worth reconciling or deleting.
 
 ## 12. Regulatory flags — CRA / GDPR classification
 **WSJF: low urgency now, high cost if skipped before Phase 10.** Get

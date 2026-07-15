@@ -1234,3 +1234,81 @@ both `STATE.md` and `BACKLOG.md`, not silently dropped.
 verification + a submodule-level commit on Yehor's machine before the
 memory-file updates land, so they're batched together in the next
 copy-paste block rather than split into two round-trips.
+
+## Session 015 — 2026-07-15 (BACKLOG 13 closed — Fix-Gen explicit decline path)
+
+Opened with the pasted `NEXT_SESSION_START.md` handoff. Ran
+`/session-strategy-synthesis` three times at Yehor's explicit request,
+each with a distinct purpose: first pass did the two-pass verification
+and surfaced the session's options; second pass (after Yehor asked for
+industrial rigor) re-verified state was unchanged and analyzed the
+tradeoffs among the three options without yet deciding; third pass (at
+Yehor's explicit instruction to stop leaving open questions) made the
+actual call and committed to a session goal and a concrete progress
+list, rather than asking again.
+
+**Drift found on the very first pass, same pattern as before:**
+`NEXT_SESSION_START.md`'s own SHA claim (`7225a12...`) was 2 commits
+stale — real `main` (confirmed via `git rev-parse HEAD` + `git ls-remote
+origin main`, independently, twice) was `60e9ef9d76511420eecb0ab3fd796ca64e6d117c`.
+Also stale: the file claimed both `.git/index.lock` and
+`.git/objects/maintenance.lock` were present; only `maintenance.lock`
+(0-byte) actually was. Corrected visibly in the file itself with a new
+"Drift note 3" — third time this specific file has gone stale within or
+across sessions, now called out explicitly as a standing pattern rather
+than a one-off.
+
+**Decision-making, not just verification:** of the three options open
+(Mirror Pass Tier 2 / item 10, Fix-Gen's decline path / item 13, or a
+no-op), item 10 was ruled out on the project's own WSJF terms — a grep
+across every memory file and `src/` for "Mirror Pass" found zero design
+spec anywhere beyond its one-line BACKLOG/BUILD_PLAN table entry
+(`Job Size: Large`, `WSJF: lowest for now`, no acceptance criteria, no
+scope). Its honest first step would have been a scoping conversation
+with Yehor, not code — starting it today would mean inventing a spec,
+not building against one. Item 13 was concrete, scoped, low-medium WSJF,
+had a named mechanism (`max_turns` exhaustion vs. an explicit tool call)
+and a named file (`fix_gen.py`) — selected without re-asking, per
+Yehor's explicit instruction this pass.
+
+**Implemented:** `decline_fix` tool added to Fix-Gen's schema
+(`fix_gen.py`) — requires `reason` + `confidence`; system prompt updated
+to instruct the model to call it (after at least one `read_file`) for
+by-design/false-positive findings instead of exhausting `max_turns`
+silently. `FixResult` gained `declined: bool` / `decline_reason: str`.
+`pipeline.py`'s batch status is now `"declined"` (distinct from the
+generic `"fix_failed"`) when set. `cli.py` prints `[DECLINED] <reason>`
+instead of the ambiguous `[SKIP] ...max_turns reached` and logs both new
+fields in the run-log record. 7 new tests added across
+`test_fix_gen.py` (6) and `test_async_pipeline.py` (1).
+
+**Real bug caught by the first real test run, not a separate
+follow-up:** first `uv run pytest --cov` came back 2 failed / 446 passed
+— both failures were the *exact same failure class* this codebase
+already documented once, verbatim, in `_make_fix_result()`'s own comment
+in `test_orchestrator.py` (2026-07-08, `project_open_tasks.md #25`): an
+unset `MagicMock` attribute auto-vivifies as truthy and
+non-JSON-serializable. Two mocks predating the new fields —
+`_make_fix_result()` and one inline `MagicMock()` in
+`TestRunLogThreaded.test_run_log_record_on_fix_failure` — hit it again.
+Production was never affected (the real dataclass defaults `declined`
+correctly); fixed both mocks to set the new fields explicitly. Logged in
+`BACKLOG.md` item 13 as a standing heuristic, now proven twice in this
+exact codebase: any new `FixResult` field needs every untyped
+`MagicMock()` construction site updated explicitly, not assumed safe.
+
+**Verified, both runs on Yehor's own machine (`.venv`, Windows):** first
+run 446 passed / 2 failed (the mock gap above); second run after the fix,
+**448 passed, 2 skipped, 15 deselected, 90.46% coverage** — up from
+441/90.31% pre-session, the 7-test delta fully accounted for. Two
+commits drafted for Yehor to run (not yet confirmed landed as of this
+entry): `docs: correct stale SHA/lock claims in NEXT_SESSION_START.md`,
+then `feat(fix-gen): add explicit decline_fix tool path (BACKLOG 13)`.
+
+**Flagged, not fixed:** no `tests/test_cli.py` exists in this repo at
+all (confirmed via `Glob`) — `cli.py`'s new `[DECLINED]` echo branch has
+no dedicated unit test since there was no existing harness to extend.
+`.claude/agents/fix-gen.md` is a stale legacy template (still says
+"RepoMend", still describes a never-implemented "ESCALATE signal") —
+observed as inconsistent with the live `_FIX_GEN_SYSTEM_PROMPT` in
+`fix_gen.py`, not confirmed unused, not touched this session.
