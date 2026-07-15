@@ -61,16 +61,18 @@ modified. `.dockerignore`, `docs/keystones/`, `memory/BACKLOG.md`,
 (new, as expected).
 
 ## Tests
-**448 passed, 2 skipped, 15 deselected — 90.46% coverage** (threshold 80%,
+**461 passed, 2 skipped, 15 deselected — 90.46% coverage** (threshold 80%,
 reached) — `uv run pytest --cov`, run by Yehor on his own machine — Tier 0
-(local exit code + output, not proxied) — 2026-07-15 — Yehor, second run
-after fixing 2 test-mock failures the first run caught (see BACKLOG item
-13). Supersedes the 2026-07-14 "441 passed, 90.31%" figure (BACKLOG 7b),
-which supersedes 2026-07-13's "421 passed, 90.01%" (BACKLOG 3a), which
-supersedes the pre-rename "371 passed, 89%" figure in old memory files
-(historical fact about the 2026-06-23 state only). The 7-test delta this
-pass is BACKLOG item 13's new coverage in `test_fix_gen.py` and
-`test_async_pipeline.py`.
+(local exit code + output, not proxied) — 2026-07-15 — Yehor, Session 017
+run after BACKLOG 15b added `tests/test_cli.py` (12 new tests, coverage
+flat since it mostly exercises already-covered lines). Supersedes the
+Session 016 "449 passed" figure (BACKLOG 15a), which supersedes the
+Session 015 "448 passed" figure (BACKLOG 13, second run after fixing 2
+test-mock failures the first run caught), which supersedes 2026-07-14's
+"441 passed" (BACKLOG 7b), which supersedes 2026-07-13's "421 passed,
+90.01%" (BACKLOG 3a), which supersedes the pre-rename "371 passed, 89%"
+figure in old memory files (historical fact about the 2026-06-23 state
+only).
 
 **Environment defect found and fixed same day, worth carrying forward:**
 the first `uv run pytest --cov` attempt failed with `error: uv trampoline

@@ -678,14 +678,34 @@ that the real file is 1505 lines and well-formed; same class of
 mount-truncation quirk previously seen with `cli.py`). Needs a real
 `uv run pytest --cov` before this is trusted.
 
-**15b — `version`/`scan`/`batch` CliRunner coverage.** Real gap, larger
-and genuinely unscoped: which commands matter most, how much of
-`scan`'s scanner-subprocess surface and `batch`'s async-pipeline
-delegation should be mocked vs. exercised, whether this belongs in
-`test_orchestrator.py` or a new dedicated `test_cli.py`. **WSJF: real
-value (this is the actual CLI users invoke) but Job Size needs its own
-scoping pass before starting — same discipline as item 10, not started
-blind this session.** **Owner:** TBD.
+**15b — `version`/`scan`/`batch` CliRunner coverage — CLOSED 2026-07-15,
+Session 017.** Self-corrected mid-session: the initial "needs its own
+scoping pass, same as item 10" call was wrong — unlike item 10 (zero
+spec anywhere), everything needed to size and build this was already
+available (`cli.py`'s full source, this codebase's own established
+`CliRunner`/`MagicMock` mocking conventions). Built `tests/test_cli.py`
+from scratch: 12 tests across `version` (3, including a check that
+`_VERSION` and `patchward.__version__` — two independent version
+strings in `cli.py` — haven't drifted apart), `scan` (3: clean repo,
+findings stored+printed, exception → exit 1), `batch` (5: missing API
+key, missing GitHub token, no `[[repos]]`, happy path, failed-repo
+path).
+
+**Two real bugs caught while writing the tests, not after:** (1) first
+draft of the "any repo failed" batch test assumed exit code 0 without
+reading `cli.py` to its actual last line (698) —
+`raise typer.Exit(code=1 if any_failed else 0)` — corrected before the
+test ever ran, left visible in the test's own docstring. (2) `RunLog()`
+called with no `--log` flag defaults to a real
+`runs/session_<timestamp>.json` relative to cwd (`run_log.py`'s
+`_default_session_path()`) — two tests would have written a real file
+into this repo's `runs/` directory as a side effect of running the test
+suite; both now pass `--log` pointed at `tmp_path`.
+
+**Verified:** Yehor ran the real suite — **461 passed** (449 + 12 new,
+exactly as predicted), 2 skipped, 15 deselected, 90.46% coverage
+(flat — CLI-layer tests mostly exercise already-covered lines). Commit
+pending (drafted, not yet confirmed landed as of this entry).
 
 ## Deferred, not forgotten
 - **[REMOVED 2026-07-14]** ClinInsight/Databutton LinkedIn DM replies —

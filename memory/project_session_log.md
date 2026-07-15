@@ -1389,3 +1389,45 @@ via independent `git fetch` + `git ls-remote`.
 Nothing left that the agent can act on unilaterally — BACKLOG item 10
 needs a scoping conversation, 15b needs its own scoping pass, items 9/12/8/14
 are Yehor-only. `NEXT_SESSION_START.md` regenerated to match.
+
+## Session 017 — 2026-07-15 (BACKLOG 15b closed — self-correction mid-session)
+
+Yehor asked, directly, why the prior session's synthesis concluded
+"nothing agent-actionable" instead of either doing item 15b now or
+explicitly scheduling it. Answered honestly rather than defensively:
+Session 016 had conflated two different kinds of "blocked" — item 10
+(genuinely zero spec anywhere) and item 15b (not actually blocked, just
+not yet scoped by the agent, despite having every piece of information
+needed already in hand: `cli.py`'s full source and this codebase's own
+established `CliRunner` mocking conventions). That was an unforced
+conservatism, not a correct application of "don't guess without
+information."
+
+Verified state fresh (unchanged: `main` @ `7a09349`, Fly healthy), then
+corrected it: built `tests/test_cli.py` from scratch in the same
+session rather than re-triaging. 12 tests across `version`, `scan`,
+`batch` — the three commands with zero prior `CliRunner` coverage.
+
+**Two real bugs caught while writing the tests, not discovered later:**
+(1) an early draft assumed `batch` exits 0 when any repo in a batch run
+failed — a re-read of `cli.py` to its actual last line (698, one past
+where the previous read had stopped) showed
+`raise typer.Exit(code=1 if any_failed else 0)`; fixed before the test
+ever ran, left visible in the test's docstring rather than silently
+corrected. (2) `RunLog()` with no `--log` flag defaults to a real
+`runs/session_<timestamp>.json` relative to cwd — two tests would have
+written a real file into this repo's own `runs/` directory as a side
+effect of running the suite; both fixed to pass `--log` with `tmp_path`
+before ever running.
+
+**Verified:** Yehor ran the real suite — **461 passed** (449 + 12,
+exactly as predicted before the run), 2 skipped, 15 deselected, 90.46%
+coverage, no regressions. Commit drafted:
+`test(cli): add dedicated test_cli.py covering version/scan/batch
+(BACKLOG 15b)`.
+
+**Heuristic worth carrying forward:** when a synthesis pass files
+something as "needs scoping" or "blocked," check whether that's actually
+true or just "I haven't finished scoping it yet" — the two look
+identical from the outside but call for opposite responses (defer to
+the user vs. finish the work now).
