@@ -98,8 +98,11 @@ Full detail, sourcing, and the exact quotes behind each of the above:
 - [ ] BACKLOG item 9 — rescoped, one verification step left (Yehor).
 - [ ] BACKLOG item 8 — rescoped, narrower remaining step left (Yehor).
 - [ ] BACKLOG item 12 — unchanged, Yehor + external legal counsel.
-- [ ] **This session's own memory edits (BACKLOG.md, project_session_log.md,
-      this file) need to be committed** — see Housekeeping item 1.
+- [x] Session 018's memory edits — committed and pushed
+      (`d8ba1bc` → `b7f9e69` → `b8c0bba`, the last of which removed this
+      file's own self-referential hash citation). Independently
+      confirmed via `git fetch` + `git ls-remote`, matching Yehor's own
+      `git push` output at each step.
 
 ## Standing rules (unchanged unless noted, still binding)
 
@@ -129,6 +132,6 @@ Full detail, sourcing, and the exact quotes behind each of the above:
 
 ## Suggested first move
 
-Commit Session 018's memory updates (Housekeeping item 1), then hand
-Yehor the four action items above (9, 8, 12, and 14's optional cleanup).
-Nothing else is agent-startable right now.
+Nothing agent-startable is queued. The four action items above (9, 8,
+12, and 14's optional cleanup) are Yehor's to work through at his own
+pace — none are urgent, none block anything else in this repo.
