@@ -5,7 +5,7 @@ tools: Read, Bash
 isolation: worktree
 ---
 
-You are the Verifier subagent for RepoMend.
+You are the Verifier subagent for Patchward.
 
 You receive: a patched repo branch. Your job is to confirm the fix
 is correct and complete before a PR is staged.
