@@ -15,13 +15,18 @@ claim to be re-verified, not a source of truth.
 ## Housekeeping — confirm these before anything else
 
 1. **Confirm `main`'s SHA fresh** via `git ls-remote origin main`. Last
-   confirmed: `833be8c5dbfe994a6a68a26a5ea936cd1d44d912` (Session 017
-   close). **Session 018's memory-only changes (BACKLOG.md,
-   project_session_log.md, this file) are not yet committed as of this
-   file being written** — check whether a newer commit exists before
-   trusting this SHA.
+   confirmed: `d8ba1bcfe595a11b7ed5932ce02c4a737a4eb653` — Session 018's
+   close-out commit, verified landed via independent `git fetch` +
+   `git ls-remote` (both matching Yehor's own `git push` output) during
+   the session-close pass itself. Re-check anyway; this line was
+   already caught stale once during this same close (it originally said
+   "not yet committed" — corrected after the commit actually landed,
+   per this project's own self-reference-trap lesson: a file that
+   documents its own commit hash is stale the moment that commit lands
+   if the file isn't re-checked afterward).
 2. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`.
-   Confirmed OK 2026-07-15.
+   Confirmed OK 2026-07-15, re-checked a second time at the actual
+   session close (same result both times).
 3. **Re-run the full test suite before trusting it.** Last real number:
    **461 passed, 2 skipped, 15 deselected, 90.46% coverage** —
    2026-07-15, Session 017.

@@ -1501,3 +1501,89 @@ Tier-0-confirmed facts — Yehor should do a live spot-check
 (`git log` on `callmed-landing`, the PyPI project page, GitHub's PR
 history on `jtesta/ssh-audit`) before treating any of this as gospel,
 same discipline this project applies to its own memory.
+
+### Session close (2026-07-15) — industrial-standard close-out for the full Sessions 015-018 arc
+
+Yehor asked for a formal close: confirm everything landed, double-check
+it, confirm the next-session prompt is still valid. Full `/session-close`
+discipline applied — reconcile, two-pass verify, judge, seal, learn.
+
+**Gate table (only CONFIRMED items feed the judgment below):**
+
+| Claim | Pass 1 | Pass 2 | Verdict |
+|---|---|---|---|
+| Session 018 memory commit landed | Yehor's `git push` output: `833be8c..d8ba1bc` | Independent `git fetch` + `git ls-remote origin main`, sandbox, same hash | **CONFIRMED** |
+| `.env` never leaked to Patchward git history | `git log --all --full-history -- .env` → empty | `git ls-files --error-unmatch .env` → not tracked (different git plumbing, same conclusion) | **CONFIRMED** |
+| `patchward.toml` targets only Yehor's `ssh-audit` fork, never upstream | Direct read: `[github].owner = "yehorcallmedai-maker"` | Cross-checked against Session 014's own log entry describing this exact config choice | **CONFIRMED** |
+| PyPI Trusted Publisher registered 2026-07-08 | Read `Autonomous-Core/memory/project_open_tasks.md` #20 directly | **Not independently re-checked against live PyPI** — this session's only cross-check was against Patchward's own `publish.yml` (which surfaced the "Any" vs `pypi` environment-name risk, a real finding, but not a live PyPI confirmation) | **Tier 2 — UNVERIFIED at Tier 0/1**, flagged as an open item for Yehor |
+| `callmed-landing` citation/proof-count fixes live since 2026-07-06 | Read `Autonomous-Core/memory/CONTEXT.md` directly | **Not independently re-checked against the live site or that repo** (not a connected folder) | **Tier 2 — UNVERIFIED at Tier 0/1**, flagged as an open item |
+| Stray `ssh-audit` branches = PRs #359/#360 against `jtesta/ssh-audit`, rejected 2026-07-03 | Read `symbiote-recurring-income-research-and-buildplan.md` §1.5 directly | **Not independently re-checked against live GitHub PR history on `jtesta/ssh-audit`** | **Tier 2 — UNVERIFIED at Tier 0/1**, high-confidence lead, not a confirmed fact |
+| "Mirror Pass Tier 2" has zero code footprint in Patchward | Read `competitive_analysis.md` directly (separate product, separate pricing) | Grep across Patchward's own `src/` for any related term — zero hits, consistent | **CONFIRMED** (the "it's not a Patchward feature" claim; the *sourcing* of what it actually is remains Tier 2) |
+| Full test suite still green | Last real run, Session 017: 461 passed, 2 skipped, 90.46% coverage | No code changed since (Session 018 was memory-only) — nothing to re-run | **CONFIRMED, unchanged, correctly not re-run** |
+| `NEXT_SESSION_START.md` accurate as of true final commit | First version (committed in `d8ba1bc`) still said "not yet committed" for its own commit — caught by this close pass | Corrected in place, re-verify below (Phase 6) | **DRIFTED, then corrected** — see below |
+
+**Session judgment:**
+
+**L3 Artifacts (confirmed only):** BACKLOG 13 (Fix-Gen `decline_fix`,
+commit `1ffb038`), 15a (CLI `[DECLINED]` test, `2b57e52`), the
+`.claude/agents/*.md` naming fix (`7effbad`), 15b (`tests/test_cli.py`,
+12 tests, `833be8c`), and this close's own item-10/14 resolution +
+8/9 rescoping (`d8ba1bc`). Five real, tested-where-applicable, pushed
+commits.
+
+**L2 Session goal:** The session opened on the pasted `NEXT_SESSION_START.md`
+whose own stated first move was "confirm housekeeping, then ask Yehor
+what to work on next." That was met immediately, then the session
+expanded through four more explicit sub-goals (close 13, close 15a,
+close 15b, resolve item 10 + guide the Yehor-only items) — **all four
+MET**, each independently verified at the time and re-confirmed in this
+close pass.
+
+**L1 Horizon:** Real progress, not just motion. Three genuine engineering
+gaps closed (13, 15a, 15b) with real tests behind them, not just
+documentation. More importantly, a real coordination gap between this
+project's memory and a related, already-signed-off strategic plan in
+`Autonomous-Core` got surfaced and partially closed — two backlog items
+that were open mysteries (10, 14) are now resolved or correctly
+reclassified as out-of-scope, and two more (8, 9) went from vague
+"confirm this exists" to precise, small, named next actions. The
+project's actual constraint (founder attention, per its own stated
+goal) is measurably lighter now than at session open.
+
+**Weakest points, stated plainly (not softened):**
+1. Everything from `Autonomous-Core` in this close (items 8, 9, 10, 14)
+   is Tier 2 — read directly from that project's own memory files, but
+   **not one of those four claims was cross-checked against a live
+   external source** (GitHub's real PR history, the real PyPI page, the
+   real callmedai.com site) this session. High-confidence secondhand
+   records, not confirmed facts. Yehor should spot-check before relying
+   on any of them for a real decision (e.g. before assuming item 9 just
+   needs one `workflow_dispatch` click).
+2. BACKLOG 15b's CLI coverage is real but not exhaustive — `scan`'s
+   `--repo`/`--config` overrides and `batch`'s `--model` override paths
+   were not tested. Don't read "BACKLOG 15b closed" as "CLI fully
+   covered."
+3. `.claude/agents/*.md`'s fate (correct forever vs. delete as dead
+   weight) was deliberately left open — correct discipline, still an
+   open thread.
+4. The sandbox's bash mount produced a **materially wrong `git status`**
+   again this close (flagged `README.md`, `pyproject.toml`, `fly.toml`,
+   and stale `runs/*.json` files as modified — none of which were true,
+   confirmed by direct comparison against Yehor's real `git status`).
+   This is now a repeatedly-documented, unresolved sandbox limitation,
+   not a fixed issue — every future session still needs Yehor's real
+   machine as the actual source of truth for working-tree state.
+5. `Autonomous-Core`'s own git log surfaced a tool called "FixProve" (CI
+   hallucination-detection checks) that was noticed but not
+   investigated — an unexplored thread, not a gap in this session's
+   actual scope, flagged so it isn't silently lost.
+
+**File manifest:**
+- Committed: `memory/BACKLOG.md`, `memory/project_session_log.md`,
+  `memory/NEXT_SESSION_START.md` (`d8ba1bc`, then one more small
+  self-reference correction to `NEXT_SESSION_START.md`, pending as of
+  this entry — see below).
+- Deliberately excluded: `tests/fixture_repo (untracked content)` and
+  `future-agi-contribution/` — both pre-existing, already-triaged in
+  earlier sessions, untouched this session, confirmed via Yehor's real
+  `git status` to be the only other non-clean items in the tree.
