@@ -1431,3 +1431,73 @@ something as "needs scoping" or "blocked," check whether that's actually
 true or just "I haven't finished scoping it yet" — the two look
 identical from the outside but call for opposite responses (defer to
 the user vs. finish the work now).
+
+## Session 018 — 2026-07-15 (cross-project research resolves items 10 and 14, rescopes 8 and 9)
+
+Yehor asked two things: what "Mirror Pass Tier 2" (item 10) actually is,
+and step-by-step guidance for the four Yehor-only items (9, 12, 8, 14).
+Item 10 had already been confirmed twice (Sessions 015, 017) to have
+zero specification anywhere inside Patchward's own `memory/`, `docs/`,
+or `src/` — so this pass looked in the second connected folder,
+`C:\Dev\Projects\Autonomous-Core`, a separate, related project not
+previously searched in this context.
+
+**Found far more than the answer to one question.** Autonomous-Core
+contains `docs/architecture/patchward-marketplace-buildplan.md` (dated
+2026-07-04, signed off by Yehor 2026-07-06) and
+`memory/symbiote-recurring-income-research-and-buildplan.md` — a
+strategic research pass that directly analyzes Patchward and recommends
+a specific pivot (self-serve GitHub Marketplace App, per-developer
+billing) backed by verified evidence, including a P0 security/
+distribution checklist. This document and its findings were **not
+previously reflected anywhere in Patchward's own `memory/` files** —
+a real coordination gap between the two projects' memory systems,
+surfaced here for the first time.
+
+**Item 10 resolved, not just answered:** "Mirror Pass" (Symbiote) is a
+completely separate product — a $1,500 flat-fee PEP 484 type-annotation
+consulting service, unrelated to Patchward's codebase. "Tier 2" is a
+sales/outreach pricing upsell for that service, tracked in
+Autonomous-Core's own tracker. Removed from `BACKLOG.md` entirely
+(same treatment as the ClinInsight/Databutton removal, Session 014) —
+it never belonged in this file.
+
+**Item 14 resolved, not just guided:** the stray `repomend/`-prefixed
+branches on `ssh-audit` are confirmed to be the source branches for
+PRs #359 and #360, opened against the real upstream `jtesta/ssh-audit`
+on 2026-06-29, both closed by the owner on 2026-07-03 with "This is AI
+slop" / "More AI slop" review comments. This is the actual incident
+that drove Autonomous-Core's whole pivot recommendation. Reconciled
+against Stage 2 (item 11): Session 014's later reuse of "ssh-audit" as
+a target was a separately-reasoned decision that happens to be
+compatible (targets only Yehor's fork, never the rejected upstream) —
+confirmed via a fresh read of the current `patchward.toml`.
+
+**Items 8 and 9 rescoped, not closed — mostly already done elsewhere:**
+`Autonomous-Core/memory/CONTEXT.md` and `project_open_tasks.md` show
+the `#381→#383` citation and "9→11 PRs" fixes already live on
+`callmed-landing` since 2026-07-06 (item 8's real remaining scope is
+just the RepoMend→Patchward name swap, not the whole site), and the
+PyPI Trusted Publisher pending-publisher registration already completed
+by Yehor on 2026-07-08 (screenshot-confirmed, project `patchward`,
+workflow `publish.yml`, environment name "Any"). **One real risk
+flagged, not just copied forward:** cross-checking that "Any" against
+the actual `.github/workflows/publish.yml` in this repo (which declares
+`environment: name: pypi`) — if "Any" was typed as a literal PyPI-side
+environment name rather than left as "no restriction," the OIDC identity
+claim won't match and the first real publish will fail on that, not on
+code. Flagged as the one thing to verify before assuming item 9's
+remaining step (`workflow_dispatch` test run) will just work.
+
+**Item 12 (CRA/GDPR) — unchanged, genuinely needs qualified legal
+input, not found addressed anywhere in either project's memory.**
+
+**Verification tier note:** all `Autonomous-Core` findings are secondhand
+records from that project's own memory files (Tier 2 by this project's
+own trust-tier framework — proxied through another project's session
+notes, not independently re-verified against live GitHub/PyPI state
+this session). Treated as strong leads worth acting on, not as
+Tier-0-confirmed facts — Yehor should do a live spot-check
+(`git log` on `callmed-landing`, the PyPI project page, GitHub's PR
+history on `jtesta/ssh-audit`) before treating any of this as gospel,
+same discipline this project applies to its own memory.

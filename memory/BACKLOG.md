@@ -404,25 +404,57 @@ the answer each session) — **conditional on Yehor's fresh `git status`/
 before committing. See commit instructions in `project_session_log.md`'s
 Session 014 addendum 3.
 
-## 8. callmed-landing rename
-**WSJF: low-medium, near-zero job size, zero downstream dependency.**
-Slot into any gap while blocked on items 1-5.
-**Owner:** Claude (agent).
+## 8. callmed-landing rename — RESCOPED 2026-07-15 (Session 018, cross-project research)
+**Most of this was already done, in a different project's memory
+(`C:\Dev\Projects\Autonomous-Core`, connected this session for the first
+time in this context).** `Autonomous-Core/memory/CONTEXT.md` confirms:
+the `#381→#383` citation fix and the "9 PRs"→"11 PRs" proof-count update
+were fixed and pushed live to `callmed-landing` on 2026-07-06 (commit
+`ca83bd5`, per that repo — not independently re-verified this session,
+Tier 2 secondhand record). **What's actually still open, per that same
+record:** the product-name rename itself (RepoMend→Patchward) on the
+`callmed-landing` site copy — narrower than "rename the landing page,"
+just the name swap. **WSJF: still low-medium, still near-zero job size.**
+**Owner:** Yehor (different repo/remote, not connected to this session
+by default — see guidance in Session 018's log entry for exact steps).
 
-## 9. PyPI Trusted Publisher — confirm live
-**WSJF: low for now** (not blocking anything until a release is actually
-cut). Confirm PyPI-side Trusted Publisher registration for the `patchward`
-project exists, and that `.github/workflows/publish.yml` has been
-exercised at least once via `workflow_dispatch` before relying on it for a
-real release.
-**Owner:** Yehor (PyPI account access required).
+## 9. PyPI Trusted Publisher — confirm live — RESCOPED 2026-07-15 (Session 018)
+**Mostly already done.** `Autonomous-Core/memory/project_open_tasks.md`
+item #20 (dated 2026-07-08, screenshot-confirmed by Yehor): PyPI-side
+pending publisher registered for project `patchward`, publisher type
+GitHub, repository `yehorcallmedai-maker/Patchward`, workflow
+`publish.yml`, **environment name "Any."** Cross-checked against the
+real `.github/workflows/publish.yml` in this repo (read directly,
+Tier 0): it declares `environment: name: pypi` under the `publish` job.
+**Flagged, not confirmed either way: PyPI's OIDC trusted-publisher
+matching requires the workflow's environment claim to match what was
+registered.** If "Any" was typed as a literal environment name on
+PyPI's pending-publisher form (rather than left blank / a "no
+restriction" selection), it will not match a workflow claiming
+`environment: pypi`, and the first real publish attempt will fail on
+an OIDC identity mismatch, not a code problem. **What's actually left:
+verify the PyPI-side environment field, then trigger `workflow_dispatch`
+once to prove the whole chain works end-to-end** — not "set this up
+from scratch." **Owner:** Yehor (PyPI account access required).
 
-## 10. Mirror Pass Tier 2
-**WSJF: lowest for now — contingent, not low-value.** Its value depends on
-item 3 (Stage 1 E2E) confirming the pipeline actually works post-rename.
-Feature work built on an unvalidated core is inventory risk, per BUILD_PLAN
-§6. Begin only after Stage 1's Keystone confirms the walking skeleton.
-**Owner:** TBD.
+## 10. "Mirror Pass Tier 2" — REMOVED 2026-07-15 (Session 018, cross-project research) — never belonged in this file
+**This was a category error carried in from `BUILD_PLAN_2026-07-10.md`,
+not a Patchward feature at all.** Confirmed via `Autonomous-Core`
+(`docs/architecture/competitive_analysis.md`,
+`memory/symbiote-recurring-income-research-and-buildplan.md`): "Mirror
+Pass" (also called Symbiote) is a completely separate product Yehor
+runs — a $1,500 flat-fee PEP 484 type-annotation consulting service for
+Python codebases, marketed on callmedai.com. "Tier 2" is a pricing/scope
+upsell for that service (service layer + entities layer, $3,000–$4,000),
+tracked as its own numbered backlog item **inside Autonomous-Core's own
+tracker** (a different "#12" than this file's item 12 — pure numbering
+coincidence, confirmed by content, not by number). It is a sales/outreach
+task (find ICP-matched prospects per `competitive_analysis.md` §5c),
+not an engineering task, and has zero code surface in this repo.
+Removed here rather than silently reassigned, per this project's own
+correction convention — same treatment as the ClinInsight/Databutton
+item removed in Session 014. If Yehor wants to track it, it belongs in
+Autonomous-Core's tracker, where it already lives.
 
 ## 11. Stage 2 — authorized third-party E2E test (COMPLETE 2026-07-14 — PR #1 on ssh-audit)
 **Target selection:** `yehorcallmedai-maker/ssh-audit` (public fork, 1.4 MB,
@@ -627,33 +659,46 @@ can resolve).
 
 ---
 
-## 14. Stray pre-rename branches on `ssh-audit` (NEW 2026-07-14 — found during Stage 2 close-out verification, undocumented)
-While independently re-verifying PR #1's merge (fresh clone of `ssh-audit`,
-`git ls-remote`), found two branches with no relationship to Stage 2:
-`repomend/fix-bandit.B110-1fdaef` and `repomend/fix-bandit.B311-6323af`,
-both dated **2026-06-29** — three weeks before this session, using the
-pre-rename `repomend/` branch prefix. `ssh-audit` does not appear
-anywhere in `memory/project_session_log.md` before today — this is a
-genuinely undocumented, unlogged run of the tool (RepoMend-era) against
-this repo. No associated PRs confirmed (unauthenticated GitHub API
-returns nothing for this account's PR list — same restriction seen all
-session; inconclusive, not confirmed-absent — check via `gh pr list
---repo yehorcallmedai-maker/ssh-audit --state all` to be certain).
+## 14. Stray pre-rename branches on `ssh-audit` — RESOLVED 2026-07-15 (Session 018, cross-project research), origin confirmed
+**Origin fully confirmed, not "Yehor-only" anymore.** Cross-referenced
+against `Autonomous-Core/memory/symbiote-recurring-income-research-and-
+buildplan.md` §1.5: on **2026-06-29**, two RepoMend PRs were opened
+against **`jtesta/ssh-audit`** (the real upstream, 4.2k stars/221
+forks — not Yehor's fork) — **#359** (bare `except` clause, Bandit
+B110) and **#360** (`random.randint`→`secrets.randbelow`, Bandit B311).
+The stray branches `repomend/fix-bandit.B110-1fdaef` and
+`repomend/fix-bandit.B311-6323af` on Yehor's fork are the local source
+branches for those two PRs. **Both PRs were closed by the upstream
+owner on 2026-07-03** with review comments reading, in full: *"This is
+AI slop."* and *"More AI slop."* — then tagged with a project-level "AI
+slop" label. No technical engagement with the actual diffs; the fixes
+themselves were narrow and correct. This incident is the single piece
+of evidence that most directly drove Autonomous-Core's Patchward
+Marketplace pivot recommendation (self-serve GitHub App, not unsolicited
+open-source outreach — see `docs/architecture/patchward-marketplace-
+buildplan.md` §1).
+
+**Reconciled against Stage 2 (item 11):** Session 014's later reuse of
+"ssh-audit" as a Stage 2 target was a separate, independently-reasoned
+decision (Yehor's own fork specifically, chosen to avoid external-consent
+complexity) made without cross-referencing this incident — but it
+happens to be compatible with it: both agree the real upstream
+`jtesta/ssh-audit` should never be targeted again. Current
+`patchward.toml` confirmed (`[github].owner = "yehorcallmedai-maker"`)
+to target only the fork, not upstream — no live conflict.
 
 **Notable data point, not just housekeeping:** the `B311` branch shows a
-real fix was produced historically for the exact finding today's Stage 2
-run declined (Fix-Gen exhausted `max_turns` without `submit_fix` — see
-item 13). Not asserted as a regression — could be a prompt/model change,
-a different Fix-Gen version, or simple non-determinism — but worth
-keeping in mind if item 13 is ever picked up: this is evidence Fix-Gen
-*can* produce a fix for this exact finding, so "declined" isn't
-necessarily "unfixable."
+real fix was produced historically for the exact finding Stage 2's own
+2026-07-14 run declined (Fix-Gen exhausted `max_turns` without
+`submit_fix` — see item 13). Not asserted as a regression — could be a
+prompt/model change, version difference, or non-determinism — but
+evidence Fix-Gen *can* produce a fix for this exact finding, so
+"declined" isn't necessarily "unfixable."
 
-**Owner:** Yehor — only he can confirm whether this was an intentional
-earlier test (and if so, whether the stray branches should be deleted)
-or something else entirely. Not investigated further this session —
-disclosed rather than silently found-and-ignored, per this project's
-own convention.
+**Recommended, not decided:** the two stale branches on Yehor's fork are
+now dead weight from rejected PRs — safe to delete, or safe to leave as
+a historical record. Genuinely low-stakes either way; still Yehor's
+call, but now a fully-informed one rather than an open mystery.
 
 ## 15. No dedicated `tests/test_cli.py` — CLI coverage is scattered and partial (NEW, triaged 2026-07-15)
 **WSJF: split into two honestly different-sized pieces — do not treat as
