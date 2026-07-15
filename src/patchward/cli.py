@@ -408,10 +408,20 @@ def fix(
                             )
 
                             if not fix_result.success:
-                                typer.echo(
-                                    f"  [SKIP] Fix-Gen did not produce"
-                                    f" a fix: {fix_result.error}"
-                                )
+                                # BACKLOG 13: an explicit decline_fix call is a
+                                # deliberate "not a real issue" decision, distinct
+                                # from max_turns exhaustion — surface it as its own
+                                # log line rather than the ambiguous generic [SKIP].
+                                if fix_result.declined:
+                                    typer.echo(
+                                        f"  [DECLINED] Fix-Gen determined this is"
+                                        f" not a real issue: {fix_result.decline_reason}"
+                                    )
+                                else:
+                                    typer.echo(
+                                        f"  [SKIP] Fix-Gen did not produce"
+                                        f" a fix: {fix_result.error}"
+                                    )
                                 run_log.append({
                                     "finding_id": finding_id,
                                     "file_path": file_path,
@@ -422,6 +432,10 @@ def fix(
                                         fix_result.branch_name
                                     ),
                                     "success": False,
+                                    "declined": fix_result.declined,
+                                    "decline_reason": (
+                                        fix_result.decline_reason
+                                    ),
                                     "verifier": None,
                                 })
                                 failed_count += 1

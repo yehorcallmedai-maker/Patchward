@@ -451,6 +451,56 @@ async def test_run_repo_pipeline_fix_failed(
 
 
 @pytest.mark.asyncio
+async def test_run_repo_pipeline_declined(
+    tmp_path: Path,
+) -> None:
+    """
+    BACKLOG 13: Fix-Gen returns success=False, declined=True → status
+    must be the distinct 'declined', not the generic 'fix_failed', and
+    result['error'] carries the model's stated decline_reason.
+    """
+    from patchward.fix_gen import FixResult
+
+    cfg = _make_cfg(tmp_path, n_repos=1)
+    sem = asyncio.Semaphore(1)
+    sarif_run = _make_sarif_run([_fake_finding()])
+    declined_result = FixResult(
+        model="claude-sonnet-4-6",
+        finding_id="test",
+        success=False,
+        declined=True,
+        decline_reason="Intentional by-design behavior, not a real issue.",
+    )
+
+    with (
+        patch(
+            "patchward.pipeline.run_all_scanners",
+            return_value=[sarif_run],
+        ),
+        patch(
+            "patchward.pipeline.fix_worktree_context"
+        ) as mock_ctx,
+        patch(
+            "patchward.pipeline.FixGenSubagent"
+        ) as mock_agent_cls,
+    ):
+        handle = mock_ctx.return_value.__enter__.return_value
+        handle.worktree_path = tmp_path / "wt"
+        handle.branch = "patchward/fix-test"
+        mock_agent_cls.return_value.apply_fix = AsyncMock(
+            return_value=declined_result
+        )
+
+        result = await run_repo_pipeline(
+            cfg.repos[0], cfg, sem, "key", "tok"
+        )
+
+    assert result["status"] == "declined"
+    assert result["error"] == "Intentional by-design behavior, not a real issue."
+    assert sem._value == 1  # noqa: SLF001
+
+
+@pytest.mark.asyncio
 async def test_run_repo_pipeline_verify_failed(
     tmp_path: Path,
 ) -> None:

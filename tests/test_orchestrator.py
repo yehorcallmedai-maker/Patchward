@@ -32,7 +32,14 @@ from typer.testing import CliRunner
 # Helpers — build lightweight mock objects
 # ---------------------------------------------------------------------------
 
-def _make_fix_result(*, success: bool = True, branch: str = "patchward/fix-test-abc", error: str = "") -> MagicMock:
+def _make_fix_result(
+    *,
+    success: bool = True,
+    branch: str = "patchward/fix-test-abc",
+    error: str = "",
+    declined: bool = False,
+    decline_reason: str = "",
+) -> MagicMock:
     r = MagicMock()
     r.success = success
     r.branch_name = branch
@@ -44,8 +51,19 @@ def _make_fix_result(*, success: bool = True, branch: str = "patchward/fix-test-
     # run_log.append() to raise inside the broad per-finding except-and-
     # continue block in cli.py — silently discarding the run log record
     # (found + fixed 2026-07-08, see project_open_tasks.md #25).
+    #
+    # BACKLOG 13: same failure class recurred when `declined`/`decline_reason`
+    # were added to FixResult — cli.py reads `fix_result.declined` and
+    # `fix_result.decline_reason` unconditionally now, and an unset MagicMock
+    # attribute is both auto-truthy (breaks the [DECLINED] vs [SKIP] branch)
+    # and non-JSON-serializable (breaks run_log.append() the same way).
+    # Every FixResult mock must set these explicitly, not rely on
+    # MagicMock's auto-vivification — that is the actual lesson, not just
+    # "set .model too."
     r.model = "claude-sonnet-4-6"
     r.error = error
+    r.declined = declined
+    r.decline_reason = decline_reason
     return r
 
 
@@ -839,6 +857,10 @@ class TestRunLogThreaded:
         fix_fail = MagicMock()
         fix_fail.success = False
         fix_fail.error = "max_turns exhausted"
+        # BACKLOG 13: must be explicit — an unset MagicMock attribute is
+        # auto-truthy, which would make pipeline.py's `if fix_result.declined`
+        # check misclassify this as status="declined" instead of "fix_failed".
+        fix_fail.declined = False
 
         repo = MagicMock()
         repo.owner = "o"

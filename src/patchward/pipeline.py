@@ -189,8 +189,18 @@ async def run_repo_pipeline(
                         )
 
                         if not fix_result.success:
-                            finding_status = "fix_failed"
-                            result["error"] = fix_result.error
+                            # BACKLOG 13: distinguish a deliberate decline
+                            # from a genuine fix_failed (max_turns exhausted
+                            # / submit_fix never called) — same underlying
+                            # success=False, different meaning downstream.
+                            if fix_result.declined:
+                                finding_status = "declined"
+                                result["error"] = (
+                                    fix_result.decline_reason
+                                )
+                            else:
+                                finding_status = "fix_failed"
+                                result["error"] = fix_result.error
                         else:
                             # Step 3: Verify
                             verify_result = (

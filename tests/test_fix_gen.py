@@ -902,3 +902,149 @@ class TestModelTieringWithBase:
         assert _model_for_severity_with_base("warning", custom) == custom
         assert _model_for_severity_with_base("info", custom) == custom
         assert _model_for_severity_with_base("note", custom) == custom
+
+
+# ---------------------------------------------------------------------------
+# 9. Explicit decline path — BACKLOG 13
+#
+# Stage 2 (2026-07-14, ssh-audit) showed Fix-Gen correctly avoiding bad
+# fixes on by-design findings, but only by exhausting max_turns without
+# calling submit_fix — safe, but indistinguishable in the logs from the
+# model genuinely struggling. decline_fix gives that same "not a real
+# issue" outcome an explicit, logged decision instead.
+# ---------------------------------------------------------------------------
+
+def test_decline_fix_schema_registered() -> None:
+    """decline_fix must be one of the tool schemas offered to the model."""
+    from patchward.fix_gen import _ALL_FIX_GEN_TOOL_SCHEMAS
+
+    names = {schema["name"] for schema in _ALL_FIX_GEN_TOOL_SCHEMAS}
+    assert "decline_fix" in names, (
+        "decline_fix must be registered in _ALL_FIX_GEN_TOOL_SCHEMAS — BACKLOG 13"
+    )
+
+
+def test_decline_fix_schema_requires_reason_and_confidence() -> None:
+    """decline_fix's input_schema must require both reason and confidence."""
+    from patchward.fix_gen import _DECLINE_FIX_SCHEMA
+
+    required = set(_DECLINE_FIX_SCHEMA["input_schema"]["required"])
+    assert required == {"reason", "confidence"}
+
+
+async def test_apply_fix_returns_declined_on_decline_fix_call(tmp_path: Path) -> None:
+    """
+    apply_fix() must return FixResult with success=False, declined=True, and
+    decline_reason populated when the model calls decline_fix instead of
+    submit_fix — BACKLOG 13.
+    """
+    mock_client = _make_mock_client(
+        "decline_fix",
+        {
+            "reason": "This bind-to-all-interfaces call is intentional for an "
+                      "SSH-auditing server, not a vulnerability.",
+            "confidence": "high",
+        },
+    )
+    agent = FixGenSubagent(client=mock_client)
+    finding = {
+        "rule_id": "python.security.avoid-bind-to-all-interfaces",
+        "file_path": "ssh_socket.py",
+        "line_start": 12,
+        "line_end": 12,
+        "severity": "warning",
+        "message": "socket bound to 0.0.0.0",
+    }
+    result = await agent.apply_fix(finding, tmp_path, finding_id="decline-001")
+
+    assert isinstance(result, FixResult)
+    assert result.success is False
+    assert result.declined is True
+    assert "SSH-auditing" in result.decline_reason
+    assert result.confidence == "high"
+    assert result.finding_id == "decline-001"
+    # Distinct from the generic max_turns fallback message:
+    assert result.error == ""
+
+
+async def test_apply_fix_declined_does_not_call_git_commit(tmp_path: Path) -> None:
+    """
+    A decline_fix call means no edit was necessarily applied — git_commit_all
+    must NOT be called, same discipline as the max_turns-exhausted path
+    (ADR-017).
+    """
+    from unittest.mock import patch as _patch
+
+    mock_client = _make_mock_client(
+        "decline_fix",
+        {"reason": "False positive — simulation code, not production.", "confidence": "medium"},
+    )
+    agent = FixGenSubagent(client=mock_client)
+    finding = {
+        "rule_id": "python.security.insecure-random",
+        "file_path": "dheat.py",
+        "line_start": 40,
+        "line_end": 40,
+        "severity": "warning",
+        "message": "weak PRNG",
+    }
+
+    with _patch("patchward.fix_gen.git_commit_all") as mock_commit:
+        result = await agent.apply_fix(finding, tmp_path, finding_id="decline-002")
+
+    assert result.declined is True
+    mock_commit.assert_not_called()
+
+
+async def test_apply_fix_max_turns_exhaustion_is_not_declined(tmp_path: Path) -> None:
+    """
+    The plain max_turns-exhausted fallback must NOT be mistaken for a
+    decline — declined stays False and decline_reason stays empty, so
+    callers can branch on `declined` without ambiguity (BACKLOG 13).
+    """
+    read_block = MagicMock()
+    read_block.type = "tool_use"
+    read_block.name = "read_file"
+    read_block.id = "tool_read_002"
+    read_block.input = {"path": str(tmp_path / "vulnerable.py")}
+
+    response = MagicMock()
+    response.content = [read_block]
+    response.stop_reason = "tool_use"
+
+    client = MagicMock()
+    client.messages.create = AsyncMock(return_value=response)
+
+    (tmp_path / "vulnerable.py").write_text("x = 1\n")
+
+    agent = FixGenSubagent(client=client)
+    finding = {
+        "rule_id": "some.rule",
+        "file_path": "vulnerable.py",
+        "line_start": 1,
+        "line_end": 1,
+        "severity": "warning",
+        "message": "test finding",
+    }
+    result = await agent.apply_fix(finding, tmp_path, max_turns=2)
+
+    assert result.success is False
+    assert result.declined is False
+    assert result.decline_reason == ""
+    assert "max_turns" in result.error
+
+
+def test_decline_fix_absent_from_execute_fix_tool_dispatch() -> None:
+    """
+    decline_fix is a control-flow signal handled directly in apply_fix()'s
+    loop, like submit_fix — it must never be routed through
+    _execute_fix_tool (which only knows read_file/edit_file/write_file).
+    """
+    result = _execute_fix_tool(
+        "decline_fix",
+        {"reason": "x", "confidence": "high"},
+        Path("/tmp/whatever"),
+        "vulnerable.py",
+    )
+    assert "ERROR" in result
+    assert "unknown tool" in result.lower()
