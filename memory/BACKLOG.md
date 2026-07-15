@@ -596,15 +596,23 @@ tool path (BACKLOG 13)`.
 file exists in this repo at all (checked via `Glob`, confirmed absent),
 so there was no existing harness/convention to extend without building
 one from scratch. `pipeline.py` and `fix_gen.py`'s decline logic are
-both covered. Also flagged, not fixed: `.claude/agents/fix-gen.md` is a
-stale legacy template — still says "RepoMend", still describes an
-"ESCALATE signal" that was never actually implemented as a tool anywhere
-in `fix_gen.py`. It appears to be a distribution/setup artifact
-("SETUP NOTE: Copy this file to .claude/agents/fix-gen.md") rather than
-the live prompt (the real one is `_FIX_GEN_SYSTEM_PROMPT`, embedded
-directly in `fix_gen.py`, which is what was actually updated) — but this
-wasn't independently confirmed unused, just observed to be inconsistent.
-**Owner:** TBD if it's worth reconciling or deleting.
+both covered (now closed — see BACKLOG 15a). **`.claude/agents/*.md`
+naming — CLOSED 2026-07-15, commit `7effbad`.** Widened during Session
+016: all three templates (`scanner.md`, `fix-gen.md`, `verifier.md`),
+not just `fix-gen.md`, still said "RepoMend"; grep across `src/`
+confirmed zero runtime references to any of them (they're not the live
+prompt — the real one is `_FIX_GEN_SYSTEM_PROMPT`, embedded directly in
+`fix_gen.py`). The `Edit`/`Write` tools refused all three as a protected
+path, so content was generated, base64-encoded, and handed to Yehor as
+three `WriteAllText` PowerShell commands to run himself — verified via
+the `Read` tool (not blocked) before handoff. All three now say
+"Patchward"; `fix-gen.md`'s branch-naming line and its fictional
+"ESCALATE signal" description now correctly describe the real
+`decline_fix` mechanism (BACKLOG 13) and the real `patchward/fix-<id>`
+branch prefix. **Not decided, deliberately left to Yehor:** whether these
+three unreferenced files are worth keeping at all, versus deleting
+outright — correcting content was the safe, reversible move; deletion is
+a call only he should make.
 
 ## 12. Regulatory flags — CRA / GDPR classification
 **WSJF: low urgency now, high cost if skipped before Phase 10.** Get
