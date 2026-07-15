@@ -647,6 +647,38 @@ or something else entirely. Not investigated further this session —
 disclosed rather than silently found-and-ignored, per this project's
 own convention.
 
+## 15. No dedicated `tests/test_cli.py` — CLI coverage is scattered and partial (NEW, triaged 2026-07-15)
+**WSJF: split into two honestly different-sized pieces — do not treat as
+one blind "add CLI tests" task.** Confirmed via `Glob` (no
+`tests/test_cli.py` exists) and a grep of `runner.invoke(app, [...])`
+call sites: `cli.py`'s 4 commands (`version`, `scan`, `fix`, `batch`) are
+698 lines total; only `fix` is exercised via `CliRunner`, and only inside
+`test_orchestrator.py` (not a dedicated CLI test file) — `version`,
+`scan`, and `batch` have zero `CliRunner` coverage anywhere.
+
+**15a — `[DECLINED]` echo branch (BACKLOG 13 follow-up) — IMPLEMENTED
+2026-07-15, pending Yehor's real test-suite confirmation.** Added
+`test_run_log_fix_gen_declined_writes_declined_echo_and_record` to
+`test_orchestrator.py`'s `TestFixCommandRunLog` class, same established
+`CliRunner` + `_make_fix_result()` pattern as its `[SKIP]` sibling.
+Asserts `[DECLINED]` appears in CLI output (not `[SKIP]`), the reason
+text is printed, and the run log record carries `declined=True` +
+`decline_reason`. Not yet verified on Yehor's real machine — the
+sandbox's `ast.parse` reported a false truncation at line 1401 (the
+mount served a stale, incomplete copy — confirmed via the `Read` tool
+that the real file is 1505 lines and well-formed; same class of
+mount-truncation quirk previously seen with `cli.py`). Needs a real
+`uv run pytest --cov` before this is trusted.
+
+**15b — `version`/`scan`/`batch` CliRunner coverage.** Real gap, larger
+and genuinely unscoped: which commands matter most, how much of
+`scan`'s scanner-subprocess surface and `batch`'s async-pipeline
+delegation should be mocked vs. exercised, whether this belongs in
+`test_orchestrator.py` or a new dedicated `test_cli.py`. **WSJF: real
+value (this is the actual CLI users invoke) but Job Size needs its own
+scoping pass before starting — same discipline as item 10, not started
+blind this session.** **Owner:** TBD.
+
 ## Deferred, not forgotten
 - **[REMOVED 2026-07-14]** ClinInsight/Databutton LinkedIn DM replies —
   carried in this list since Session 012 (2026-07-10). Decision this

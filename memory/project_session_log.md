@@ -1312,3 +1312,54 @@ no dedicated unit test since there was no existing harness to extend.
 "RepoMend", still describes a never-implemented "ESCALATE signal") —
 observed as inconsistent with the live `_FIX_GEN_SYSTEM_PROMPT` in
 `fix_gen.py`, not confirmed unused, not touched this session.
+
+## Session 016 — 2026-07-15 (continued — .claude/agents cleanup triaged, test_cli.py gap scored)
+
+Ran `/session-strategy-synthesis` again at Yehor's request, decisively
+per the pattern set last session (no re-asking a multiple-choice
+question back). Verified Session 015's 3 commits landed clean (`git
+rev-parse HEAD` + `git ls-remote origin main`, both `9788656`, matching
+Yehor's reported push exactly) and Fly health OK (Tier 1). One real
+mount artifact hit twice this session: the bash sandbox served a stale
+`tail` of `project_session_log.md` (missing the just-written Session 015
+entry) even after the commit landed on remote — confirmed via the `Read`
+tool that the entry was genuinely present and genuinely committed
+(3-file diff in `9788656` included it). Noted, not acted on — matches
+this project's own documented "file reads can be stale" pattern.
+
+**Widened a Session 015 finding:** the "stale `fix-gen.md`" flag from
+last session turned out to undercount — read `scanner.md` and
+`verifier.md` too, both also say "RepoMend" and share the same orphaned
+"SETUP NOTE: Copy this file to .claude/agents/X.md" boilerplate. Grepped
+`src/` for any reference to `.claude/agents` — zero hits. All three
+files are confirmed unreferenced by the actual runtime pipeline (which
+calls scanners/Fix-Gen/Verifier directly via subprocess/Anthropic-SDK
+code, not via Claude Code subagents).
+
+**Blocked, not worked around:** attempted to correct the three files'
+content (RepoMend→Patchward, fix `fix-gen.md`'s fictional "ESCALATE
+signal" reference to match the real `decline_fix` mechanism) — the
+`Edit` tool refused, reporting `.claude/agents/*` as a protected path.
+Did not attempt a bash-level workaround around an explicit tool
+refusal — handed the exact diff to Yehor to apply himself instead (see
+below).
+
+**`tests/test_cli.py` gap triaged, not built blind:** confirmed via
+`Glob` no such file exists, and via grep of `runner.invoke(app, [...])`
+call sites that only the `fix` command has any `CliRunner` coverage
+(inside `test_orchestrator.py`, not a dedicated file) — `version`,
+`scan`, `batch` have zero. Split into BACKLOG item 15a (small, scoped,
+implemented this session) and 15b (real gap, genuinely unscoped job
+size, parked — same discipline applied to item 10 last session, not
+started blind).
+
+**15a implemented:** new test in `test_orchestrator.py` exercising the
+`[DECLINED]` echo path through the real `fix` CLI command (not just
+`pipeline.py`'s async path) — the actual gap BACKLOG 13 flagged.
+**Not yet verified on Yehor's real machine.** The sandbox's own
+`ast.parse` reported a false syntax error (unclosed paren at line 1401)
+— traced to the bash mount serving a truncated, stale copy of the file;
+the `Read` tool confirmed the real file is 1505 lines, complete, and
+well-formed. Same truncation-artifact class as `cli.py` in an earlier
+session. Needs `uv run pytest --cov` on Yehor's machine before trusting
+either the new test or the "no regression" claim.

@@ -1,188 +1,169 @@
 # Patchward — Next Session Start Prompt
-Regenerated at the actual end of Session 015 (2026-07-15), after BACKLOG
-item 13 closed and both commits were drafted (not yet confirmed landed —
-see Housekeeping item 1). Paste this whole file as your opening message
-to start the next session with full context restored.
+Regenerated at the actual end of Session 016 (2026-07-15). Paste this
+whole file as your opening message to start the next session with full
+context restored.
 
 ---
 
 **Resume Patchward.** Read `memory/STATE.md`, `memory/BACKLOG.md`, and
-`memory/project_session_log.md` (Session 015 entry) first, in full. Do
-not assume anything below is still true without re-checking — verify,
-don't trust memory, per standing project rules. This file itself is a
-claim to be re-verified, not a source of truth — it has gone stale
-within its own session three separate times now (see "A pattern worth
-naming" below).
+`memory/project_session_log.md` (Session 015 and 016 entries) first, in
+full. Do not assume anything below is still true without re-checking —
+verify, don't trust memory, per standing project rules. This file itself
+is a claim to be re-verified, not a source of truth — it has gone stale
+within its own session or across sessions four separate times now (see
+"A pattern worth naming," carried forward from Session 015).
 
-## Housekeeping — confirm these before anything else
+## Housekeeping — confirm these before anything else, in order
 
-1. **Confirm the two Session 015 commits actually landed.** Drafted for
-   Yehor to run at session close: `docs: correct stale SHA/lock claims
-   in NEXT_SESSION_START.md`, then `feat(fix-gen): add explicit
-   decline_fix tool path (BACKLOG 13)`. **Not confirmed landed as of
-   this file being written** — the test run that validated the change
-   (448 passed, 2 skipped, 90.46% coverage) happened before the commit
-   step. Check `git log --oneline -5` and `git ls-remote origin main` on
-   Yehor's machine before trusting anything below that assumes these
-   are on `main`.
-2. **Confirm `main`'s SHA fresh** via `git ls-remote origin main` —
-   don't trust any SHA cited in this file's own text without
-   re-checking (see item 1 and the pattern note below).
-3. **Check `.git/objects/maintenance.lock`.** Present (0-byte) as of
-   this session on the sandbox mount; `.git/index.lock` was absent this
-   session (cleared since Session 014). Known, previously self-resolving
-   mount-permission quirk (Sessions 012, 013) — not confirmed blocking
-   anything on Yehor's real machine. Check `git status` there first.
-4. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`,
-   cheap and authoritative. Confirmed OK 2026-07-15 (direct HTTPS GET,
-   Tier 1). Re-check anyway.
-5. **Confirm `.venv` still works.** Confirmed OK by Yehor directly on
-   his own machine 2026-07-15 (two full test runs). Re-check anyway;
-   rebuild only if it actually fails (`Remove-Item -Recurse -Force .venv`
-   then `uv sync --all-extras`).
-6. **Re-run the full test suite before trusting it.** Last real number:
-   **448 passed, 2 skipped, 15 deselected, 90.46% coverage** — Yehor's
-   `.venv`, real machine, 2026-07-15 (second run, after fixing 2
-   test-mock failures the first run caught — see BACKLOG item 13). Any
-   session after this one should still re-confirm rather than cite this
-   number cold.
-7. **This sandbox's `git status`/`git diff` (working-tree comparisons)
-   cannot be trusted at all** — unchanged from prior sessions. `git
-   log`/`git ls-remote` (ref/object reads) remain trustworthy. Restrict
-   sandbox git usage to those two.
-8. **Sandbox file reads can go stale on recently-edited files** — this
-   session confirmed the opposite is also true: a `grep`-after-`Edit`
-   check on 5 freshly-edited files all matched immediately, no lag
-   observed. File-specific and unpredictable either way — trust the
-   Read/Edit tools' own view, verify compile/tests on Yehor's real
-   machine, not the sandbox.
+1. **Run the real test suite — this is the actual blocker, not routine
+   housekeeping.** Session 016 added one new test
+   (`test_run_log_fix_gen_declined_writes_declined_echo_and_record` in
+   `test_orchestrator.py`, BACKLOG 15a) that has **never been run on
+   real Python** — only `ast.parse`'d, and even that hit a false
+   positive first (see item 7 below). Run:
+   ```
+   cd D:\Dev\Projects\Patchward
+   uv run pytest --cov
+   ```
+   Expected: 449 passed (448 + the 1 new test), same 2 skipped, 15
+   deselected, coverage roughly flat or slightly up from 90.46%. If it
+   fails, don't assume it's a repeat of BACKLOG 13's MagicMock gap
+   without checking — read the actual failure first.
+2. **Apply the `.claude/agents/*.md` manual diff (below) — the agent
+   could not do this itself.** The `Edit` tool refused all three files
+   as a protected path. Three small, purely textual changes: rename
+   "RepoMend" → "Patchward" in `scanner.md`, `fix-gen.md`, `verifier.md`;
+   and in `fix-gen.md`, replace the "ESCALATE signal" description (never
+   actually implemented) with a description of the real `decline_fix`
+   tool that shipped in BACKLOG 13. See "Manual diff for Yehor" below
+   for exact before/after text.
+3. **If both of the above are done, commit + push:**
+   ```
+   git add tests/test_orchestrator.py memory/BACKLOG.md memory/project_session_log.md memory/NEXT_SESSION_START.md .claude/agents/scanner.md .claude/agents/fix-gen.md .claude/agents/verifier.md
+   git commit -m "test(cli): cover [DECLINED] echo path (BACKLOG 15a); fix stale RepoMend naming in .claude/agents templates"
+   git push
+   ```
+   Then `git ls-remote origin main` to confirm it landed — don't trust
+   the terminal output alone; a fresh session should re-check
+   independently regardless.
+4. **Confirm `main`'s SHA fresh** via `git ls-remote origin main` before
+   trusting any SHA cited anywhere in this file.
+5. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`.
+   Confirmed OK 2026-07-15 (direct HTTPS GET, Tier 1). Re-check anyway.
+6. **This sandbox's `git status`/`git diff` cannot be trusted at all.**
+   `git log`/`git ls-remote` remain trustworthy. Restrict sandbox git
+   usage to those two.
+7. **Sandbox file/line-count reads can be truncated, not just stale.**
+   Confirmed twice now, different files, different sessions: `cli.py`
+   (Session 014) and `tests/test_orchestrator.py` (this session — bash
+   `wc -l` reported 1401 lines and `ast.parse` reported a false
+   unclosed-paren syntax error at the truncation point; the `Read` tool
+   confirmed the real file is 1505 lines, complete, well-formed). Trust
+   the `Read`/`Edit` tools' own view of a file's contents over any bash
+   `cat`/`wc`/`grep`/`py_compile` read of it. Verify real correctness
+   (syntax, tests) only on Yehor's actual machine.
+8. **`.git/objects/maintenance.lock` may still be present (0-byte,
+   known non-blocking quirk).** Check `git status` on Yehor's machine
+   before assuming it blocks anything.
 9. **Don't trust a tool's self-reported description of what it did —
    check the actual artifact.**
-10. **PowerShell heredoc paste is unreliable on this machine for
-    multi-line strings.** Working pattern: base64-encode + `WriteAllText`,
-    or a single unbroken line, or (new this session, lower-risk when
-    Yehor is the one running the command, not the agent typing into his
-    terminal) a plain single-line `git commit -m "..."` with no commit
-    body — full rationale lives in code comments and the session log
-    instead of a long commit message.
+10. **Any new dataclass field added to a result type that's mocked via
+    bare `MagicMock()` (not `spec=`'d) anywhere in the test suite must be
+    added explicitly to every existing mock-construction site.** Hit
+    twice in this exact codebase (2026-07-08, 2026-07-15,
+    `test_orchestrator.py` both times).
 
-## A pattern worth naming — this file's own claims have now gone stale three times
+## Manual diff for Yehor — `.claude/agents/*.md` (agent-blocked, apply by hand)
 
-Session 014 caught this file going stale mid-session, twice, within the
-same session (see the two Session 014 drift notes, preserved below for
-the record). Session 015 caught a third instance on the very first
-read: the file's own claimed SHA and lock-file state were already wrong
-by the time a fresh session opened it. This is not "occasionally
-happens" — it is the default outcome for any transient-state claim in
-this file, because a new commit can land after the file is written and
-before it is next read. Treat every SHA, lock-file, or "as of this
-session" claim in this file as a hypothesis with a near-100% chance of
-being stale, not as a fact, no matter how recently it says it was
-checked. Re-verify via `git ls-remote`/`git rev-parse HEAD` first, every
-time, before anything else.
+All three files currently start their body with a line like `You are
+the <Name> subagent for RepoMend.` — change `RepoMend` to `Patchward` in
+all three (`scanner.md`, `fix-gen.md`, `verifier.md`).
 
-### Session 014 drift notes (preserved)
+In `fix-gen.md` specifically, this line:
+```
+- If you are uncertain about scope: stop and return an
+  ESCALATE signal, do not guess
+```
+should become something like:
+```
+- If you are uncertain about scope: stop and do not guess.
+- If, after inspecting the code, this is not a real, fixable
+  vulnerability (by-design behavior, false positive, test/simulation
+  code): call decline_fix with a clear reason instead of forcing an
+  unnecessary edit. This is the real, implemented mechanism (BACKLOG
+  13, 2026-07-15) — the old "ESCALATE signal" language here never
+  corresponded to an actual tool.
+```
+(Optional, your call: all three files also carry a "SETUP NOTE: Copy
+this file to .claude/agents/X.md" trailer that's self-referential —
+they're already at that path. Confirmed via grep this session that none
+of the three are referenced anywhere in `src/`; whether to delete them
+outright rather than just correct the content is a decision only you
+should make, not something decided unilaterally this session.)
 
-The first Session 014 handoff was written after only BACKLOG 3a landed,
-then 3c/3d/6a/6/7/3b/11/7a/7b/7c/7d all closed in the same session
-without the file being regenerated to match until a `/session-strategy-
-synthesis` drift check caught it — twice. Lesson from that session:
-regenerate this file once, at the point work actually stops, not at the
-first natural pause and not so late that drift compounds. This session
-tried to follow that — regenerating once, now, after BACKLOG 13 actually
-closed (pending commit confirmation, see Housekeeping item 1).
+## Progress list — where things stand (verified fresh 2026-07-15, Session 016)
 
-## Progress list — where things stand (verified fresh 2026-07-15)
-
-- [x] Phase 8 (State Reconstruction Audit) — CLOSED, tagged `state-audit-2026-07`.
-- [x] Stage-1 E2E pipeline test — run and documented (Session 013).
-- [x] Stage 2 (BACKLOG item 11) — real third-party E2E test, COMPLETE.
-      `github.com/yehorcallmedai-maker/ssh-audit/pull/1` shipped, merged,
-      branch deleted. Pipeline validated end-to-end against a real
-      third-party repo.
-- [x] BACKLOG 3a/3b/3c/3d, 6, 6a, 7, 7a, 7b, 7c, 7d — all CLOSED (Session 014).
-- [x] **BACKLOG 13 — Fix-Gen explicit decline path — CLOSED 2026-07-15
-      (pending commit confirmation, Housekeeping item 1).** Selected over
-      item 10 via `/session-strategy-synthesis` on WSJF terms (item 10
-      has no spec anywhere in the repo — see BACKLOG item 13's full
-      writeup and item 10 below). `decline_fix` tool added to Fix-Gen;
-      `FixResult.declined`/`.decline_reason` added; `pipeline.py`/`cli.py`
-      updated to surface it distinctly from generic `fix_failed`/`[SKIP]`.
-      7 new tests. Caught and fixed a real recurrence of a previously-
-      documented MagicMock test-mock bug class along the way (see
-      BACKLOG 13 for the full writeup — now flagged as a standing
-      heuristic for this codebase's test-mocking style).
-- [ ] **BACKLOG item 10 — Mirror Pass Tier 2 — still unscoped, not
-      started.** Confirmed this session: no design spec exists anywhere
-      in `memory/`, `docs/`, or `src/` beyond a one-line BACKLOG/BUILD_PLAN
-      table entry. Its real next step is a scoping conversation with
-      Yehor, not code. Don't start "implementing" it without that
-      conversation happening first.
-- [ ] BACKLOG item 9 — PyPI Trusted Publisher — confirm live. Yehor-only
-      (PyPI account access required).
-- [ ] BACKLOG item 12 — Regulatory flags (CRA/GDPR) — Yehor-only
-      (external legal input required), needed before paid listing, not now.
-- [ ] BACKLOG item 8 — `callmed-landing` rename — different repo, out of
-      scope for Patchward sessions.
-- [ ] BACKLOG item 14 — stray pre-rename `repomend/` branches on
-      `ssh-audit` — Yehor-only, not investigated further.
-- [ ] `.claude/agents/fix-gen.md` — **NEW, flagged this session, not
-      scheduled.** Stale legacy template: still says "RepoMend", still
-      describes a never-implemented "ESCALATE signal" tool. Appears to be
-      a distribution/setup artifact, not the live prompt (the real one is
-      `_FIX_GEN_SYSTEM_PROMPT` embedded in `fix_gen.py`, which is what
-      was actually updated for BACKLOG 13) — not confirmed unused, just
-      observed inconsistent. Owner: TBD.
-- [ ] No `tests/test_cli.py` exists in this repo at all — confirmed via
-      `Glob` this session. `cli.py`'s `[DECLINED]` echo branch (BACKLOG
-      13) has no dedicated unit test as a result. Not blocking, but worth
-      knowing before assuming CLI-level output is covered.
+- [x] BACKLOG 13 — Fix-Gen explicit decline path — CLOSED, verified,
+      committed, pushed (`9788656`).
+- [x] BACKLOG 15 — triaged (not built blind): split into 15a (small,
+      implemented this session, **unverified on real Python — see
+      Housekeeping item 1**) and 15b (real gap, genuinely unscoped,
+      parked).
+- [ ] `.claude/agents/*.md` cleanup — content drafted, **blocked on
+      Yehor applying it manually** (agent-blocked path). See "Manual
+      diff" above.
+- [ ] BACKLOG item 10 — Mirror Pass Tier 2 — still unscoped, needs a
+      conversation with Yehor before it's real work, not started.
+- [ ] BACKLOG items 9, 12, 8, 14 — unchanged, all Yehor-only.
+- [ ] BACKLOG 15b — `version`/`scan`/`batch` CliRunner coverage — real
+      gap, not scoped, not started.
 
 Full detail and WSJF ordering for all of the above: `memory/BACKLOG.md`.
 
+## A pattern worth naming (carried forward, now a 4th instance)
+
+This file, or its underlying memory files, have gone stale or been
+caught mid-write four separate times across Sessions 014-016: two
+mid-session drifts in 014, one stale SHA/lock claim caught at the start
+of 015, and this session's sandbox-mount truncation (a different failure
+mode — not memory drift, but a read-tool artifact that could have been
+mistaken for a real code defect if trusted uncritically). The common
+thread: verify via the most direct, most independent method available
+before trusting any claim, including this file's own — and when a
+sandbox check contradicts a tool's own success confirmation (e.g. `Edit`
+reporting success, then a later `Read` should be trusted over a bash
+`ast.parse` that disagrees), trust the tool that did the actual write,
+not the secondary read path.
+
 ## Standing rules (unchanged unless noted, still binding)
 
-- Verify before reporting anything as done — re-fetch/re-check live
-  state, never trust a prior session's cached belief, including this
-  file itself (see "A pattern worth naming" above).
+- Verify before reporting anything as done.
 - **Never run git writes against Patchward from the bash sandbox** —
-  hand git writes to Yehor to run on his own machine.
+  hand git writes to Yehor.
 - **Never paste or forward API keys/secrets through terminal output
   into chat.**
 - Trust-tier logic (BUILD_PLAN_2026-07-10.md Appendix B): Tier 0 (git
   hashes, `git ls-remote`, local exit codes) — accept as-is. Tier 1
-  (authenticated direct reads, e.g. a direct HTTPS healthz probe) —
-  accept with evidence. Tier 2 (proxied/unauthenticated reads) — never
-  sufficient alone for a gating decision.
-- **This sandbox's `git status`/`git diff` cannot be trusted at all** —
-  restrict sandbox git usage to `git log`/`git ls-remote` only.
+  (authenticated direct reads) — accept with evidence. Tier 2
+  (proxied/unauthenticated) — never sufficient alone for a gating
+  decision.
+- **This sandbox's `git status`/`git diff` cannot be trusted at all.**
+- **Sandbox file reads/line-counts can be stale or truncated** — trust
+  `Read`/`Edit` tool output, verify real correctness on Yehor's machine.
 - **Don't trust a tool's self-reported description of what it did —
   check the actual artifact.**
-- **New this session: any new dataclass field added to a result type
-  that's mocked via bare `MagicMock()` (not `spec=`'d) anywhere in the
-  test suite must be added explicitly to every existing mock-construction
-  site** — an unset attribute auto-vivifies as a truthy,
-  non-JSON-serializable object, which silently breaks any code path that
-  both branches on truthiness and serializes the mock to JSON. This
-  exact class of bug has now hit this codebase twice (2026-07-08 and
-  2026-07-15) in the same file (`test_orchestrator.py`).
+- **When a tool (like `Edit`) refuses a path as protected, hand the
+  change to Yehor rather than working around it via bash or another
+  channel.**
 - **Regenerate this handoff file at the actual end of a session's
   work** — not at the first pause point.
 
-## New capability from Session 014, still relevant
-
-`gh` (GitHub CLI) is installed and authenticated on Yehor's machine
-(device-flow, `yehorcallmedai-maker` account, org access to FixProve and
-yehorkaliberda). Useful for independent verification — `gh pr view`,
-`gh pr diff`, `gh repo list` — rather than trusting a tool's or CLI's own
-self-report.
-
 ## Suggested first move
 
-Confirm Housekeeping items 1-6 above — especially item 1, since the two
-Session 015 commits were drafted but not confirmed landed before this
-file was written. Once confirmed, nothing in the current backlog is
-agent-actionable without Yehor's input: item 10 needs a scoping
-conversation before it's real work, items 9/12/8/14 are Yehor-only. Ask
-Yehor what he wants to look at next rather than assuming continuation
-into any of them.
+Run the real test suite (Housekeeping item 1) — this session shipped one
+untested-on-real-Python test and needs that confirmed before anything
+else. Apply the `.claude/agents` manual diff whenever convenient (small,
+independent, no dependency on the test run). After both land, the
+backlog has no agent-startable coding work left without your input —
+item 10 needs a scoping conversation, 15b needs its own scoping pass,
+everything else is Yehor-only.

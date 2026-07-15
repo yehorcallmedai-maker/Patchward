@@ -394,6 +394,85 @@ class TestFixCommandRunLog:
         assert records[0]["verifier"] is None
         handle.mark_success.assert_not_called()
 
+    def test_run_log_fix_gen_declined_writes_declined_echo_and_record(
+        self, tmp_path: Path
+    ) -> None:
+        """
+        BACKLOG 13/15a: when Fix-Gen calls decline_fix (success=False,
+        declined=True), the CLI must print the distinct [DECLINED] message
+        (not the generic [SKIP]) and the run log record must carry
+        declined=True and the decline_reason — through the real `fix`
+        command invocation, not just pipeline.py's async path.
+        """
+        from patchward.cli import app
+        from patchward.run_log import RunLog
+
+        log_path = tmp_path / "run.json"
+        finding = _make_finding()
+        fix_result = _make_fix_result(
+            success=False,
+            declined=True,
+            decline_reason="Intentional by-design behavior, not a real issue.",
+        )
+
+        cfg = _base_cfg()
+
+        handle = MagicMock()
+        handle.worktree_path = tmp_path / "worktree"
+        handle.branch = "patchward/fix-test-abc"
+
+        wt_ctx = MagicMock()
+        wt_ctx.__enter__ = MagicMock(return_value=tmp_path / "scan-wt")
+        wt_ctx.__exit__ = MagicMock(return_value=False)
+
+        fix_wt_ctx = MagicMock()
+        fix_wt_ctx.__enter__ = MagicMock(return_value=handle)
+        fix_wt_ctx.__exit__ = MagicMock(return_value=False)
+
+        sarif_run = MagicMock()
+        sarif_run.to_findings.return_value = [finding]
+
+        runner = CliRunner()
+
+        with (
+            patch("patchward.cli.load_config", return_value=cfg),
+            patch("patchward.cli.CredentialProxy") as mock_proxy_cls,
+            patch("patchward.cli.require_git_version"),
+            patch("patchward.cli.tracing"),
+            patch("patchward.cli.open_db"),
+            patch("patchward.cli.get_or_create_repo", return_value=1),
+            patch("patchward.cli.create_run", return_value=1),
+            patch("patchward.cli.finish_run"),
+            patch("patchward.cli.insert_finding"),
+            patch("patchward.cli.worktree_context", return_value=wt_ctx),
+            patch("patchward.cli.run_all_scanners", return_value=[sarif_run]),
+            patch("patchward.cli.fix_worktree_context", return_value=fix_wt_ctx),
+            patch("patchward.cli.FixGenSubagent") as mock_fg_cls,
+            patch("patchward.cli.Verifier"),
+        ):
+            mock_proxy_cls.return_value.load.return_value = MagicMock()
+            mock_proxy_cls.return_value.load.return_value.assert_credentials_excluded = MagicMock()
+            mock_proxy_cls.return_value.load.return_value.get_container_env = MagicMock(return_value={})
+            mock_proxy_cls.return_value.load.return_value.scrub = lambda x: x
+
+            mock_fg_cls.return_value.apply_fix = AsyncMock(return_value=fix_result)
+
+            result = runner.invoke(app, ["fix", "--log", str(log_path)])
+
+        assert result.exit_code == 0, result.output
+        assert "[DECLINED]" in result.output
+        assert "Intentional by-design behavior" in result.output
+        assert "[SKIP]" not in result.output
+
+        records = RunLog(path=log_path).records()
+        assert len(records) == 1
+        assert records[0]["success"] is False
+        assert records[0]["declined"] is True
+        assert records[0]["decline_reason"] == (
+            "Intentional by-design behavior, not a real issue."
+        )
+        handle.mark_success.assert_not_called()
+
     def test_no_api_key_exits_nonzero(self, tmp_path: Path) -> None:
         """fix command requires ANTHROPIC_API_KEY — exits 1 without it."""
         from patchward.cli import app
