@@ -14,16 +14,18 @@ claim to be re-verified, not a source of truth.
 
 ## Housekeeping — confirm these before anything else
 
-1. **Confirm `main`'s SHA fresh** via `git ls-remote origin main`. Last
-   confirmed: `d8ba1bcfe595a11b7ed5932ce02c4a737a4eb653` — Session 018's
-   close-out commit, verified landed via independent `git fetch` +
-   `git ls-remote` (both matching Yehor's own `git push` output) during
-   the session-close pass itself. Re-check anyway; this line was
-   already caught stale once during this same close (it originally said
-   "not yet committed" — corrected after the commit actually landed,
-   per this project's own self-reference-trap lesson: a file that
-   documents its own commit hash is stale the moment that commit lands
-   if the file isn't re-checked afterward).
+1. **Run `git ls-remote origin main` yourself — do not trust any SHA
+   cited anywhere in this file, including this line.** This isn't
+   general caution: it's a structural fact, proven twice in one close
+   this session. This file is itself part of the commit chain it
+   describes — the moment it's committed, any hash it cites for "the
+   current commit" is already one commit behind (this exact thing
+   happened twice in a row while closing Session 018: the file said
+   "not yet committed" about a commit that then landed; the fix that
+   named the new hash was itself committed in a later commit, making
+   the named hash stale again on arrival). No amount of re-checking
+   before commit fixes this — only checking *after* opening the file
+   in a new session does. So: run the command, don't read the number.
 2. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`.
    Confirmed OK 2026-07-15, re-checked a second time at the actual
    session close (same result both times).
