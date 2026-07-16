@@ -110,6 +110,28 @@ def test_is_entitled_false_after_cancellation(db) -> None:
     assert is_entitled(db, "acme") is False
 
 
+def test_is_entitled_true_while_pending_change_not_yet_effective(db) -> None:
+    """
+    BACKLOG 5: a submitted downgrade/cancellation ("pending_change") only
+    takes effect at the start of the customer's next billing cycle (per
+    GitHub's own Marketplace docs on handling plan changes) — until then
+    the customer is still on, and still paying for, their current plan.
+    is_entitled() intentionally does NOT treat "pending_change" as
+    non-entitled; this test locks that in as a deliberate behavior, not
+    an oversight, after an earlier pass in this same session mistakenly
+    flagged it as a bug without checking GitHub's actual semantics first.
+    """
+    upsert_marketplace_purchase(
+        db, account_login="acme", plan_id=1, unit_count=5,
+        billing_cycle="monthly", status="purchased",
+    )
+    upsert_marketplace_purchase(
+        db, account_login="acme", plan_id=1, unit_count=5,
+        billing_cycle="monthly", status="pending_change",
+    )
+    assert is_entitled(db, "acme") is True
+
+
 def test_upsert_purchase_updates_unit_count_on_plan_change(db) -> None:
     upsert_marketplace_purchase(
         db, account_login="acme", plan_id=1, unit_count=5,

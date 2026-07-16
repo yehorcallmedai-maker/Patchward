@@ -26,6 +26,7 @@ Deliberately NOT in this version (see ADR-030):
 from __future__ import annotations
 
 import asyncio
+import collections
 import hashlib
 import hmac
 import logging
@@ -33,6 +34,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
@@ -61,6 +63,91 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Patchward Webhook Receiver")
 
 _DB_PATH = Path(os.environ.get("PATCHWARD_WEBHOOK_DB", "runs/webhook_state.db"))
+
+# BACKLOG 5 (Phase 9 Exposure Gate) — request body size limit.
+# GitHub's own hard cap on webhook payloads is 25 MB (a larger event
+# simply never gets delivered — see
+# https://docs.github.com/en/webhooks/webhook-events-and-payloads),
+# so a limit at that same ceiling never rejects a legitimate delivery
+# and still bounds worst-case memory use per request. Read as a
+# function (not a module-level constant) so tests can override it via
+# `monkeypatch.setenv` without needing to reload the module.
+_DEFAULT_MAX_BODY_BYTES = 25 * 1024 * 1024
+
+
+def _max_body_bytes() -> int:
+    return int(os.environ.get("PATCHWARD_WEBHOOK_MAX_BODY_BYTES", _DEFAULT_MAX_BODY_BYTES))
+
+
+def _check_body_size(content_length_header: str | None) -> None:
+    """
+    Reject oversized deliveries by Content-Length before the body is read,
+    when the client sends that header (GitHub always does). This is a
+    fast-path check only — a client omitting or lying about
+    Content-Length (e.g. chunked transfer-encoding) is still caught by
+    the second, post-read check in github_webhook, at the cost of that
+    request's bytes already having been buffered into memory by
+    Starlette. Full protection against that residual case would need a
+    streaming ASGI-level body limit, deliberately out of scope for this
+    v0 pass (see ADR-030's "deliberately not in this version" list).
+    """
+    if content_length_header is None:
+        return
+    try:
+        content_length = int(content_length_header)
+    except ValueError:
+        return
+    if content_length > _max_body_bytes():
+        raise HTTPException(status_code=413, detail="Payload too large")
+
+
+# BACKLOG 5 — rate limiting on /webhooks/github. Single Fly machine,
+# scale-to-zero (fly.toml), no shared store between instances by design
+# (ADR-030) — an in-memory sliding-window counter is consistent with
+# that same v0 scope, not a compromise pending a "real" implementation.
+# This bounds a runaway/replay flood; it is not a per-installation
+# fairness mechanism (GitHub's own webhook delivery rate is bounded by
+# its own infrastructure under normal operation).
+_RATE_LIMIT_MAX_REQUESTS_DEFAULT = 60
+_RATE_LIMIT_WINDOW_SECONDS_DEFAULT = 60.0
+
+_rate_limit_timestamps: collections.deque[float] = collections.deque()
+
+
+def _rate_limit_max_requests() -> int:
+    return int(
+        os.environ.get(
+            "PATCHWARD_WEBHOOK_RATE_LIMIT_MAX", _RATE_LIMIT_MAX_REQUESTS_DEFAULT
+        )
+    )
+
+
+def _rate_limit_window_seconds() -> float:
+    return float(
+        os.environ.get(
+            "PATCHWARD_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS",
+            _RATE_LIMIT_WINDOW_SECONDS_DEFAULT,
+        )
+    )
+
+
+def _check_rate_limit() -> None:
+    """
+    Sliding-window limiter: raises HTTPException(429) once more than
+    `_rate_limit_max_requests()` requests have hit this endpoint within
+    the last `_rate_limit_window_seconds()` seconds. Not thread-safe by
+    design — this process serves the endpoint from a single asyncio
+    event loop (uvicorn's default worker model here), so a plain
+    deque is sufficient; do not reuse this helper if the deployment
+    model ever moves to multiple worker processes/threads.
+    """
+    now = time.monotonic()
+    window_start = now - _rate_limit_window_seconds()
+    while _rate_limit_timestamps and _rate_limit_timestamps[0] < window_start:
+        _rate_limit_timestamps.popleft()
+    if len(_rate_limit_timestamps) >= _rate_limit_max_requests():
+        raise HTTPException(status_code=429, detail="Too many requests")
+    _rate_limit_timestamps.append(now)
 
 
 def _db() -> "idb.sqlite3.Connection":  # type: ignore[name-defined]
@@ -168,14 +255,27 @@ async def github_webhook(
     background_tasks: BackgroundTasks,
     x_github_event: str | None = Header(default=None),
     x_hub_signature_256: str | None = Header(default=None),
+    x_github_delivery: str | None = Header(default=None),
+    content_length: str | None = Header(default=None),
 ) -> dict:
+    _check_rate_limit()
+    _check_body_size(content_length)
+
     raw_body = await request.body()
+    if len(raw_body) > _max_body_bytes():
+        # Defense in depth for a missing/lying Content-Length header
+        # (e.g. chunked transfer-encoding) — see _check_body_size's
+        # docstring for the residual-risk note on this path.
+        raise HTTPException(status_code=413, detail="Payload too large")
     _verify_signature(raw_body, x_hub_signature_256)
     payload = await request.json()
 
     event = x_github_event or "unknown"
     action = payload.get("action")
-    logger.info("[webhook] received event=%s action=%s", event, action)
+    delivery_id = x_github_delivery or ""
+    logger.info(
+        "[webhook] received event=%s action=%s delivery=%s", event, action, delivery_id
+    )
 
     if event == "ping":
         return {"status": "pong"}
