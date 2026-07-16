@@ -1587,3 +1587,213 @@ goal) is measurably lighter now than at session open.
   `future-agi-contribution/` — both pre-existing, already-triaged in
   earlier sessions, untouched this session, confirmed via Yehor's real
   `git status` to be the only other non-clean items in the tree.
+
+## Session 020 — 2026-07-16 (BACKLOG item 5 — X-GitHub-Delivery logging shipped, pip-audit blocked cleanly, is_entitled() gap confirmed real)
+
+First session opened via `/session-strategy-synthesis` directly (rather
+than a pasted handoff paraphrase) against `.strategy/STRATEGY.md`,
+bootstrapped at Session 019's close. Two-pass verification: `main` @
+`7654b1e` unchanged (two independent `git ls-remote origin main` calls),
+Fly webhook healthy (direct `web_fetch`; bash-level curl/urllib both hit
+a sandbox proxy `403` — a tooling gap, not a health signal, confirmed
+by trying two different bash-level methods that failed identically).
+`.strategy/STRATEGY.md` and `memory/SESSION_CLOSE_2026-07-15.md` confirmed
+still untracked via `git ls-files` — Yehor has not yet committed Session
+019's bootstrap files. `Autonomous-Core` is not mounted this session, so
+items 8/9/10/14 remain exactly as Session 018/019 left them, Tier 2,
+unchanged.
+
+**Real finding, not just a re-check:** re-scanning all of `BACKLOG.md`
+rather than only the items foregrounded by the last three handoffs
+surfaced BACKLOG item 5 (Phase 9 Exposure Gate) — still fully open,
+still the only item marked `Owner: Claude (agent)`, and confirmed via a
+direct `grep` of `webhook.py` to have zero hits for `X-GitHub-Delivery`
+or rate-limiting. Proposed this as the session's L2 goal; Yehor
+confirmed and handed a precise, pre-scoped task brief covering exactly
+two of item 5's four sub-parts this session (pip-audit, then delivery
+logging), explicit done-gates, and a no-commit constraint.
+
+**Sub-task #4 (scoped `pip-audit`) — blocked cleanly, not guessed
+around.** Pinned versions read directly from committed `uv.lock` (Tier
+0): `fastapi==0.139.0`, `uvicorn==0.51.0`, `pyjwt==2.13.0`,
+`httpx==0.28.1` — matches memory's claimed extra membership exactly.
+`uv export --extra webhook` needs to download a Python 3.12+
+interpreter first; the sandbox's bash has no general internet egress
+(confirmed identically via `uv`'s own downloader, raw `curl`, and
+`python3 -m urllib.request` — all hit a proxy `403`/connect failure,
+while `web_fetch` and `pip install` from PyPI's index both work — an
+egress-allowlist gap specific to certain hosts, not a real outage).
+Tried a PyPI-JSON-API-via-`web_fetch` workaround for vulnerability data;
+came back empty, not trustworthy. Per the task's own instruction, did
+not fabricate a clean/dirty verdict — handed Yehor the exact two-line
+command to run on his own machine instead (see BACKLOG.md item 5).
+
+**Sub-task #2 (`X-GitHub-Delivery` structured logging) — implemented.**
+`webhook.py`'s `github_webhook` gained an `x_github_delivery` header
+param; the single `logger.info(...)` line at the top of the handler
+(which runs before the event-type dispatch) now includes `delivery=%s`
+— one change covers every event path, not six. Missing header logs an
+empty string, never raises — confirmed by a dedicated test. Two tests
+added to `test_webhook.py`, following the existing `caplog.at_level(...)`
+convention already established in `test_pr_publisher.py` (not invented
+fresh). **Verified in an ad-hoc sandbox pre-check only** (Python 3.10,
+deps `pip install`-ed manually since the sandbox has no matching
+interpreter for the project's real `>=3.12` requirement, `PYTHONPATH=src`
+in place of an editable install): `test_webhook.py` 8/8 passed; full
+suite **463 passed** (461 baseline + 2 new, exact arithmetic), 2
+skipped, 15 deselected, no regressions. Explicitly not treated as the
+done-gate — flagged for Yehor to re-run for real (`uv run pytest --cov`)
+before trusting.
+
+**Bonus finding while scoping, not itself in this session's assigned
+sub-parts:** direct read of `installations_db.py::is_entitled()`
+confirms the exact risk item 5's own text flagged as unconfirmed —
+`pending_change` status currently reads as entitled (only `"cancelled"`
+is excluded), and `test_installations_db.py` has zero test coverage for
+`pending_change`. Not fixed this session (out of the scoped two
+sub-parts); logged in `BACKLOG.md` as confirmed-real, fix-ready, next in
+line.
+
+**Not committed, per instruction.** Diff for `src/patchward/webhook.py`
+and `tests/test_webhook.py` staged only, handed to Yehor for
+line-by-line review (BUILD_PLAN §2 security-boundary rule). `BACKLOG.md`
+and this log entry updated to match; `.strategy/STRATEGY.md` updated at
+session close.
+
+### Session 020 continued — sub-task #4 closed for real on Yehor's machine
+
+Yehor hit the two things flagged as likely: (1) ran `uv export` from
+`C:\Users\truff` (no `pyproject.toml` there) instead of the repo root —
+`cd`'d in and it resolved instantly ("Resolved 77 packages in 1ms"); (2)
+`pip-audit -r webhook-reqs.txt` without `--no-deps` started building its
+own resolution venv to re-derive the dependency tree pip-audit doesn't
+trust a plain requirements file to already contain — slow enough that
+he interrupted it, not an actual hang. Corrected command
+(`pip-audit -r webhook-reqs.txt --no-deps`, justified because `uv
+export` already emits the full pinned transitive tree from the
+lockfile) came back clean: **"No known vulnerabilities found"** across
+all 77 packages. BACKLOG item 5's pip-audit sub-part is now genuinely
+closed, Tier 0, not a sandbox guess. Two of item 5's four sub-parts done
+this session (`X-GitHub-Delivery` logging + pip-audit); remaining two
+(rate limiting/body-size limits, `is_entitled()`'s `pending_change` gap)
+still open, next in line.
+
+### Session 020 continued — rate limiting + body-size limits shipped; is_entitled() "fix" reversed before writing any code
+
+Yehor asked to continue with full rigor, step by step. Re-verified state
+fresh (`git ls-remote` unchanged, `7654b1e`; both staged files from
+earlier this session still present, confirmed by direct `Read`/`Grep`,
+not by trusting memory of having written them).
+
+**Rate limiting + body-size limits (item 5's two remaining
+originally-scoped sub-parts) — implemented.** Checked `fly.toml` first:
+single machine, scale-to-zero, no shared store — same v0 constraints
+ADR-030 already accepts for the task queue and DB choice, so an
+in-memory limiter is architecturally consistent, not a corner cut.
+Looked up GitHub's actual documented webhook payload cap (25 MB,
+confirmed via `WebSearch`) and set the body-size default there — high
+enough to never reject a real delivery, low enough to bound worst-case
+memory per request. Added `_check_body_size()` (Content-Length
+fast-path, checked before signature verification) and a second
+post-read length check for the residual chunked-encoding case (documented
+as not fully solved — true protection needs a streaming ASGI limiter,
+out of scope, said so rather than overclaiming). Added `_check_rate_limit()`,
+a plain-deque sliding window (60 req/60s default, both tunable via env
+vars), justified in a code comment against the single-instance
+deployment fact just checked. 6 new tests in `test_webhook.py`
+(threshold, window-slide, oversized-rejected, within-limit-still-works),
+plus an autouse fixture resetting the rate limiter's module-level state
+between tests — without it, tests would leak counts into each other.
+
+**Real sandbox tooling problem hit and fixed, not routed around:**
+after editing both files, a sandbox pytest run under-collected
+`test_webhook.py` (8 items instead of 12) and then hit an
+`AttributeError` on `_rate_limit_timestamps` not existing, then (after
+bypassing `__pycache__` with `PYTHONPYCACHEPREFIX`) a flat-out
+`SyntaxError` in `webhook.py` that the `Read` tool's own view of the
+same file showed was well-formed. Same documented class of bug as
+Session 016's `cli.py` truncation and Session 017's stale
+`test_orchestrator.py` read — the bash sandbox's view of a just-edited
+file can lag or truncate relative to the real filesystem the Read/Edit
+tools see. Fix applied directly rather than worked around blindly:
+re-read each affected file in full via `Read` (trusted per this
+project's own standing rule), then rewrote it byte-for-byte through a
+bash heredoc to the same path, which forced the sandbox's own view back
+in sync — confirmed via `ast.parse` and a clean `hasattr()` check before
+re-running tests. Full suite after the fix: **467 passed** (461 + 6 new),
+2 skipped, 15 deselected — sandbox pre-check only, still needs Yehor's
+real `uv run pytest --cov`.
+
+**`is_entitled()`/`pending_change` — the earlier "confirmed bug" finding
+from this same session was wrong, caught before any code was written,
+not after.** Before implementing the previously-planned fix (exclude
+`pending_change` from entitlement), did the semantic research that
+should have happened before calling it a bug in the first place: fetched
+GitHub's own docs on Marketplace webhook plan changes. Cancellations and
+downgrades take effect only at the start of the next billing cycle —
+GitHub sends the webhook (and the change actually applies) at that
+future point, not at submission time. A customer sitting in
+`pending_change` is, by GitHub's own model, still a paying, still-entitled
+customer until the change's `effective_date` arrives. Read literally,
+"fixing" `is_entitled()` to exclude `pending_change` would cut off paying
+customers early — the actual bug, and the opposite of what this item
+originally assumed. **Did not write the code change.** Corrected
+`BACKLOG.md` in place rather than silently rewriting it, explaining the
+reversal step by step so the record shows the reasoning, not just the
+new conclusion. Flagged as a real open question for Yehor, since this is
+an entitlement/revenue decision, not a pure code-hygiene one, and the
+GitHub docs fetch that grounds this was cut short by a token limit before
+it reached the specific `pending_change` schema block — the argument
+rests on a corroborating search-result summary plus the codebase's own
+schema-comment naming, not a direct quoted doc citation of that exact
+action. Recommended path if confirmed: leave the behavior as-is, add a
+test that locks in and documents *why* `pending_change` counts as
+entitled, rather than "fixing" something that likely already works
+correctly.
+
+### Session 020 continued — Yehor confirmed the reversal independently; is_entitled() closed with a test, no code change
+
+Yehor checked GitHub's own docs himself and confirmed the reversal:
+leave `is_entitled()`'s behavior as-is, add a regression test instead of
+"fixing" it. Read `installations_db.py`'s schema comment and
+`upsert_marketplace_purchase` call sites first, per the stop-condition —
+confirmed `status` is a plain `TEXT` column with no CHECK constraint,
+and `webhook.py` passes the GitHub webhook's own `action` field straight
+through as the stored `status` string, so `"pending_change"` is a real,
+directly-observed value, not a misreading of a different payload field.
+Added `test_is_entitled_true_while_pending_change_not_yet_effective` to
+`tests/test_installations_db.py`. Hit the same stale-mount bug a third
+time this session (bash's view of the freshly-edited test file was
+truncated mid-docstring, `ast.parse` caught it) — same fix applied
+immediately: re-read via `Read`, rewrote via bash heredoc, re-verified
+syntax before running. Result: `test_installations_db.py` 11/11 passed;
+full suite **468 passed** (461 + 6 + 1), 2 skipped, 15 deselected, no
+regressions, sandbox pre-check only.
+
+**Session 020 summary, all sandbox pre-checks, none committed:** four
+of BACKLOG item 5's real sub-items now done (delivery logging,
+pip-audit — genuinely closed via Yehor's own machine, rate limiting +
+body-size limits, is_entitled/pending_change confirmed-correct-with-test)
+plus the earlier items 8/9/10/12/14 research from this session's open.
+Diffs across `src/patchward/webhook.py`, `tests/test_webhook.py`, and
+`tests/test_installations_db.py` staged only, handed to Yehor for
+line-by-line review per BUILD_PLAN §2. `BACKLOG.md` updated in place for
+every sub-item; `.strategy/STRATEGY.md` to be updated at close.
+
+### Session 020 continued — real-machine test confirmation, post-close
+
+After the formal close (`memory/SESSION_CLOSE_2026-07-16.md`), Yehor ran
+the actual done-gate himself: `uv run pytest --cov` on his real machine
+(Python 3.14.4, not the sandbox's 3.10). Result, pasted in full, not
+summarized: **468 passed, 2 skipped, 15 deselected, 90.46% coverage,
+threshold 80% reached** — exact match to every sandbox prediction made
+this session, no regressions. `webhook.py` correctly excluded from
+coverage measurement (`pyproject.toml`'s `omit` list), consistent with
+the flat coverage % despite ~100 new lines of webhook code. All four of
+BACKLOG item 5's sub-parts (rate limiting/body-size, delivery logging,
+pip-audit, `is_entitled()`/`pending_change`) are now confirmed on
+real hardware, not just the sandbox. `memory/BACKLOG.md` updated in
+place to reflect this — every "pending Yehor's real test-suite
+confirmation" hedge replaced with the actual pasted result. Only
+Yehor's line-by-line review and his own commit remain before item 5 is
+genuinely, fully closed.

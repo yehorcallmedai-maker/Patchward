@@ -234,17 +234,116 @@ Windows trampoline launchers, left over from before the project
 directory's rename — see `memory/STATE.md`'s Tests section for the fix).
 Item 3's precondition is now satisfied.
 
-## 5. Phase 9 Exposure Gate — narrowed scope
+## 5. Phase 9 Exposure Gate — REAL-MACHINE VERIFIED 2026-07-16, pending only Yehor's commit
 **WSJF: high** (security-adjacent, small-medium job size, already-live
-surface). Per this session's verification, HMAC signature validation is
-already done — do not re-implement it. Real remaining items:
-- Rate limiting / request body size limits on `/webhooks/github`
-- `X-GitHub-Delivery` header in structured logs (needed for any future
-  incident report or GitHub support ticket)
-- `pip-audit` run scoped to the `webhook` optional-dependency group
+surface). Per Session 020's verification, HMAC signature validation is
+already done — do not re-implement it. All four remaining sub-parts are
+now implemented, tested, and confirmed on Yehor's real Python 3.14.4
+venv (`uv run pytest --cov` → 468 passed, 2 skipped, 15 deselected,
+90.46% coverage, threshold 80% reached, no regressions) — the only
+thing left is Yehor's line-by-line review and his own commit:
+- Rate limiting / request body size limits on `/webhooks/github` —
+  **IMPLEMENTED 2026-07-16 (Session 020), VERIFIED on Yehor's real
+  machine same day.** Checked `fly.toml` first: single Fly
+  machine, scale-to-zero, no shared store — same v0 constraints ADR-030
+  already accepts elsewhere, so an in-memory approach is consistent
+  scope, not a corner cut. Body-size default (25 MB) matches GitHub's
+  own documented hard cap on webhook payloads (confirmed via
+  `WebSearch`), so it never rejects a real delivery while still
+  bounding worst-case memory per request; checked via `Content-Length`
+  before the body is read, with a second post-read length check as
+  defense-in-depth for a missing/lying header (chunked encoding) —
+  documented as a real residual gap, not oversold as fully solved (true
+  protection there needs a streaming ASGI-level limit, out of scope for
+  this v0 pass). Rate limiting is a plain in-process sliding-window
+  counter (60 req/60s default, both tunable via
+  `PATCHWARD_WEBHOOK_RATE_LIMIT_MAX` /
+  `PATCHWARD_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS` env vars) — bounds a
+  runaway/replay flood, not a per-installation fairness mechanism.
+  6 new tests in `test_webhook.py` (threshold, window-slide,
+  oversized-rejected, within-limit-still-works), plus an autouse
+  fixture resetting the limiter's module-level state between tests.
+  Sandbox pre-check (Python 3.10, ad hoc `pip install`) predicted 467
+  passed (461 + 6); a real sandbox tooling bug was hit and fixed
+  mid-session, not routed around: the bash mount served a stale/truncated
+  copy of both `webhook.py` and `test_webhook.py` after editing (same
+  documented class of bug as Sessions 016/017's `cli.py`/
+  `test_orchestrator.py` truncations) — fixed by re-reading each file in
+  full via the `Read` tool (trusted per this project's own rule) and
+  rewriting it byte-for-byte through a bash heredoc to force the
+  sandbox's view back in sync, verified via `ast.parse` before re-running
+  tests. **Real confirmation, Yehor's own machine, same day (Python
+  3.14.4):** `uv run pytest --cov` → 468 passed (461 baseline + 6 rate-
+  limit/body-size tests + 1 pending_change test, combined with the other
+  sub-items below), 2 skipped, 15 deselected, **90.46% coverage**,
+  threshold 80% reached — exact match to every sandbox prediction, no
+  regressions. Diff staged only, not yet committed.
+- `X-GitHub-Delivery` header in structured logs — **IMPLEMENTED
+  2026-07-16 (Session 020), VERIFIED on Yehor's real machine same day.**
+  `webhook.py`'s `github_webhook` now takes an `x_github_delivery` header
+  param and includes `delivery=%s` in the single `logger.info(...)` line
+  at the top of the handler — since that line runs before the event-type
+  dispatch, this covers every path (ping, installation,
+  installation_repositories, marketplace_purchase, push, and the
+  unrecognized/"ignored" fallback) with one change, not six. Missing
+  header logs an empty string, never raises. Two new tests added to
+  `tests/test_webhook.py` (`test_delivery_id_logged_for_every_handled_delivery`
+  using `caplog.at_level(...)`, matching the existing convention in
+  `test_pr_publisher.py`; `test_missing_delivery_header_does_not_crash`).
+  Sandbox pre-check (Python 3.10, ad hoc pip install) predicted 463
+  passed. **Real confirmation, Yehor's own machine, same day (Python
+  3.14.4):** `uv run pytest --cov` → 468 passed (combined total across
+  all of item 5's sub-items), 2 skipped, 15 deselected, 90.46% coverage
+  — `webhook.py` correctly excluded from the coverage measurement itself
+  (`pyproject.toml`'s `[tool.coverage.run].omit` list), consistent with
+  the coverage % staying flat despite the new code. Changes staged only,
+  not yet committed — diff to be reviewed line-by-line per BUILD_PLAN
+  §2's security-boundary rule before Yehor's own commit.
+- `pip-audit` run scoped to the `webhook` optional-dependency group —
+  **CLOSED 2026-07-16 (Session 020).** Agent's sandbox attempt was
+  blocked cleanly (no internet egress to download a matching Python
+  3.12+ interpreter for `uv export`; details preserved in
+  `project_session_log.md`'s Session 020 entry) — command handed to
+  Yehor rather than a guessed verdict. **Yehor ran it for real, on his
+  own machine, from the repo root:**
+  ```
+  uv export --no-emit-project --extra webhook > webhook-reqs.txt
+  pip-audit -r webhook-reqs.txt --no-deps
+  ```
+  (`--no-deps` needed — without it, `pip-audit` tries to build its own
+  resolution venv and re-resolve the whole tree, which is slow enough to
+  look hung; `uv export` already emits every pinned transitive dependency
+  from the lockfile, so there's nothing left to resolve.) **Result: "No
+  known vulnerabilities found"** across all 77 resolved packages in the
+  `webhook` extra (`fastapi==0.139.0`, `uvicorn==0.51.0`,
+  `pyjwt==2.13.0`, `httpx==0.28.1`, and their full transitive tree) —
+  Tier 0, Yehor's own terminal output. Re-run periodically as dependency
+  versions drift; not a one-time clearance.
 - Confirm `is_entitled()` correctly treats `cancelled`/`pending_change`
-  Marketplace status as non-entitled (test gap identified in the
-  Consolidated Keystone Report §5 — may already be correct, just unconfirmed)
+  Marketplace status as non-entitled — **CLOSED 2026-07-16 (Session
+  020). Behavior confirmed correct as-is; Yehor confirmed the reversal
+  above after independently checking GitHub's Marketplace docs
+  himself** (cancellations/downgrades only take effect at the start of
+  the next billing cycle; the current plan stays active until then).
+  The session's own earlier "confirmed bug" framing was wrong — kept
+  visible in this file rather than silently deleted, per this project's
+  correction convention. **No production code changed.** Added
+  `test_is_entitled_true_while_pending_change_not_yet_effective` to
+  `tests/test_installations_db.py`, same style as the existing
+  `is_entitled` tests, asserting `is_entitled()` stays `True` for a
+  `pending_change` status and documenting why in its docstring — turns
+  today's implicit behavior into an explicit, tested contract instead of
+  an unexamined accident. Sandbox pre-check predicted 468 passed.
+  **Real confirmation, Yehor's own machine, same day (Python 3.14.4):**
+  `uv run pytest --cov` → **468 passed, 2 skipped, 15 deselected, 90.46%
+  coverage**, threshold 80% reached, no regressions — exact match,
+  `tests\test_installations_db.py` included in the run (11 tests in that
+  file, matching). **All four of item 5's sub-parts are now real-machine
+  confirmed; only Yehor's commit remains.** Still open, not itself
+  resolved this session:
+  whether `pending_change_cancelled` exists as a distinct action and
+  needs the same reasoning applied — low priority, noted for whenever
+  this area is revisited.
 **Owner:** Claude (agent) for implementation, Yehor reviews line-by-line
 per BUILD_PLAN §2's security-boundary rule.
 

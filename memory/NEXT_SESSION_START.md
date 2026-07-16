@@ -1,4 +1,33 @@
 # Patchward — Next Session Start Prompt
+
+> **Addendum — Session 020 close (2026-07-16). Supersedes the item
+> 8/9/12 "nothing agent-startable" framing below for this one item.**
+> BACKLOG item 5 (Phase 9 Exposure Gate) — the only item owned by the
+> agent — is now functionally done, all 4 sub-parts (pip-audit clean and
+> double-confirmed on Yehor's machine; rate limiting + body-size limits;
+> `X-GitHub-Delivery` structured logging; `is_entitled()`/`pending_change`
+> confirmed correct-as-is, locked in with a test after a mid-session
+> self-correction Yehor independently re-verified). Nothing committed —
+> diffs staged in `src/patchward/webhook.py`, `tests/test_webhook.py`,
+> `tests/test_installations_db.py`, plus `memory/BACKLOG.md` and
+> `memory/project_session_log.md` updated to match. Full detail, gate
+> table, and weakest-points section: `memory/SESSION_CLOSE_2026-07-16.md`.
+> Open Session 021 via `/session-strategy-synthesis`, grounding in
+> `.strategy/STRATEGY.md` — re-verify everything here and there, don't
+> trust it. First things to check: did Yehor commit this session's
+> staged work, and did his real `uv run pytest --cov` confirm the
+> sandbox's 468-passed number.
+
+> **Addendum — Session 019 close (2026-07-15, later the same day).**
+> A `.strategy/STRATEGY.md` now exists at the repo root (session-strategy-
+> synthesis loop bootstrapped). Open Session 020 via that skill, grounding
+> in that file, then return here for item detail. Session 019 verified:
+> remote unchanged at the hash you'll re-check yourself, Fly healthy, items
+> 8/9/12 exactly as described below (site rename confirmed fully pending:
+> 34 RepoMend hits, 0 Patchward). New files pending Yehor's commit:
+> `.strategy/STRATEGY.md`, `memory/SESSION_CLOSE_2026-07-15.md`, and this
+> addendum. Everything below remains valid.
+
 Regenerated at the end of Session 018 (2026-07-15), after cross-project
 research in `C:\Dev\Projects\Autonomous-Core` resolved item 10 and 14
 and rescoped items 8 and 9. Paste this whole file as your opening
