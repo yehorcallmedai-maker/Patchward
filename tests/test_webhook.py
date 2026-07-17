@@ -256,6 +256,153 @@ def test_body_within_limit_still_processed_normally(
     assert response.json() == {"status": "pong"}
 
 
+def _spy_check_body_size(monkeypatch: pytest.MonkeyPatch) -> list:
+    """
+    Wrap the real `_check_body_size` (the Content-Length fast-path check) so
+    every call's argument and whether it raised is recorded, while still
+    running the real function underneath. This lets a test assert, from
+    inside the actual request that ran, exactly what Content-Length value
+    the fast path saw and that it did NOT raise — proving any 413 that
+    follows came from the second, post-read check (webhook.py L264-269),
+    not this one. A plain no-op monkeypatch would only prove "a 413
+    happened with the fast path disabled," which is weaker: it wouldn't
+    confirm what Content-Length the request actually carried. Recording the
+    call arguments while still delegating to the real implementation proves
+    both facts at once.
+    """
+    calls: list = []
+    original = webhook._check_body_size
+
+    def spy(content_length_header: str | None) -> None:
+        calls.append(content_length_header)
+        original(content_length_header)  # real check still runs — must not raise here
+
+    monkeypatch.setattr(webhook, "_check_body_size", spy)
+    return calls
+
+
+def test_oversized_payload_no_content_length_rejected_via_second_check(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """
+    BACKLOG 5 follow-up: webhook.py's post-read defense-in-depth body-size
+    check (L264-269) exists specifically for requests that omit
+    Content-Length (e.g. chunked transfer-encoding) or lie about it — the
+    existing test_oversized_payload_rejected_413_via_content_length only
+    exercises the Content-Length fast path (_check_body_size), never this
+    second check. Sending the body via a generator forces httpx to use
+    chunked transfer-encoding with no Content-Length header at all
+    (confirmed via a standalone diagnostic: content=<generator> produces
+    `transfer-encoding: chunked` and no `content-length` header on the
+    request FastAPI/Starlette actually receives).
+    """
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_MAX_BODY_BYTES", "100")
+    calls = _spy_check_body_size(monkeypatch)
+
+    def gen():
+        yield b"x" * 500
+
+    response = client.post(
+        "/webhooks/github",
+        content=gen(),
+        headers={"X-GitHub-Event": "ping"},
+    )
+
+    assert calls == [None], (
+        f"expected the fast-path check to see NO Content-Length header "
+        f"(proving it was a no-op and could not have produced the 413), got {calls}"
+    )
+    assert response.status_code == 413
+
+
+def test_oversized_payload_lying_content_length_rejected_via_second_check(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """
+    Break-case beyond a merely-absent header: a client that sends a small,
+    well-formed but WRONG Content-Length while actually streaming a larger
+    body. The fast path only ever inspects the header value (it never reads
+    the body), so a lying header sails through it; the second check reads
+    the real body and must catch it.
+    """
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_MAX_BODY_BYTES", "100")
+    calls = _spy_check_body_size(monkeypatch)
+
+    body = b"x" * 500
+    response = client.post(
+        "/webhooks/github",
+        content=body,
+        headers={"X-GitHub-Event": "ping", "Content-Length": "10"},
+    )
+
+    assert calls == ["10"], (
+        f"expected the fast-path check to see the lying '10' Content-Length "
+        f"header and pass it (10 is not > 100), got {calls}"
+    )
+    assert response.status_code == 413
+
+
+def test_oversized_body_no_content_length_boundary_exact_vs_plus_one(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """
+    Data-boundary check on the second check specifically: a body of exactly
+    `PATCHWARD_WEBHOOK_MAX_BODY_BYTES` bytes must NOT be rejected (strict
+    `>`, not `>=`); one byte more must be. Both cases go through the
+    no-Content-Length (chunked) path so the fast path stays a confirmed
+    no-op throughout (asserted via the spy) and the boundary behavior
+    being proven is genuinely the second check's, not the fast path's.
+    The "no rejection" case is asserted as a full valid 200 (correct
+    signature, correct response body) rather than merely "not 413", so a
+    coincidental different failure can't masquerade as a pass.
+    """
+    calls = _spy_check_body_size(monkeypatch)
+    payload = {"zen": "hi", "pad": "y" * 500}
+    body = json.dumps(payload).encode("utf-8")
+    signature = _sign("test-secret", body)
+    exact = len(body)
+
+    # Case 1: max == exact body length -> must be accepted (200, real pong).
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_MAX_BODY_BYTES", str(exact))
+
+    def gen_at_limit():
+        yield body
+
+    ok_response = client.post(
+        "/webhooks/github",
+        content=gen_at_limit(),
+        headers={
+            "X-GitHub-Event": "ping",
+            "X-Hub-Signature-256": signature,
+            "Content-Type": "application/json",
+        },
+    )
+    assert ok_response.status_code == 200
+    assert ok_response.json() == {"status": "pong"}
+
+    # Case 2: max == exact body length - 1 -> body is now 1 byte over -> 413.
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_MAX_BODY_BYTES", str(exact - 1))
+
+    def gen_over_by_one():
+        yield body
+
+    over_response = client.post(
+        "/webhooks/github",
+        content=gen_over_by_one(),
+        headers={
+            "X-GitHub-Event": "ping",
+            "X-Hub-Signature-256": signature,
+            "Content-Type": "application/json",
+        },
+    )
+    assert over_response.status_code == 413
+
+    assert calls == [None, None], (
+        f"expected the fast-path check to see NO Content-Length header on "
+        f"either boundary request, got {calls}"
+    )
+
+
 def test_healthz() -> None:
     client = TestClient(webhook.app)
     response = client.get("/healthz")
