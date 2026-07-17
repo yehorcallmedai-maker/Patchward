@@ -30,6 +30,7 @@ import collections
 import hashlib
 import hmac
 import logging
+import math
 import os
 import shutil
 import subprocess
@@ -76,7 +77,31 @@ _DEFAULT_MAX_BODY_BYTES = 25 * 1024 * 1024
 
 
 def _max_body_bytes() -> int:
-    return int(os.environ.get("PATCHWARD_WEBHOOK_MAX_BODY_BYTES", _DEFAULT_MAX_BODY_BYTES))
+    # Uniform guard shape across the three numeric-override parsers
+    # (_max_body_bytes / _rate_limit_max_requests / _rate_limit_window_
+    # seconds): read raw -> absent means default -> parse (unparseable
+    # means default) -> RANGE-validate (out-of-range means default). A
+    # malformed OR out-of-range override must never reach the request
+    # path: an int()/float() that raised would 500 every request, and a
+    # <1 byte cap would make every request fail the size check (a silent
+    # outage). Fall back to the documented default in every bad case,
+    # fail-safe direction; valid in-range values are returned unchanged.
+    raw = os.environ.get("PATCHWARD_WEBHOOK_MAX_BODY_BYTES")
+    if raw is None:
+        return _DEFAULT_MAX_BODY_BYTES
+    try:
+        value = int(raw)
+    except ValueError:
+        value = None
+    if value is None or value < 1:
+        logger.warning(
+            "[webhook] invalid PATCHWARD_WEBHOOK_MAX_BODY_BYTES=%r "
+            "(must be an integer >= 1) — using default %d",
+            raw,
+            _DEFAULT_MAX_BODY_BYTES,
+        )
+        return _DEFAULT_MAX_BODY_BYTES
+    return value
 
 
 def _check_body_size(content_length_header: str | None) -> None:
@@ -101,13 +126,22 @@ def _check_body_size(content_length_header: str | None) -> None:
         raise HTTPException(status_code=413, detail="Payload too large")
 
 
-# BACKLOG 5 — rate limiting on /webhooks/github. Single Fly machine,
-# scale-to-zero (fly.toml), no shared store between instances by design
-# (ADR-030) — an in-memory sliding-window counter is consistent with
-# that same v0 scope, not a compromise pending a "real" implementation.
-# This bounds a runaway/replay flood; it is not a per-installation
-# fairness mechanism (GitHub's own webhook delivery rate is bounded by
-# its own infrastructure under normal operation).
+# BACKLOG 5 — rate limiting on /webhooks/github. The limiter is called
+# AFTER _verify_signature in the handler (Phase 9 security-boundary
+# change), so it counts only HMAC-valid, genuinely-from-GitHub requests.
+# An unauthenticated flood is rejected at 401 before it ever reaches the
+# limiter and therefore cannot consume the budget — that closes the
+# starvation vector where anonymous traffic filling a shared window would
+# push GitHub's real deliveries into 429s and, via GitHub's
+# consecutive-non-2xx auto-disable, risk the webhook being turned off.
+# The residual cost of an unauthenticated flood (buffering + one HMAC per
+# request) is bounded by the body-size cap above and consciously accepted
+# at v0 scope, not re-solved with a second pre-auth limiter (ADR-030).
+# Single Fly machine, scale-to-zero (fly.toml), no shared store between
+# instances by design (ADR-030) — an in-memory sliding-window counter is
+# consistent with that same v0 scope, not a compromise pending a "real"
+# implementation. This bounds a runaway/replay flood of otherwise-valid
+# GitHub deliveries; it is not a per-installation fairness mechanism.
 _RATE_LIMIT_MAX_REQUESTS_DEFAULT = 60
 _RATE_LIMIT_WINDOW_SECONDS_DEFAULT = 60.0
 
@@ -115,20 +149,51 @@ _rate_limit_timestamps: collections.deque[float] = collections.deque()
 
 
 def _rate_limit_max_requests() -> int:
-    return int(
-        os.environ.get(
-            "PATCHWARD_WEBHOOK_RATE_LIMIT_MAX", _RATE_LIMIT_MAX_REQUESTS_DEFAULT
+    # Same guard shape as _max_body_bytes. A max < 1 (zero or negative)
+    # would make _check_rate_limit reject on the very first request and
+    # never accept again — a permanent-429 outage — so it falls back to
+    # the default just like an unparseable value.
+    raw = os.environ.get("PATCHWARD_WEBHOOK_RATE_LIMIT_MAX")
+    if raw is None:
+        return _RATE_LIMIT_MAX_REQUESTS_DEFAULT
+    try:
+        value = int(raw)
+    except ValueError:
+        value = None
+    if value is None or value < 1:
+        logger.warning(
+            "[webhook] invalid PATCHWARD_WEBHOOK_RATE_LIMIT_MAX=%r "
+            "(must be an integer >= 1) — using default %d",
+            raw,
+            _RATE_LIMIT_MAX_REQUESTS_DEFAULT,
         )
-    )
+        return _RATE_LIMIT_MAX_REQUESTS_DEFAULT
+    return value
 
 
 def _rate_limit_window_seconds() -> float:
-    return float(
-        os.environ.get(
-            "PATCHWARD_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS",
+    # Same guard shape as _max_body_bytes, with one extra hazard: float()
+    # accepts "inf"/"-inf"/"nan" without raising, and those are NOT caught
+    # by `except ValueError`. An infinite window would make the limiter's
+    # sliding-window eviction never expire a timestamp, so once the budget
+    # filled it would 429 forever. math.isfinite() rejects inf/-inf/nan;
+    # `<= 0` rejects zero and negatives. Any of those -> documented default.
+    raw = os.environ.get("PATCHWARD_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS")
+    if raw is None:
+        return _RATE_LIMIT_WINDOW_SECONDS_DEFAULT
+    try:
+        value = float(raw)
+    except ValueError:
+        value = None
+    if value is None or not math.isfinite(value) or value <= 0:
+        logger.warning(
+            "[webhook] invalid PATCHWARD_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS=%r "
+            "(must be a finite number > 0) — using default %s",
+            raw,
             _RATE_LIMIT_WINDOW_SECONDS_DEFAULT,
         )
-    )
+        return _RATE_LIMIT_WINDOW_SECONDS_DEFAULT
+    return value
 
 
 def _check_rate_limit() -> None:
@@ -258,7 +323,6 @@ async def github_webhook(
     x_github_delivery: str | None = Header(default=None),
     content_length: str | None = Header(default=None),
 ) -> dict:
-    _check_rate_limit()
     _check_body_size(content_length)
 
     raw_body = await request.body()
@@ -268,6 +332,12 @@ async def github_webhook(
         # docstring for the residual-risk note on this path.
         raise HTTPException(status_code=413, detail="Payload too large")
     _verify_signature(raw_body, x_hub_signature_256)
+    # Rate limiting runs AFTER signature verification so only HMAC-valid,
+    # genuinely-from-GitHub requests count toward the window (see the
+    # limiter's rationale comment above). A request that fails HMAC has
+    # already returned 401 from _verify_signature and never reaches this
+    # line, so it cannot touch or mutate the rate-limit deque.
+    _check_rate_limit()
     payload = await request.json()
 
     event = x_github_event or "unknown"

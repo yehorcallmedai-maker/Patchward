@@ -408,3 +408,195 @@ def test_healthz() -> None:
     response = client.get("/healthz")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_failed_hmac_does_not_consume_rate_limit_budget(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """
+    Phase 9 security-boundary change: the limiter now runs AFTER
+    _verify_signature, so a request with a bad signature is rejected 401
+    before the limiter is ever reached and cannot consume the window.
+    Proof: with the budget set to 2, fire 5 invalid-signature requests —
+    all must be 401, never 429 (a 429 would mean the limiter was hit
+    pre-auth) — and the rate-limit deque must stay empty; then a single
+    VALID signed request must still succeed with 200. Under the old
+    pre-auth ordering the 5 junk requests would have filled the window and
+    the valid delivery would have been starved into a 429.
+    """
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_RATE_LIMIT_MAX", "2")
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS", "60")
+
+    body = json.dumps({"zen": "hi"}).encode("utf-8")
+    bad_headers = {
+        "X-GitHub-Event": "ping",
+        "X-Hub-Signature-256": "sha256=deadbeef",
+        "Content-Type": "application/json",
+    }
+    invalid_statuses = [
+        client.post("/webhooks/github", content=body, headers=bad_headers).status_code
+        for _ in range(5)
+    ]
+    assert invalid_statuses == [401, 401, 401, 401, 401], (
+        f"failed-HMAC requests must all be 401 (never 429) — a 429 would mean the "
+        f"limiter was reached before signature verification. Got {invalid_statuses}"
+    )
+    assert len(webhook._rate_limit_timestamps) == 0, (
+        "failed-HMAC requests must not have appended to the rate-limit deque"
+    )
+
+    good_headers = {
+        "X-GitHub-Event": "ping",
+        "X-Hub-Signature-256": _sign("test-secret", body),
+        "Content-Type": "application/json",
+    }
+    valid = client.post("/webhooks/github", content=body, headers=good_headers)
+    assert valid.status_code == 200, (
+        f"a valid signed delivery after a flood of junk must still succeed, got {valid.status_code}"
+    )
+    assert valid.json() == {"status": "pong"}
+
+
+def test_malformed_numeric_env_falls_back_to_default_not_500(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """
+    Bundled low finding: a malformed numeric override env var used to raise
+    inside the handler and 500 every request. Each parse now falls back to
+    its documented default (fail-safe). Set all three overrides to garbage
+    and assert (a) the helpers return their defaults and (b) a normal valid
+    delivery still returns 200 rather than erroring.
+    """
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_RATE_LIMIT_MAX", "not-a-number")
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS", "abc")
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_MAX_BODY_BYTES", "huge")
+
+    assert webhook._rate_limit_max_requests() == 60
+    assert webhook._rate_limit_window_seconds() == 60.0
+    assert webhook._max_body_bytes() == 25 * 1024 * 1024
+
+    body = json.dumps({"zen": "hi"}).encode("utf-8")
+    response = client.post(
+        "/webhooks/github",
+        content=body,
+        headers={
+            "X-GitHub-Event": "ping",
+            "X-Hub-Signature-256": _sign("test-secret", body),
+            "Content-Type": "application/json",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"status": "pong"}
+
+
+@pytest.mark.parametrize("bad_window", ["inf", "nan", "-inf", "-1", "0"])
+def test_window_seconds_out_of_range_falls_back_to_default(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, bad_window: str
+) -> None:
+    """
+    Phase 9 hardening: float() accepts inf/nan/-inf without raising, so the
+    old `except ValueError` guard let them through — an infinite window never
+    expires a timestamp and 429s forever once full; a zero/negative window is
+    nonsensical. Each must now fall back to the default AND the endpoint must
+    still serve a normal 200.
+    """
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS", bad_window)
+    assert webhook._rate_limit_window_seconds() == 60.0
+
+    body = json.dumps({"zen": "hi"}).encode("utf-8")
+    response = client.post(
+        "/webhooks/github",
+        content=body,
+        headers={
+            "X-GitHub-Event": "ping",
+            "X-Hub-Signature-256": _sign("test-secret", body),
+            "Content-Type": "application/json",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"status": "pong"}
+
+
+@pytest.mark.parametrize("bad_max", ["0", "-5"])
+def test_rate_limit_max_out_of_range_falls_back_to_default(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, bad_max: str
+) -> None:
+    """A max < 1 (zero/negative) would 429 the very first request forever — must default."""
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_RATE_LIMIT_MAX", bad_max)
+    assert webhook._rate_limit_max_requests() == 60
+
+    body = json.dumps({"zen": "hi"}).encode("utf-8")
+    response = client.post(
+        "/webhooks/github",
+        content=body,
+        headers={
+            "X-GitHub-Event": "ping",
+            "X-Hub-Signature-256": _sign("test-secret", body),
+            "Content-Type": "application/json",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"status": "pong"}
+
+
+@pytest.mark.parametrize("bad_bytes", ["0", "-5"])
+def test_max_body_bytes_out_of_range_falls_back_to_default(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, bad_bytes: str
+) -> None:
+    """A <1 byte cap makes every request fail the size check (413 outage) — must default."""
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_MAX_BODY_BYTES", bad_bytes)
+    assert webhook._max_body_bytes() == 25 * 1024 * 1024
+
+    body = json.dumps({"zen": "hi"}).encode("utf-8")
+    response = client.post(
+        "/webhooks/github",
+        content=body,
+        headers={
+            "X-GitHub-Event": "ping",
+            "X-Hub-Signature-256": _sign("test-secret", body),
+            "Content-Type": "application/json",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {"status": "pong"}
+
+
+def test_infinite_window_env_still_expires_limiter_recovers(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """
+    Strong proof the inf hole is closed: not merely "no 500", but that the
+    limiter still RECOVERS. With WINDOW="inf" guarded back to the finite 60s
+    default and MAX=1, fill the window (one request), confirm the next is 429,
+    then age the recorded timestamp past the window and confirm a later
+    request succeeds again. If "inf" had leaked through unguarded,
+    window_start would be -inf, the timestamp could never evict, and the
+    third request would be a permanent 429 instead of the 200 asserted here.
+    """
+    import time
+
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS", "inf")
+    monkeypatch.setenv("PATCHWARD_WEBHOOK_RATE_LIMIT_MAX", "1")
+
+    body = json.dumps({"zen": "hi"}).encode("utf-8")
+    headers = {
+        "X-GitHub-Event": "ping",
+        "X-Hub-Signature-256": _sign("test-secret", body),
+        "Content-Type": "application/json",
+    }
+
+    first = client.post("/webhooks/github", content=body, headers=headers)
+    assert first.status_code == 200
+
+    second = client.post("/webhooks/github", content=body, headers=headers)
+    assert second.status_code == 429
+
+    # Age the single recorded timestamp to well beyond the (defaulted, finite)
+    # 60s window. With the guard, eviction removes it and the next request is
+    # accepted; without the guard (window == inf) it could never be evicted.
+    assert len(webhook._rate_limit_timestamps) == 1
+    webhook._rate_limit_timestamps[0] = time.monotonic() - 120.0
+
+    third = client.post("/webhooks/github", content=body, headers=headers)
+    assert third.status_code == 200
+    assert third.json() == {"status": "pong"}
