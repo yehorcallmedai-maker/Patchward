@@ -68,20 +68,20 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   `{"status":"ok"}` (Tier 1; direct bash `curl` to `patchward-webhook.fly.dev`
   fails with connection status 000 from this sandbox's own egress
   restrictions, consistent with H4 — not a health signal).
-- [2026-07-21] `webhook-reqs.txt` confirmed present at repo root (154,468
-  bytes, `device_list_dir` — Tier 0), untracked (`git ls-files` empty)
-  and absent from `.gitignore`. Still pending Yehor's gitignore-or-delete
-  call; not touched this session.
-- [2026-07-21] `memory/Patchward_Turning-Point_Industrial-Plan_2026-07-16.md`
-  mojibake claim **NOT REPRODUCED**: full non-ASCII character census of
-  the file (`Python` `collections.Counter` over every char with
-  `ord(ch) > 127`) found only `—`(em-dash, ×99), `→`(×14), `–`(en-dash,
-  ×14), `·`(×6), `≥`(×3), `§`(×2), `≤`(×1) — all legitimate, no
-  replacement characters (`�`) or double-encoded UTF-8 artifacts
-  (`â€™`-style sequences). File is confirmed untracked (not in git at
-  all). If Yehor still sees garbled text, it's most likely a rendering
-  issue in whatever he's viewing it in, not corruption in the saved
-  file — worth him naming the specific line if it recurs.
+- [2026-07-21, CLOSED at session close] `webhook-reqs.txt` — Yehor
+  gitignored it (commit `3ecc3e4`); confirmed untracked (`git ls-files`
+  empty) and the `.gitignore` line present, both re-verified fresh at
+  close. No longer an open thread.
+- [2026-07-21, CLOSED at session close] `memory/Patchward_Turning-Point_Industrial-Plan_2026-07-16.md`
+  mojibake — confirmed a non-issue, twice independently: this session's
+  own non-ASCII character census (only legitimate `—`/`→`/`–`/`·`/`≥`/`§`/`≤`,
+  no replacement characters or double-encoding artifacts) and Yehor's own
+  `Get-Content -Encoding UTF8` re-read, both clean. The file was never
+  corrupted; the working hypothesis (an earlier unqualified `Get-Content`
+  call rendering valid UTF-8 as mojibake in a non-UTF-8 console code
+  page) is plausible but is itself a Tier 1 causal claim about a prior
+  command never directly observed — the file-state finding is Tier 0,
+  the "why" is not.
 - [2026-07-21] PR #1283 disclosure comment (unrelated repo) — not chased
   this session per standing instruction ("your pace," unrelated repo).
   Still UNVERIFIED, unchanged.
@@ -96,7 +96,6 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   unrestricted? Yehor checks PyPI UI, then one workflow_dispatch to prove chain
 - BACKLOG 8: RepoMend→Patchward swap in callmed-landing (34 occurrences, 3 files)
 - BACKLOG 12: CRA/GDPR — external legal input, unchanged
-- webhook-reqs.txt (repo root, 154KB, untracked) — gitignore or delete, Yehor's call
 - `pending_change_cancelled` — noted in BACKLOG item 5's closing text as a
   low-priority open question (does it exist as a distinct Marketplace
   action needing the same `is_entitled()` reasoning?) — not urgent
@@ -225,3 +224,34 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   rather than confirmed-or-refuted. Not below the 0.7-for-two-sessions
   threshold that would trigger a memory-hygiene warning; worth watching
   next session rather than acting on yet.
+
+## Session log (close)
+- [2026-07-21, Session 021 close] Reconciliation commits landed and
+  independently re-verified: `2074db3` (memory rewrite, diffed
+  byte-identical against the agent's drafts — zero corruption in the
+  write→commit chain) and `3ecc3e4` (Yehor's own `webhook-reqs.txt`
+  gitignore fix). Real `uv run pytest --cov` pasted from Yehor's machine
+  at HEAD `3ecc3e4`: 483 passed, 2 skipped, 15 deselected, 90.46%
+  coverage, Python 3.14.4 — converts the one remaining Tier 1 claim in
+  the Phase 9 chain to Tier 0. Mojibake and `webhook-reqs.txt` both
+  closed (see Current state / Open threads above). Full detail:
+  `memory/SESSION_CLOSE_2026-07-21.md`. No further agent-startable work
+  queued — next session opens by having Yehor pick among BACKLOG 8/9/12.
+
+## Calibration record (close)
+- [2026-07-21 close] Of this close's own claims (git state, commit
+  content, test results, mojibake resolution): 7 fully CONFIRMED via a
+  method independent of the in-chat report (fresh `git ls-remote`/`fetch`,
+  byte-diff of committed vs. drafted content, `.gitignore`/`git ls-files`
+  checks), 1 PARTIALLY confirmed (the file-clean finding is Tier 0; the
+  specific causal story for the earlier garbled read stays Tier 1,
+  correctly labeled as inference, not fact). Roughly 7.5/8 (~0.94) —
+  a real recovery from the open's 0.75, and consistent with that 0.75
+  being the audit getting more rigorous rather than the project getting
+  less reliable: the one open-session drift (mojibake) is now resolved
+  as a genuine non-issue, and the two open-session unverified items
+  (real pytest run, mount-noise trick) resolved to one real Tier-0
+  confirmation and one correctly-avoided-not-needed. No heuristic
+  promotions this close — H8-candidate (uncommitted local reconciliation
+  drafts) had no second occurrence to test against this close, stays a
+  candidate at 1 occurrence.
