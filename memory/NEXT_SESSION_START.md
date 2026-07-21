@@ -1,5 +1,49 @@
 # Patchward — Next Session Start Prompt
 
+> **Addendum — Session 021 open (2026-07-21). Supersedes both addenda
+> below as the current state.** `origin/main` is now
+> `3d1ec086972445373ac6a1eb7ac8abed238559a5` — two commits past the
+> `793a1d0` the addendum below stops at. Those two commits
+> (`4b6a023`, `3d1ec08`) did real additional security work on BACKLOG
+> item 5: a post-HMAC rate-limiter reorder plus env-parser range-hardening
+> that closes a guard hole found in adversarial review, with a
+> negative-control test proving the guard actually discriminates
+> guarded vs. unguarded behavior. **BACKLOG item 5 is now genuinely,
+> fully closed — nothing agent-actionable remains on it.** Verified
+> 2026-07-21 via `git ls-remote`, a fresh `git clone`, and a direct
+> `raw.githubusercontent.com` fetch + sha256 compare (three methods, none
+> touching this D:\ mount) plus a test-count arithmetic cross-check
+> (468 + 3 + 12 = 483, matching the reported real-machine figure). Full
+> detail: `.strategy/STRATEGY.md`'s Current State section and
+> `memory/BACKLOG.md` item 5. Also this session: found that
+> `.strategy/STRATEGY.md`, `memory/BACKLOG.md`, and this file had each
+> drifted differently — two of the three already had uncommitted local
+> partial corrections sitting on disk that themselves stopped short of
+> true HEAD. All three are now reconciled through `3d1ec08` as of this
+> addendum. **Open Session 022 via `/session-strategy-synthesis`,
+> grounding in `.strategy/STRATEGY.md` — re-verify, don't trust.** No
+> agent-startable code work is queued; next session opens by picking the
+> next BACKLOG item (8, 9, or 12 all need Yehor/external input first) or
+> confirming whether Yehor has committed this session's memory edits.
+
+> **Correction, same day, after this addendum was first written:** it
+> said "nothing committed." That was true when written, then went stale
+> within the hour — Yehor ran the real test suite (468 passed, 2
+> skipped, 15 deselected, 90.46% coverage, exact match), reviewed, and
+> committed both batches: `0c6a742` (feature: webhook.py + both test
+> files) and `793a1d0` (docs: BACKLOG.md + session log + strategy
+> memory). Pushed to `origin/main`, confirmed via two independent
+> `git ls-remote` calls plus a `git fetch`. **BACKLOG item 5 is fully,
+> genuinely closed** — not staged, not pending review, actually shipped.
+> Left the original addendum below uncorrected-in-place rather than
+> silently rewritten, per this project's own correction convention —
+> exactly the "cite a commit hash inside a file that then gets committed
+> again" trap (H2) recurring one layer up: a status claim, not a hash
+> this time, but the same structural problem. **Session 021 opens on a
+> genuinely clean slate for item 5** — the only remaining agent-adjacent
+> thread is the low-priority, non-blocking `pending_change_cancelled`
+> question noted in BACKLOG item 5's text.
+
 > **Addendum — Session 020 close (2026-07-16). Supersedes the item
 > 8/9/12 "nothing agent-startable" framing below for this one item.**
 > BACKLOG item 5 (Phase 9 Exposure Gate) — the only item owned by the

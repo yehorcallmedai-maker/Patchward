@@ -234,14 +234,37 @@ Windows trampoline launchers, left over from before the project
 directory's rename — see `memory/STATE.md`'s Tests section for the fix).
 Item 3's precondition is now satisfied.
 
-## 5. Phase 9 Exposure Gate — REAL-MACHINE VERIFIED 2026-07-16, pending only Yehor's commit
+## 5. Phase 9 Exposure Gate — FULLY CLOSED, committed and pushed through `3d1ec08`
 **WSJF: high** (security-adjacent, small-medium job size, already-live
 surface). Per Session 020's verification, HMAC signature validation is
-already done — do not re-implement it. All four remaining sub-parts are
-now implemented, tested, and confirmed on Yehor's real Python 3.14.4
-venv (`uv run pytest --cov` → 468 passed, 2 skipped, 15 deselected,
-90.46% coverage, threshold 80% reached, no regressions) — the only
-thing left is Yehor's line-by-line review and his own commit:
+already done — do not re-implement it. All four original sub-parts
+implemented, tested, and confirmed on Yehor's real Python 3.14.4 venv
+(`uv run pytest --cov` → 468 passed, 2 skipped, 15 deselected, 90.46%
+coverage, threshold 80% reached, no regressions). **Committed and
+pushed** — feature commit `0c6a742` (webhook.py + both test files),
+docs commit `793a1d0` (this file + session log + strategy memory).
+**Session 021 correction: this is not the end of the chain.** Two more
+commits landed after `793a1d0`, both real security work, not docs:
+`4b6a023` (3 defense-in-depth spy tests proving the post-read body-size
+check actually rejects a missing/lying `Content-Length`) and `3d1ec08`
+("harden(webhook): range-validate rate-limit/body-size env parsers" —
+moves the rate limiter to run *after* `_verify_signature` so an
+unauthenticated flood can't consume the rate-limit budget, and closes a
+guard hole found in adversarial review of that reorder: the env-parser
+helpers now reject non-finite (`inf`/`nan`/`-inf`) and out-of-range
+(`<1`, `<=0`) overrides via `math.isfinite()` instead of a bare `except
+ValueError`, with a negative-control test
+(`test_infinite_window_env_still_expires_limiter_recovers`) proving the
+guard actually discriminates guarded vs. unguarded behavior, not just
+suppressing a 500). `origin/main` is now `3d1ec086972445373ac6a1eb7ac8abed238559a5`,
+confirmed 2026-07-21 via `git ls-remote`, a fresh `git clone`, and a
+direct `raw.githubusercontent.com` fetch + sha256 compare of
+`webhook.py` against that clone (identical) — three independent methods,
+none touching the local `D:\` mount. Test-count cross-check: 468 + 3
+(`4b6a023`) + 12 (`3d1ec08`) = 483, matching the reported real-machine
+figure exactly. **Note on citing hashes at all** (H2): re-run
+`git ls-remote` fresh in any future session rather than trusting the
+number above.
 - Rate limiting / request body size limits on `/webhooks/github` —
   **IMPLEMENTED 2026-07-16 (Session 020), VERIFIED on Yehor's real
   machine same day.** Checked `fly.toml` first: single Fly
@@ -344,6 +367,15 @@ thing left is Yehor's line-by-line review and his own commit:
   whether `pending_change_cancelled` exists as a distinct action and
   needs the same reasoning applied — low priority, noted for whenever
   this area is revisited.
+- **Session 021 (2026-07-21) addendum — item genuinely, fully closed.**
+  `4b6a023` and `3d1ec08` (see header above) landed after this section
+  was last edited, closing a real guard hole (non-finite/out-of-range env
+  overrides) found in adversarial review of the post-HMAC rate-limiter
+  reorder. 12 new tests in `3d1ec08` alone, including a negative-control
+  test proving the fix actually changes behavior rather than just
+  silencing an exception. Nothing left agent-actionable on this item;
+  the only open sub-thread is `pending_change_cancelled` above (low
+  priority, whenever revisited).
 **Owner:** Claude (agent) for implementation, Yehor reviews line-by-line
 per BUILD_PLAN §2's security-boundary rule.
 
