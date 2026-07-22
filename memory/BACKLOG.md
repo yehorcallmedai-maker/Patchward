@@ -535,38 +535,63 @@ the answer each session) — **conditional on Yehor's fresh `git status`/
 before committing. See commit instructions in `project_session_log.md`'s
 Session 014 addendum 3.
 
-## 8. callmed-landing rename — RESCOPED 2026-07-15 (Session 018, cross-project research)
-**Most of this was already done, in a different project's memory
-(`C:\Dev\Projects\Autonomous-Core`, connected this session for the first
-time in this context).** `Autonomous-Core/memory/CONTEXT.md` confirms:
-the `#381→#383` citation fix and the "9 PRs"→"11 PRs" proof-count update
-were fixed and pushed live to `callmed-landing` on 2026-07-06 (commit
-`ca83bd5`, per that repo — not independently re-verified this session,
-Tier 2 secondhand record). **What's actually still open, per that same
-record:** the product-name rename itself (RepoMend→Patchward) on the
-`callmed-landing` site copy — narrower than "rename the landing page,"
-just the name swap. **WSJF: still low-medium, still near-zero job size.**
-**Owner:** Yehor (different repo/remote, not connected to this session
-by default — see guidance in Session 018's log entry for exact steps).
+## 8. callmed-landing rename — CLOSED 2026-07-22 (Session 022)
+**Fully closed this session, Tier-0 verified.** `C:\Dev\Projects` connected
+mid-session, making both `callmed-landing` and `Autonomous-Core` directly
+reachable for the first time. Fresh direct read (not the prior Tier-2
+Autonomous-Core secondhand record) confirmed: the `#381→#383` citation fix
+and "9 PRs"→"11 PRs" proof-count update were already live in `index.html`
+line 174 (upgraded Tier 2→Tier 0). The RepoMend→Patchward swap itself:
+**45 real word-occurrences** across `index.html`(24)/`privacy.html`(7)/
+`security.html`(14) — not 34 as previously estimated; that figure was a
+`grep -c` line-count, not a word-count (several lines carry 2-3 instances).
+Fixed via case-sensitive two-pass swap (`RepoMend`→`Patchward`,
+`repomend`→`patchward`), verified 45→0 via `grep -o -i`.
+**Investigation also caught 3 occurrences that weren't cosmetic** — the
+page was giving visitors actively wrong instructions, not just an old
+brand name: (a) index.html's CLI sample (`uv tool install repomend` /
+`repomend fix --repo .`) — real entry point is `patchward`
+(`pyproject.toml` `[project.scripts]`), fixed automatically by the plain
+swap and cross-checked against `src/patchward/cli.py`'s real `fix --repo`
+option; (b) security.html's branch-naming line (`repomend/fix-{id}`) —
+real pattern per `src/patchward/fix_worktree.py`'s own docstring is
+`patchward/fix-<finding-id>`, required a manual fix beyond the naive
+swap (HTML-entity-encoded as `&lt;finding-id&gt;` so it renders as text,
+not markup); (c) security.html's PyPI-namespace claim (`repomend`
+namespace) — now correctly `patchward`, fixed by the plain swap and
+Tier-0 confirmed via item 9's fresh publish this same session. Corrected
+files delivered to Yehor and written to `C:\Dev\Projects\callmed-landing\`
+**uncommitted** (not pushed, live site untouched) for his own `git diff`
+review and commit — per standing process, no agent commits to a repo
+without Yehor's own review pass first. **New backlog candidate surfaced,
+not acted on:** the real Patchward codebase still has ~59 internal
+"repomend" references across 15 files (e.g. `RepomendConfig` class in
+`config.py`/`webhook.py`) — see item 16.
+**Owner:** Yehor, for the `git diff` review + commit only; the actual
+content work is done.
 
-## 9. PyPI Trusted Publisher — confirm live — RESCOPED 2026-07-15 (Session 018)
-**Mostly already done.** `Autonomous-Core/memory/project_open_tasks.md`
-item #20 (dated 2026-07-08, screenshot-confirmed by Yehor): PyPI-side
-pending publisher registered for project `patchward`, publisher type
-GitHub, repository `yehorcallmedai-maker/Patchward`, workflow
-`publish.yml`, **environment name "Any."** Cross-checked against the
-real `.github/workflows/publish.yml` in this repo (read directly,
-Tier 0): it declares `environment: name: pypi` under the `publish` job.
-**Flagged, not confirmed either way: PyPI's OIDC trusted-publisher
-matching requires the workflow's environment claim to match what was
-registered.** If "Any" was typed as a literal environment name on
-PyPI's pending-publisher form (rather than left blank / a "no
-restriction" selection), it will not match a workflow claiming
-`environment: pypi`, and the first real publish attempt will fail on
-an OIDC identity mismatch, not a code problem. **What's actually left:
-verify the PyPI-side environment field, then trigger `workflow_dispatch`
-once to prove the whole chain works end-to-end** — not "set this up
-from scratch." **Owner:** Yehor (PyPI account access required).
+## 9. PyPI Trusted Publisher — CLOSED 2026-07-22 (Session 022), Tier-0 end-to-end
+**Fully closed this session — the real publish happened and was verified
+two independent ways, not inferred.** PyPI's pending-publisher UI showed
+**Environment name: `(Any)`** (parenthesized italic — PyPI's own
+placeholder for "no restriction," not a literal string "Any" someone
+typed), which matches `publish.yml`'s `environment: pypi` claim without
+issue — the risk this item flagged does not materialize. Yehor then
+triggered `workflow_dispatch` on `main` @ `07f97d3` (the session's
+verified HEAD) via GitHub's UI. Result, confirmed via two independent
+methods: (1) the Actions run itself — `build` (10s) → `publish` (21s),
+both green, 47s total; (2) the actual PyPI release page,
+`pypi.org/project/patchward/0.1.0/` — live, uploaded 2026-07-22, both
+`patchward-0.1.0.tar.gz` and `patchward-0.1.0-py3-none-any.whl` present,
+explicitly stating **"uploaded using Trusted Publishing via GitHub
+Actions from the repository `yehorcallmedai-maker/Patchward`"** — the
+OIDC identity chain proven working end-to-end, not just "environment
+field looks right." Minor non-blocking oddity: the bare
+`pypi.org/project/patchward` (no version) 404'd twice via this session's
+fetch tool while the version-pinned URL loaded fine — read as a
+caching/propagation quirk on the fetch side, not a real problem; Yehor
+can confirm with his own browser at his convenience. `patchward` v0.1.0
+is now a real, live, public PyPI package. **Owner:** none — closed.
 
 ## 10. "Mirror Pass Tier 2" — REMOVED 2026-07-15 (Session 018, cross-project research) — never belonged in this file
 **This was a category error carried in from `BUILD_PLAN_2026-07-10.md`,
@@ -906,3 +931,19 @@ pending (drafted, not yet confirmed landed as of this entry).
   block a real git command, the fix is `Remove-Item <path> -Force` on
   Yehor's own machine — same pattern as Session 012, not worth a design
   discussion.
+
+## 16. Internal `Repomend`-naming debt in the real Patchward codebase (NEW, surfaced 2026-07-22, Session 022) — not triaged, not started
+Surfaced as a side effect of closing item 8 (callmed-landing rename), not
+independently investigated — treat the details below as a starting point,
+not a full scope. `grep -rli "repomend" src/ tests/` found **15 files**,
+`grep -rno -i "repomend" src/ tests/ | wc -l` found **59 occurrences**,
+including a live class name still in production use: `RepomendConfig` in
+`src/patchward/config.py`, imported and used in `src/patchward/webhook.py`
+and elsewhere. This is internal naming, not user-facing product identity —
+lower urgency than items 8/9 were, but a real rename (not just a docstring
+fix): renaming a class used across 15 files needs a proper find-usages
+pass, not a blind string swap, and should get its own dedicated session
+rather than being folded into unrelated work. **WSJF: not yet scored** —
+needs triage first (full usage inventory, decide if `RepomendConfig` is
+public API/exported anywhere that would make this a breaking change).
+**Owner:** unassigned, agent-startable once triaged.

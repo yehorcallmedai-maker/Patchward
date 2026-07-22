@@ -7,8 +7,10 @@ tool: PyPI release chain working end-to-end, webhook deployed on Fly, site
 memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 
 ## Success criteria
-1. `workflow_dispatch` publish to PyPI succeeds via OIDC Trusted Publisher.
-2. callmed-landing copy says Patchward, not RepoMend (0 grep hits).
+1. ✅ `workflow_dispatch` publish to PyPI succeeds via OIDC Trusted Publisher.
+   MET 2026-07-22 — `patchward` v0.1.0 live on PyPI, Tier-0 verified.
+2. ✅ callmed-landing copy says Patchward, not RepoMend (0 grep hits). MET
+   2026-07-22 — 45→0 verified; corrected files await Yehor's commit.
 3. Test suite green at ≥90% coverage on Yehor's machine.
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
@@ -90,17 +92,57 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   verification, 12 CRA/GDPR legal) are all Yehor-or-external-only, same
   as every prior session's finding — nothing new surfaced this session
   to contradict that.
+- [2026-07-22] Session 022 open reconfirmed HEAD fresh via two
+  independent methods: `git ls-remote origin main` and a sandbox-local
+  fresh clone both return `07f97d356c0e931ce0e9006b08acfd920345662f`
+  ("docs: close Session 021"), matching the SHA cited at resume —
+  exactly the commit chain this file already describes above, no drift.
+  Fly `/healthz` fresh `WebFetch` → `{"status":"ok"}` (curl still
+  blocked per H4, not a health signal).
+- [2026-07-22] `memory/project_session_log.md` on the D:\ mount carries
+  ~240 uncommitted lines (real Session 021-023 narrative on the webhook
+  rate-limiter reorder and env-parser hardening work) not present at git
+  HEAD — confirmed via `diff` against a fresh clone; git's last touch to
+  that file was `793a1d0`. Narrative only, no code/config drift, not
+  urgent — but this is the fact that triggered H8's promotion (see
+  Heuristics). `.strategy/STRATEGY.md`, `memory/BACKLOG.md`, and
+  `memory/NEXT_SESSION_START.md` were all diffed identical mount-vs-HEAD
+  (no drift there).
+- [2026-07-22] **BACKLOG items 8 and 9 both CLOSED this session** (see
+  `memory/BACKLOG.md` for full detail). Item 9: real `workflow_dispatch`
+  triggered by Yehor, `patchward` v0.1.0 published live on PyPI, Tier-0
+  verified via the Actions run (both jobs green) and the actual PyPI
+  release page (explicit Trusted-Publishing-from-the-right-repo
+  confirmation). Item 8: `C:\Dev\Projects` connected mid-session,
+  surfacing the real callmed-landing and Autonomous-Core repos for the
+  first time; the "34 occurrences" estimate was DRIFTED (a line-count,
+  not a word-count — real figure was 45), and the investigation caught 3
+  occurrences that were actively wrong technical instructions (stale CLI
+  install command, wrong branch-naming convention, wrong PyPI namespace),
+  not just old branding — all corrected, cross-checked against the real
+  `src/patchward/` source, written uncommitted to Yehor's working tree for
+  his own review/commit. Surfaced a new, untriaged finding: ~59 internal
+  "repomend" references remain in the real Patchward codebase across 15
+  files (e.g. `RepomendConfig` class) — logged as new BACKLOG item 16, not
+  acted on.
 
 ## Open threads
-- BACKLOG 9: PyPI pending-publisher environment field — "Any" literal vs
-  unrestricted? Yehor checks PyPI UI, then one workflow_dispatch to prove chain
-- BACKLOG 8: RepoMend→Patchward swap in callmed-landing (34 occurrences, 3 files)
 - BACKLOG 12: CRA/GDPR — external legal input, unchanged
+- BACKLOG 16 (new): ~59 internal "repomend" references across 15 files in
+  the real Patchward codebase (`RepomendConfig` class in `config.py`/
+  `webhook.py` and others) — untriaged, needs a usage inventory before
+  scoping as a real rename job
 - `pending_change_cancelled` — noted in BACKLOG item 5's closing text as a
   low-priority open question (does it exist as a distinct Marketplace
   action needing the same `is_entitled()` reasoning?) — not urgent
 - ssh-audit fork: 2 stale repomend/* branches, optional cleanup
 - PR #1283 disclosure comment, unrelated repo — Yehor's own pace
+- `memory/STATE.md` stale relative to reality — still describes the
+  webhook's security posture as of commit `0bb0286`, predating the
+  entire Phase 9 chain (`0c6a742` → `4b6a023` → `3d1ec08`). Low priority
+  (this file already treats STATE.md as secondary, not a source of
+  gating facts), flagged 2026-07-22 for whenever memory upkeep is next
+  in scope — not a queued session goal unless Yehor wants it to be.
 - Detailed engineering memory lives in memory/ (STATE.md, BACKLOG.md,
   project_session_log.md) — this file is the calibration layer, not a fork of it
 
@@ -136,6 +178,31 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   re-run isn't possible from this sandbox** (`requires-python = ">=3.12"`,
   sandbox has 3.11.15, and fetching 3.12+ via `uv python install` hits
   this exact block) — a standing, not per-session, limitation.
+  **Session 022 correction — Tier 0 vs Tier 1, kept separate on purpose:**
+  **Tier 0 (directly observed):** `/usr/bin/python3.13` exists in this
+  sandbox right now; `uv run patchward ...` found and used it with zero
+  network calls, and a real `uv run pytest --cov` executed successfully —
+  `480 passed, 2 skipped, 15 deselected, 90.59% coverage`. **Tier 1
+  (plausible, NOT independently confirmed):** the inference that H4's
+  original diagnosis was merely *incomplete* (tested "fetch a new
+  interpreter," never checked "is one already present") rather than the
+  sandbox's base image having genuinely changed between sessions. Nobody
+  re-ran the old failing `uv python install 3.12` command in this exact
+  environment to see if it still fails the same way — both explanations
+  predict the same observed outcome, so this is genuinely underdetermined
+  from what was actually checked, same distinction this file already
+  draws for the Session 021 mojibake finding. **Do not treat "just check
+  for a local interpreter first" as a universal fix until a future session
+  re-tests the old failure mode directly in this same environment.**
+  **The 480-vs-483 test-count gap is now fully resolved, Tier 0:** a
+  `--collect-only` diff between this sandbox (Python 3.13) and Yehor's
+  machine (Python 3.14.4) found the exact 3 missing test IDs, all in
+  `tests/fixture_repo/tests/test_clean.py` — not a version/platform
+  marker at all, but `tests/fixture_repo`'s known bare-gitlink-with-no-
+  `.gitmodules` state (BACKLOG 7d): a plain `git clone` in the sandbox
+  leaves that submodule directory empty, so those 3 tests never collect
+  here, while Yehor's local checkout has real content. See
+  `memory/STATE.md`'s Tests section for full detail.
 - H5 [active, promoted 2026-07-16, evidence: Session 020]: before calling
   a status-check/entitlement condition a "bug" from code alone, check
   what the upstream system (here, GitHub's own webhook docs) actually
@@ -150,15 +217,19 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   exchange]: when summarizing multi-step work after time has passed
   within the same session, re-paste the actual evidence (diff, raw
   command output) rather than asserting "already done."
-- H8-candidate [1 occurrence, Session 021, NOT yet promoted]: a memory
-  reconciliation task can itself be started and left uncommitted across
-  sessions — this session found `BACKLOG.md` and `NEXT_SESSION_START.md`
-  both already had partial, uncommitted local corrections sitting on
-  `D:\`, written after `793a1d0` but before `4b6a023`/`3d1ec08`, that
-  would have been invisible from `git log`/`git clone` alone. Check the
-  local disk (via the device bridge, diffed against a fresh clone) for
-  uncommitted drafts before assuming a stale-memory task starts from
-  the last committed state. Needs a second occurrence before promotion.
+- H8 [active, PROMOTED 2026-07-22, evidence: two independent occurrences
+  across two different files — Session 021 (`BACKLOG.md` +
+  `NEXT_SESSION_START.md`, partial uncommitted corrections stopping short
+  of true HEAD) and Session 022 (`memory/project_session_log.md`, ~240
+  uncommitted lines of real Session 021-023 narrative, last touched by
+  git at `793a1d0`)]: local disk can be ahead of git in ways
+  `git log`/`git clone` will never show — a memory file can carry real,
+  substantive uncommitted content for multiple sessions running. This is
+  now a standing step, not a one-off check: at session open, diff every
+  memory file on the D:\ mount against a fresh clone before assuming
+  memory starts clean from the last commit. (Formerly H8-candidate,
+  which required one more occurrence before promotion; that occurrence
+  happened this session.)
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -166,10 +237,16 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   mount sync mechanism verifiably changes.
 - [2026-07-21] Trying to install a Python 3.12+ interpreter in-sandbox via
   `uv python install` to re-run the real test suite — blocked by H4 (403
-  from the python-build-standalone release CDN). Retry only if the
-  sandbox's network egress policy changes; until then, real pytest runs
-  stay Yehor-machine-only and the arithmetic test-count cross-check is
-  the best available substitute.
+  from the python-build-standalone release CDN). **SUPERSEDED 2026-07-22:**
+  fetching a *new* interpreter is still blocked, but this session found
+  `/usr/bin/python3.13` already present — `uv run pytest` used it directly
+  with no network fetch and a real run succeeded (480/2/15, 90.59% cov,
+  vs. Yehor's 483/2/15, 90.46% — 3-test collection gap, **RESOLVED same
+  session via `--collect-only` diff: `tests/fixture_repo`'s bare-gitlink
+  submodule has no content after a plain sandbox clone, see H4/STATE.md**).
+  The real fix for future sessions: check for an existing compatible
+  interpreter before assuming this failed approach applies; don't retry
+  `uv python install` itself, that part is still blocked.
 
 ## Session log
 - [2026-07-15, Session 019 close] Bootstrap session: created this file,
@@ -200,6 +277,55 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   section, NEXT_SESSION_START.md new addendum) do that. No git commits
   made from the sandbox (standing rule); files written to `D:\` for
   Yehor's own review and commit.
+- [2026-07-22, Session 022 open] Verified fresh via two independent
+  methods: `git ls-remote origin main` and a sandbox-local fresh clone
+  both confirm HEAD `07f97d3` ("docs: close Session 021"), matching the
+  SHA cited at resume exactly — 0 drift on git state. Fly `/healthz`
+  fresh `WebFetch` → `{"status":"ok"}`. Diffed the D:\ mount against the
+  fresh clone for `.strategy/STRATEGY.md`, `memory/BACKLOG.md`,
+  `memory/NEXT_SESSION_START.md` (all identical, no drift) and
+  `memory/STATE.md` (identical but stale in content — flagged in Open
+  threads) and `memory/project_session_log.md` (real difference: ~240
+  uncommitted lines of Session 021-023 narrative on disk, invisible to
+  git). That last finding is H8-candidate's second occurrence across a
+  second file → promoted to H8 (see Heuristics). BACKLOG item 5 (Phase 9)
+  reconfirmed fully closed; no agent-startable code work queued — L2 goal
+  is pending Yehor's choice among BACKLOG 8/9/12, none of which an agent
+  can start without his or external input first. No git commits made from
+  the sandbox this session; only this memory file touched, written back
+  to `D:\` for Yehor's own review and commit.
+- [2026-07-22, Session 022 continued] Yehor picked "9 then 8." Item 9:
+  confirmed PyPI's pending-publisher environment field showed `(Any)` —
+  identified as PyPI's own UI placeholder for "no restriction" (italic +
+  parenthesized, not literal typed text), so no OIDC mismatch risk;
+  guided Yehor through GitHub's UI to trigger `workflow_dispatch`
+  (screenshots at each step); verified the result two independent ways
+  (Actions run status via `WebFetch`, and the live PyPI release page) —
+  real publish, real Tier-0 confirmation, not inferred. Item 8: `C:\Dev\Projects`
+  got connected, re-ran Ground→Verify→Synthesize scoped to item 8 per
+  Yehor's explicit request; found the "34 occurrences" figure was a
+  line-count undercounting the true 45 word-occurrences, and found 3
+  occurrences were stale technical claims (CLI command, branch-naming
+  convention, PyPI namespace) rather than pure branding — cross-checked
+  each against the real `src/patchward/` source before writing the fix,
+  not paraphrased from memory. Executed the fix (case-sensitive two-pass
+  swap + one manual HTML-entity-encoded correction), verified 45→0,
+  delivered diffs + corrected files, wrote them uncommitted to Yehor's
+  `callmed-landing` working tree. Did not commit or push either repo's
+  changes — Yehor's own review stays the gate, per standing process.
+- [2026-07-22, Session 022 continued] Pre-commit double-check on item 8's
+  two riskiest claims, both independently verified rather than trusted
+  from the diff text: (1) rendered `security.html` in real headless
+  Chromium and read the actual visible text — confirmed
+  `patchward/fix-<finding-id>` displays correctly, not as literal HTML
+  entities; (2) ran the real `patchward --help` / `patchward fix --help`
+  — confirmed the page's CLI sample (`patchward fix --repo .`) matches
+  exactly. Bonus finding in the process: this sandbox has
+  `/usr/bin/python3.13` already present, which `uv` used directly with no
+  network fetch, enabling a real `uv run pytest --cov` — see H4 correction
+  and the superseded Failed-approaches entry. Nothing committed by the
+  agent this session in either repo; Yehor has the reviewed diffs and the
+  commit sequence to run himself.
 
 ## Calibration record
 - [2026-07-15 open] 5/6 confirmed, 1 UNVERIFIED, 0 drifted. 1.00 on checkable claims.
@@ -255,3 +381,58 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   promotions this close — H8-candidate (uncommitted local reconciliation
   drafts) had no second occurrence to test against this close, stays a
   candidate at 1 occurrence.
+
+- [2026-07-22 open] Of 5 checkable claims (git HEAD match via ls-remote,
+  git HEAD match via fresh clone, Fly health, mount-vs-clone drift check
+  across 5 memory files, H8-candidate's second-occurrence status): 5/5
+  CONFIRMED, each via a method independent of the in-chat/resume-prompt
+  report (ls-remote + fresh clone as two separate confirmations of the
+  same SHA; fresh WebFetch for Fly; direct `diff` for every mount-vs-HEAD
+  comparison). 1.00 on checkable claims. One heuristic promoted
+  (H8-candidate → H8) on real second-occurrence evidence, not asserted.
+
+- [2026-07-22, Session 022 continued] Of the execution-phase claims (PyPI
+  environment-field reading, workflow_dispatch result, PyPI release-page
+  content, item 8's occurrence count, the 3 technical corrections' factual
+  basis): all CONFIRMED via a method independent of the initial read in
+  each case — the `(Any)` reading was corroborated by the actual publish
+  succeeding with no identity-mismatch error (if the reading had been
+  wrong, the real-world publish would have failed, and it didn't); the
+  Actions run and the PyPI release page are two separate, independently
+  fetched sources agreeing with each other; the 45-occurrence count was
+  verified by a different grep invocation (`-o` vs `-c`) than the one that
+  produced the original "34" estimate; each of the 3 technical corrections
+  was checked against the real source file, not asserted from the prior
+  session's or Autonomous-Core's description. 1.00 on checkable claims —
+  no drift found in this execution phase itself (the drift was in the
+  *prior* estimate this phase was verifying against, correctly caught).
+
+- [2026-07-22, Session 022 pre-commit check] Of 3 checkable claims (branch-
+  naming line renders as visible text not raw entities; CLI sample matches
+  real `--help` output; H4's "no compatible Python in-sandbox" premise):
+  2 CONFIRMED via a method independent of the diff text itself (real
+  headless-Chromium render, real `--help` invocation), 1 DRIFTED —
+  H4's blanket "real pytest runs stay Yehor-machine-only" turned out to
+  be broader than the evidence supported; a compatible interpreter was
+  present all along, just never checked for. 1.00 on the claims this
+  check was actually scoped to; the H4 drift is scored separately since
+  it was a standing heuristic being corrected, not a claim from this
+  session's own opening brief.
+
+- [2026-07-22, Session 022 final check] The 480-vs-483 test-count gap,
+  opened UNVERIFIED-why in the prior entry: bounded, closed-scope
+  `--collect-only` diff (this sandbox's Python 3.13 output vs. Yehor's
+  Python 3.14.4 output, both generated the same way, staged and diffed
+  directly rather than eyeballed) found exactly 3 missing test IDs, all in
+  `tests/fixture_repo/tests/test_clean.py` — root cause CONFIRMED (not
+  inferred): that submodule is a bare gitlink with no `.gitmodules`, so a
+  plain `git clone` in the sandbox leaves it empty. Not a Python-version
+  or platform marker, as originally guessed — a known, pre-existing
+  submodule-checkout gap (BACKLOG 7d). 1.00 on this check's own claim
+  (exactly 3 IDs, exact file, confirmed empty directory) — genuinely
+  closed, not left dangling. Also worth noting for calibration: the
+  original hypothesis going in ("likely a skipif marker on version/
+  platform") was wrong, but the check was structured to catch that (step
+  4's "if no marker explains it, stop and flag, don't guess further") —
+  correctly wouldn't have papered over a wrong guess if the collect-only
+  diff hadn't found a clean, complete explanation.

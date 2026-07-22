@@ -61,6 +61,21 @@ modified. `.dockerignore`, `docs/keystones/`, `memory/BACKLOG.md`,
 (new, as expected).
 
 ## Tests
+**480/483 collection gap resolved, 2026-07-22 (Session 022):** an in-sandbox
+`uv run pytest --cov` (this repo's first real in-sandbox test run — sandbox
+has `/usr/bin/python3.13`, satisfying `requires-python>=3.12`, no network
+fetch needed) got 480 passed/2 skipped/15 deselected/90.59% coverage vs.
+Yehor's own 483/2/15/90.46% on Python 3.14.4 — 3 fewer collected in-sandbox.
+Root cause confirmed via `--collect-only` diff on both sides (test-ID sets,
+not just totals): all 3 missing tests are in `tests/fixture_repo/tests/test_clean.py`
+(`test_clean_add`, `test_clean_greet`, `test_clean_imports_without_error`) —
+the pre-existing `tests/fixture_repo` submodule (BACKLOG 7d) is a bare
+gitlink with no resolvable `.gitmodules`, so a plain `git clone` in the
+sandbox leaves it as an empty directory; nothing to grep a skip/version
+marker for, since the file doesn't exist there at all. Not a Python-version
+or platform difference — a git-submodule-checkout completeness gap between
+environments. Verified via collect-only diff, 2026-07-22, agent + Yehor.
+
 **461 passed, 2 skipped, 15 deselected — 90.46% coverage** (threshold 80%,
 reached) — `uv run pytest --cov`, run by Yehor on his own machine — Tier 0
 (local exit code + output, not proxied) — 2026-07-15 — Yehor, Session 017
