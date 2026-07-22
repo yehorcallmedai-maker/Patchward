@@ -436,3 +436,56 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   4's "if no marker explains it, stop and flag, don't guess further") —
   correctly wouldn't have papered over a wrong guess if the collect-only
   diff hadn't found a clean, complete explanation.
+
+- [2026-07-22, Session 022 CLOSE] Formal close-out run via the
+  `session-close` skill, explicitly instructed NOT to trust any hash or
+  "confirmed" claim from the conversation transcript. Result: Patchward's
+  `origin/main` = `5c5a4790f73e9d0f10163ccf0feea8f738da3cae`, independently
+  re-verified via fresh `git ls-remote` (matched the transcript's claim
+  exactly) AND a fresh `git clone` whose `.strategy/STRATEGY.md`,
+  `memory/BACKLOG.md`, `memory/STATE.md` are byte-identical to this
+  agent's own authored drafts — zero corruption end to end.
+  `memory/project_session_log.md`'s "missed in prior commit" follow-up fix
+  (`5c5a479`) also confirmed: file size/content in the fresh clone matches
+  exactly what was already sitting uncommitted on the D:\ mount pre-fix.
+  **callmed-landing's claimed hash (`75f1a7b79ed635fa296cec3d890346e1d9860fab`)
+  could NOT be independently confirmed** — `git ls-remote` from this
+  sandbox failed with "could not read Username... terminal prompts
+  disabled" (private repo, no credentials here). Used a different,
+  genuinely independent method instead: fresh `WebFetch` of the live
+  `callmedai.com` site — confirms 0 "RepoMend" mentions, "Patchward"
+  branding present, and the exact corrected CLI line
+  (`uv tool install patchward`). This proves the *deploy*, which is
+  arguably more meaningful than the hash, but the specific commit hash
+  itself stays UNVERIFIED by this agent — flagged plainly rather than
+  assumed from the conversation's own claim, per H2/H3. Also flagged, not
+  chased: the "hanging credential-prompt push cancelled without
+  diagnosis" incident was never independently observed by this agent,
+  only reported secondhand — the clean end-state is confirmed, the
+  incident's mechanics are not. Full close-out: `memory/SESSION_CLOSE_2026-07-22.md`.
+  `memory/NEXT_SESSION_START.md` rewritten clean (not another addendum
+  layer — flagged explicitly as a deliberate full rewrite, not silent,
+  since this file had grown to 210 lines of nested corrections and this
+  file already carries the full historical ledger).
+
+- [2026-07-22 close] Of 9 checkable claims at close (Patchward hash via
+  ls-remote, Patchward hash via fresh clone, 3 memory files byte-identical,
+  project_session_log.md fix verified, working tree cleaned of tax files,
+  Fly health, PyPI page, callmed-landing live-site content, callmed-landing
+  exact hash): **7 CONFIRMED** via a method independent of the conversation's
+  own claims, **1 CONFIRMED via single-method only** (working-tree cleanliness
+  — device listing is the only check available, appropriately flagged as
+  such rather than treated as equal-strength to the dual-method checks),
+  **1 UNVERIFIED** (callmed-landing's exact commit hash — genuinely
+  blocked by lack of sandbox credentials to a private repo, not a
+  shortcut). **~0.94 on checkable claims (8.5/9-ish, treating the
+  single-method one as partial credit)** — consistent with this project's
+  pattern of closes scoring higher than opens (stricter checking applied
+  earlier in the session pays off at close) and, more importantly, this is
+  the first close where an UNVERIFIED item was caused by a genuine
+  environment limitation (no auth to a private repo) rather than a method
+  choice that could have been better — worth distinguishing from
+  "should have checked harder" style gaps in future calibration. No new
+  heuristic promotions this close (H8 was already promoted mid-session,
+  correctly not re-promoted twice); H4's correction stands as logged
+  mid-session, carried through the close unchanged.

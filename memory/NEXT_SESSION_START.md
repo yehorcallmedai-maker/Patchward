@@ -1,210 +1,91 @@
 # Patchward — Next Session Start Prompt
 
-> **Addendum — Session 021 open (2026-07-21). Supersedes both addenda
-> below as the current state.** `origin/main` is now
-> `3d1ec086972445373ac6a1eb7ac8abed238559a5` — two commits past the
-> `793a1d0` the addendum below stops at. Those two commits
-> (`4b6a023`, `3d1ec08`) did real additional security work on BACKLOG
-> item 5: a post-HMAC rate-limiter reorder plus env-parser range-hardening
-> that closes a guard hole found in adversarial review, with a
-> negative-control test proving the guard actually discriminates
-> guarded vs. unguarded behavior. **BACKLOG item 5 is now genuinely,
-> fully closed — nothing agent-actionable remains on it.** Verified
-> 2026-07-21 via `git ls-remote`, a fresh `git clone`, and a direct
-> `raw.githubusercontent.com` fetch + sha256 compare (three methods, none
-> touching this D:\ mount) plus a test-count arithmetic cross-check
-> (468 + 3 + 12 = 483, matching the reported real-machine figure). Full
-> detail: `.strategy/STRATEGY.md`'s Current State section and
-> `memory/BACKLOG.md` item 5. Also this session: found that
-> `.strategy/STRATEGY.md`, `memory/BACKLOG.md`, and this file had each
-> drifted differently — two of the three already had uncommitted local
-> partial corrections sitting on disk that themselves stopped short of
-> true HEAD. All three are now reconciled through `3d1ec08` as of this
-> addendum. **Open Session 022 via `/session-strategy-synthesis`,
-> grounding in `.strategy/STRATEGY.md` — re-verify, don't trust.** No
-> agent-startable code work is queued; next session opens by picking the
-> next BACKLOG item (8, 9, or 12 all need Yehor/external input first) or
-> confirming whether Yehor has committed this session's memory edits.
+> **Full rewrite, 2026-07-22 (Session 022 close). Explicitly a deliberate
+> rewrite, not a silent one** — this file had grown to 210 lines of nested
+> addenda-on-addenda across 4 sessions. `.strategy/STRATEGY.md` already
+> carries the complete historical ledger (session log, calibration record,
+> heuristics, failed approaches); this file's job is to be a lean,
+> current-state pointer for whoever opens the next session, not a second
+> history. Nothing below is new information that isn't already in
+> `STRATEGY.md` in full detail — this is a compressed, current-only summary.
 
-> **Correction, same day, after this addendum was first written:** it
-> said "nothing committed." That was true when written, then went stale
-> within the hour — Yehor ran the real test suite (468 passed, 2
-> skipped, 15 deselected, 90.46% coverage, exact match), reviewed, and
-> committed both batches: `0c6a742` (feature: webhook.py + both test
-> files) and `793a1d0` (docs: BACKLOG.md + session log + strategy
-> memory). Pushed to `origin/main`, confirmed via two independent
-> `git ls-remote` calls plus a `git fetch`. **BACKLOG item 5 is fully,
-> genuinely closed** — not staged, not pending review, actually shipped.
-> Left the original addendum below uncorrected-in-place rather than
-> silently rewritten, per this project's own correction convention —
-> exactly the "cite a commit hash inside a file that then gets committed
-> again" trap (H2) recurring one layer up: a status claim, not a hash
-> this time, but the same structural problem. **Session 021 opens on a
-> genuinely clean slate for item 5** — the only remaining agent-adjacent
-> thread is the low-priority, non-blocking `pending_change_cancelled`
-> question noted in BACKLOG item 5's text.
+Resume Patchward. **Open via the `session-strategy-synthesis` skill**,
+grounding in `.strategy/STRATEGY.md` — re-verify its claims fresh, do not
+trust them as-is. They were verified 2026-07-22 (Session 022 close) and
+can go stale between sessions, exactly like every prior session's memory.
 
-> **Addendum — Session 020 close (2026-07-16). Supersedes the item
-> 8/9/12 "nothing agent-startable" framing below for this one item.**
-> BACKLOG item 5 (Phase 9 Exposure Gate) — the only item owned by the
-> agent — is now functionally done, all 4 sub-parts (pip-audit clean and
-> double-confirmed on Yehor's machine; rate limiting + body-size limits;
-> `X-GitHub-Delivery` structured logging; `is_entitled()`/`pending_change`
-> confirmed correct-as-is, locked in with a test after a mid-session
-> self-correction Yehor independently re-verified). Nothing committed —
-> diffs staged in `src/patchward/webhook.py`, `tests/test_webhook.py`,
-> `tests/test_installations_db.py`, plus `memory/BACKLOG.md` and
-> `memory/project_session_log.md` updated to match. Full detail, gate
-> table, and weakest-points section: `memory/SESSION_CLOSE_2026-07-16.md`.
-> Open Session 021 via `/session-strategy-synthesis`, grounding in
-> `.strategy/STRATEGY.md` — re-verify everything here and there, don't
-> trust it. First things to check: did Yehor commit this session's
-> staged work, and did his real `uv run pytest --cov` confirm the
-> sandbox's 468-passed number.
+## Housekeeping, in order
 
-> **Addendum — Session 019 close (2026-07-15, later the same day).**
-> A `.strategy/STRATEGY.md` now exists at the repo root (session-strategy-
-> synthesis loop bootstrapped). Open Session 020 via that skill, grounding
-> in that file, then return here for item detail. Session 019 verified:
-> remote unchanged at the hash you'll re-check yourself, Fly healthy, items
-> 8/9/12 exactly as described below (site rename confirmed fully pending:
-> 34 RepoMend hits, 0 Patchward). New files pending Yehor's commit:
-> `.strategy/STRATEGY.md`, `memory/SESSION_CLOSE_2026-07-15.md`, and this
-> addendum. Everything below remains valid.
+1. Run `git ls-remote origin main` yourself for Patchward. Last known:
+   `5c5a4790f73e9d0f10163ccf0feea8f738da3cae` ("docs(memory): include
+   session log in Session 022 close") — confirmed via fresh `git ls-remote`
+   AND a fresh `git clone` with byte-diff against authored content, Tier 0.
+2. Re-confirm Fly health fresh: `patchward-webhook.fly.dev/healthz`.
+3. Re-confirm PyPI fresh: `pypi.org/project/patchward/0.1.0/` — should
+   still show the live package with Trusted Publishing confirmed.
+4. **One loose end from Session 022, worth closing early if convenient:**
+   callmed-landing's exact remote hash (reported as
+   `75f1a7b79ed635fa296cec3d890346e1d9860fab`) was never independently
+   `git ls-remote`-confirmed from the sandbox — that repo is private and
+   the sandbox has no credentials for it. A fresh `WebFetch` of the live
+   `callmedai.com` site DID confirm the deployed content is correct (0
+   "RepoMend" mentions, right CLI instructions), which is strong evidence
+   the push landed, but it isn't the same as a confirmed hash. Ask Yehor
+   for a fresh `git ls-remote origin main` paste from his own machine to
+   close this precisely — or treat the live-site match as sufficient and
+   move on; his call either way, not a guess.
+5. Diff every memory file on the D:\ mount against a fresh clone before
+   assuming memory starts clean from the last commit — **this is H8, a
+   promoted standing heuristic now, not a one-off check.**
 
-Regenerated at the end of Session 018 (2026-07-15), after cross-project
-research in `C:\Dev\Projects\Autonomous-Core` resolved item 10 and 14
-and rescoped items 8 and 9. Paste this whole file as your opening
-message to start the next session with full context restored.
+## Current state (verified at Session 022 close, re-verify anyway)
 
----
+- **BACKLOG item 5** (Phase 9 Exposure Gate) — fully closed since Session
+  021, reconfirmed again this session. Nothing agent-actionable remains.
+- **BACKLOG item 9** (PyPI Trusted Publisher) — fully closed this session.
+  `patchward` v0.1.0 is live on PyPI; the OIDC identity chain is proven
+  end-to-end (Actions run + PyPI release page, two independent fetches
+  agreeing).
+- **BACKLOG item 8** (callmed-landing rename) — fully closed this session.
+  45 occurrences fixed (not 34 — that was a line-count, not a word-count),
+  plus 3 technical corrections (CLI command, branch-naming placeholder,
+  PyPI namespace) verified against real source. Confirmed live in
+  production via direct fetch of the deployed site.
+- **BACKLOG item 16** (NEW, untriaged) — ~59 internal "repomend" references
+  remain in the real Patchward codebase across 15 files (`RepomendConfig`
+  class in `config.py`/`webhook.py` and others). Not touched, not scoped.
+  Needs a usage inventory before it can even be estimated.
+- **BACKLOG item 12** (CRA/GDPR) — unchanged, needs qualified legal
+  counsel, not agent work.
+- **H4 heuristic corrected**: this sandbox has a working Python 3.13
+  interpreter (`/usr/bin/python3.13`) that `uv` finds with zero network
+  calls — real in-sandbox `pytest` runs are now possible (they weren't
+  known to be, before this session). Kept properly tiered: the *working
+  interpreter* is Tier 0 (directly observed); *why prior sessions missed
+  it* stays Tier 1 (plausible — H4's diagnosis was about fetching a NEW
+  interpreter, never checked for an existing one — but genuinely
+  unconfirmed; the sandbox's base image could also have simply changed).
+- **The 480-vs-483 test-count question is fully resolved, Tier 0**: the
+  gap is `tests/fixture_repo`'s 3 tests, missing from sandbox clones
+  because that submodule is a bare gitlink with no `.gitmodules` — not a
+  version/platform marker, and not a new problem (BACKLOG item 7d already
+  tracked this submodule's state). Both Yehor's 483 and the sandbox's 480
+  are correct for their respective checkouts.
+- **No agent-startable code work is queued.** Next session opens by
+  either: (a) Yehor wants item 16 triaged (agent-startable once he says
+  go), (b) something entirely new, or (c) just the housekeeping above.
 
-**Resume Patchward.** Read `memory/STATE.md`, `memory/BACKLOG.md`, and
-`memory/project_session_log.md` (Sessions 015-018) first, in full. Do
-not assume anything below is still true without re-checking — verify,
-don't trust memory, per standing project rules. This file itself is a
-claim to be re-verified, not a source of truth.
-
-## Housekeeping — confirm these before anything else
-
-1. **Run `git ls-remote origin main` yourself — do not trust any SHA
-   cited anywhere in this file, including this line.** This isn't
-   general caution: it's a structural fact, proven twice in one close
-   this session. This file is itself part of the commit chain it
-   describes — the moment it's committed, any hash it cites for "the
-   current commit" is already one commit behind (this exact thing
-   happened twice in a row while closing Session 018: the file said
-   "not yet committed" about a commit that then landed; the fix that
-   named the new hash was itself committed in a later commit, making
-   the named hash stale again on arrival). No amount of re-checking
-   before commit fixes this — only checking *after* opening the file
-   in a new session does. So: run the command, don't read the number.
-2. **Re-confirm Fly health fresh** — `patchward-webhook.fly.dev/healthz`.
-   Confirmed OK 2026-07-15, re-checked a second time at the actual
-   session close (same result both times).
-3. **Re-run the full test suite before trusting it.** Last real number:
-   **461 passed, 2 skipped, 15 deselected, 90.46% coverage** —
-   2026-07-15, Session 017.
-4. **This sandbox's `git status`/`git diff` cannot be trusted.**
-   `git log`/`git ls-remote` remain trustworthy.
-5. **Sandbox file reads/line-counts can be stale or truncated.** Trust
-   `Read`/`Edit`/`Write` tool output over bash reads.
-6. **`.claude/agents/*` is a protected path for `Edit`/`Write`** — use
-   the base64 `WriteAllText` handoff pattern if it needs touching again.
-7. **New this session: a second connected folder,
-   `C:\Dev\Projects\Autonomous-Core`, contains real, relevant context
-   about Patchward that isn't mirrored in this project's own memory.**
-   See "Cross-project findings" below. Treat anything sourced from
-   there as Tier 2 (secondhand, another project's own memory files) —
-   strong leads, not independently re-verified against live GitHub/PyPI
-   state from this session. Worth checking that folder whenever a
-   Patchward question feels unanswerable from `memory/`/`docs/`/`src/`
-   alone — it wasn't obviously connected to Patchward-specific
-   questions before this session.
-8. **Don't trust a tool's self-reported description of what it did —
-   check the actual artifact.**
-
-## Cross-project findings (Session 018) — action items for Yehor
-
-**Item 9 (PyPI Trusted Publisher) — mostly done, one thing to verify.**
-Autonomous-Core's records say Yehor completed the PyPI-side pending
-publisher registration 2026-07-08 (project `patchward`, repo
-`yehorcallmedai-maker/Patchward`, workflow `publish.yml`, environment
-name "Any"). **Check specifically:** does PyPI's pending-publisher page
-show the environment field as blank/unrestricted, or literally the text
-"Any"? The real `publish.yml` in this repo declares
-`environment: name: pypi` — if PyPI has a literal string "Any" rather
-than no restriction, the OIDC claim won't match and the first real
-publish will fail on identity, not code. If it looks right, trigger
-`workflow_dispatch` once (Actions tab → "Publish to PyPI" → Run
-workflow) to prove the chain end-to-end.
-
-**Item 10 — REMOVED.** "Mirror Pass Tier 2" was never a Patchward
-feature — it's a pricing upsell for a completely different product
-(Symbiote / Mirror Pass, $1,500 PEP 484 type-annotation service),
-tracked in Autonomous-Core's own backlog. Nothing to do here in this
-repo, ever.
-
-**Item 14 — RESOLVED.** The stray branches on `ssh-audit` are confirmed
-remnants of PRs #359/#360 against the real upstream `jtesta/ssh-audit`,
-rejected 2026-07-03 as "AI slop." Optional cleanup: delete the two
-stale branches from your fork (`repomend/fix-bandit.B110-1fdaef`,
-`repomend/fix-bandit.B311-6323af`) — safe either way, your call.
-
-**Item 8 (callmed-landing) — narrower than before.** The citation/proof-
-count fixes are already live (2026-07-06). What's left: the
-RepoMend→Patchward product-name swap on the site copy itself.
-
-**Item 12 (CRA/GDPR) — unchanged, still needs qualified legal input.**
-Not found addressed anywhere in either project.
-
-Full detail, sourcing, and the exact quotes behind each of the above:
-`memory/BACKLOG.md` items 8, 9, 10 (now removed), 12, 14, and
-`memory/project_session_log.md`'s Session 018 entry.
-
-## Progress list — where things stand (2026-07-15, Session 018 close)
-
-- [x] BACKLOG 13, 15a, 15b — all closed, verified, shipped (Sessions 015-017).
-- [x] `.claude/agents/*.md` naming cleanup — closed, shipped.
-- [x] BACKLOG item 10 — REMOVED, resolved as not-a-Patchward-item.
-- [x] BACKLOG item 14 — RESOLVED, origin fully confirmed.
-- [ ] BACKLOG item 9 — rescoped, one verification step left (Yehor).
-- [ ] BACKLOG item 8 — rescoped, narrower remaining step left (Yehor).
-- [ ] BACKLOG item 12 — unchanged, Yehor + external legal counsel.
-- [x] Session 018's memory edits — committed and pushed
-      (`d8ba1bc` → `b7f9e69` → `b8c0bba`, the last of which removed this
-      file's own self-referential hash citation). Independently
-      confirmed via `git fetch` + `git ls-remote`, matching Yehor's own
-      `git push` output at each step.
-
-## Standing rules (unchanged unless noted, still binding)
-
-- Verify before reporting anything as done.
-- **Never run git writes against Patchward from the bash sandbox** —
-  hand git writes to Yehor.
-- **Never paste or forward API keys/secrets through terminal output
-  into chat.**
-- Trust-tier logic (BUILD_PLAN_2026-07-10.md Appendix B): Tier 0 (git
-  hashes, `git ls-remote`, local exit codes) — accept as-is. Tier 1
-  (authenticated direct reads) — accept with evidence. Tier 2
-  (proxied/unauthenticated, or **another project's own memory files**)
-  — never sufficient alone for a gating decision; treat as a lead to
-  verify, not a fact.
-- **This sandbox's `git status`/`git diff` cannot be trusted at all.**
-- **Sandbox file reads/line-counts can be stale or truncated** — trust
-  `Read`/`Edit`/`Write` tool output, verify real correctness on Yehor's
-  machine.
-- **`.claude/agents/*` is a protected path for `Edit`/`Write`.**
-- **Don't trust a tool's self-reported description of what it did —
-  check the actual artifact.**
-- **Before filing something as "needs scoping" or "blocked," check
-  whether the information to scope it is already available** —
-  including in a second connected folder, per this session.
-- **Regenerate this handoff file at the actual end of a session's
-  work** — not at the first pause point.
-
-## Suggested first move
-
-Nothing agent-startable is queued. The four action items above (9, 8,
-12, and 14's optional cleanup) are Yehor's to work through at his own
-pace — none are urgent, none block anything else in this repo.
+## Standing heuristics worth knowing before this session (see STRATEGY.md for full evidence)
+- **H1**: only remote-ref ops (`git ls-remote`), a fresh `git clone`, or
+  direct hosted-content fetches are fully trustworthy for git state —
+  local mount reads can lie.
+- **H2**: never cite a commit hash inside a file that then gets committed
+  — always re-run `git ls-remote` fresh at session open instead of
+  trusting a cited hash, even one from a prior session's own close-out.
+- **H4**: a bash-level network failure doesn't mean the target/technique
+  is universally blocked — test the specific host/tool combination
+  (and: check for an already-present local interpreter before assuming
+  none exists, per this session's correction).
+- **H8**: diff every memory file against a fresh clone before assuming
+  memory starts clean — local disk can carry real uncommitted content for
+  multiple sessions running, invisible to `git log`.
