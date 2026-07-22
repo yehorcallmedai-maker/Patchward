@@ -1797,3 +1797,240 @@ place to reflect this — every "pending Yehor's real test-suite
 confirmation" hedge replaced with the actual pasted result. Only
 Yehor's line-by-line review and his own commit remain before item 5 is
 genuinely, fully closed.
+
+### Session 021 — Phase 9 security-boundary review of webhook.py rate-limit + body-size code (2026-07-17)
+
+Read-and-analyze only, no code changes, no commits, no STATE.md writes.
+Reviewed the production rate-limiter and body-size defenses in
+`src/patchward/webhook.py` against the committed source, not memory and
+not the tests.
+
+**HEAD confirmation.** `git ls-remote origin main` could NOT be run from
+the agent sandbox — the device bridge has no outbound network
+(`fatal: unable to access ... Received HTTP code 403 from proxy after
+CONNECT`). Best available evidence instead: local
+`refs/remotes/origin/main` = `4b6a023` = current `HEAD` (last fetched
+2026-07-16 14:46 UTC), and `git log -- src/patchward/webhook.py` (a
+ref/object read, trustworthy on this mount per STATE.md's Session-013
+rule) shows the rate-limit + body-size + delivery-logging production code
+landed in `0c6a742` ("feat(webhook): add rate limiting, body-size limits,
+and X-GitHub-Delivery logging (BACKLOG 5)"), with `HEAD` `4b6a023` a
+test-only commit on top ("test(webhook): prove body-size defense-in-depth
+check via spy"). `git diff HEAD -- src/patchward/webhook.py` came back
+empty and the file is not staged — but that is a working-tree comparison,
+which STATE.md declares non-authoritative on this mount, so the
+committed-not-staged conclusion rests on the `git log` object read above,
+not the diff. **Action for Yehor: re-run `git ls-remote origin main` on
+your own machine to confirm `4b6a023` is actually the pushed remote HEAD —
+the sandbox could not reach GitHub.**
+
+**Findings (surfaced for decision, nothing fixed):**
+1. (Highest) The limiter is a single process-global, UNKEYED sliding
+   window (`_rate_limit_timestamps`, one shared deque) and it runs at
+   L261 BEFORE HMAC verification at L270. An unauthenticated caller who
+   knows the public endpoint can fill the shared 60-req/60-s budget with
+   junk and starve GitHub's real signed deliveries into 429s. Combined
+   with the intentional "acknowledge, never 4xx" design for unknown events
+   (to avoid GitHub auto-disabling the hook), sustained attacker-driven
+   429s to legitimate deliveries could get the webhook disabled by GitHub
+   — a full loss-of-service path. This is a conscious ordering trade-off
+   (rate-limit-before-auth bounds flood CPU/memory but exposes legit
+   callers to anonymous starvation); flagged for Yehor's call, not fixed.
+2. (Low / availability, fail-CLOSED so not a bypass) Malformed
+   `PATCHWARD_WEBHOOK_RATE_LIMIT_MAX` / `_WINDOW_SECONDS` /
+   `_MAX_BODY_BYTES` env vars raise `ValueError` inside the handler → 500
+   on every request. Safe direction (rejects, never allows), but a
+   deploy-time foot-gun.
+3. (Low, already documented + accepted) The post-read body check at L265
+   runs only after Starlette has buffered the whole body into memory; the
+   fast-path Content-Length check at L262 is the real memory protector.
+   Residual risk for chunked/lying Content-Length is documented in
+   `_check_body_size`'s docstring and accepted as v0 scope per ADR-030.
+
+**Self-review verdicts (each with the settling line):**
+- ORDER: rate-limit BEFORE signature verify (L261 `_check_rate_limit()`
+  precedes L270 `_verify_signature(...)`). Protects HMAC/downstream from
+  flood; exposes legit GitHub deliveries to anonymous starvation.
+- KEYING: keyed on NOTHING — one global `_rate_limit_timestamps` deque
+  (L114). Not spoofable (no key), but any single source drains the shared
+  bucket for everyone.
+- STATE+SCALE: in-memory module global (L114). Per-instance, resets on
+  deploy. fly.toml is single-machine scale-to-zero, so per-instance ==
+  global today and the reset is immaterial for a flood-bound limiter —
+  consciously acceptable per the L104-110 comment. Only becomes wrong if
+  they ever scale horizontally (effective limit N×60) or move to
+  multi-worker (deque not thread-safe, per L138-142 docstring).
+- BODY-SIZE ORDER: fast path is BEFORE read — L262 `_check_body_size(...)`
+  precedes L264 `raw_body = await request.body()`; the L265 len() check is
+  after read (defense in depth only).
+- FAILURE MODE: fails CLOSED. Over-budget → `raise HTTPException(429)`
+  (L149); any internal error (e.g. bad env var) propagates → 500. No
+  try/except swallows an error into an allow. Rejected requests do not
+  append to the deque (raise precedes L150 append), so a rejected flood
+  doesn't self-extend the window.
+
+Proposed one-line STATE.md addition (for Yehor to promote after review,
+NOT written by the agent): under "Webhook security posture", replace the
+"Rate limiting / request body size limits: not present" line with —
+"Rate limiting + body-size limits: implemented in `0c6a742`
+(`webhook.py` L82-150, L261-269); Phase 9 security review performed
+2026-07-17, findings attached (session 021) — pre-auth global unkeyed
+limiter flagged as an anonymous-starvation trade-off for Yehor's
+decision; body-size fast-path-before-read + post-read defense-in-depth
+confirmed; limiter fails closed."
+
+### Session 022 — Phase 9 security-boundary change: rate limiter moved post-HMAC + guarded env parse (2026-07-17)
+
+Implement + self-review only. Staged into the working tree, **NOT
+committed** — HEAD unchanged at `4b6a023` (`git rev-parse HEAD` after the
+edit, object read — trustworthy on this mount). All git writes are
+Yehor's.
+
+**Base confirmation.** `git ls-remote origin main` again could NOT run
+from the sandbox (proxy `HTTP 403 after CONNECT`, no outbound network).
+Local object reads: `HEAD` = `refs/remotes/origin/main` = `4b6a023` —
+matches the required base. **Remote parity still needs Yehor's own
+`git ls-remote origin main`.**
+
+**What changed in `src/patchward/webhook.py` (4 edits, nothing else —
+confirmed by `diff -u` against the staged original):**
+1. The single `_check_rate_limit()` call moved from the top of
+   `github_webhook` to immediately AFTER `_verify_signature(...)`. Nothing
+   else in the handler moved — the body-size fast path
+   `_check_body_size(content_length)` stays before `await request.body()`,
+   and the post-read `len(raw_body) > _max_body_bytes()` 413 stays in
+   place. A failed-HMAC request now returns 401 before the limiter is
+   reached, so it cannot touch the deque — closes the anonymous-starvation
+   / webhook-disable vector.
+2. `_max_body_bytes()`, `_rate_limit_max_requests()`,
+   `_rate_limit_window_seconds()` each wrapped so a malformed env var logs
+   a warning and falls back to its documented default instead of raising
+   inside the handler (was a 500-every-request foot-gun). No behavior
+   change on valid or absent values.
+3. The L104-110 rationale comment rewritten: the old text claimed the
+   pre-auth position bounded an anonymous flood before signature cost —
+   now inverted and stated truthfully (limiter counts only HMAC-valid
+   traffic; unauth flood is 401'd first; residual unauth compute bounded
+   by the body-size cap, consciously accepted at v0 per ADR-030, NOT
+   re-solved with a second limiter).
+   Explicitly out of scope and NOT added: streaming ASGI body limit; any
+   compensating pre-auth counter.
+
+**Tests added to `tests/test_webhook.py` (2):**
+- `test_failed_hmac_does_not_consume_rate_limit_budget` — budget=2, fires
+  5 bad-signature requests (asserts all 401, never 429, AND deque stays
+  empty), then one valid signed request asserts 200. This is the test that
+  actually proves the starvation vector is closed; it would fail under the
+  old pre-auth ordering (valid request would be starved to 429).
+- `test_malformed_numeric_env_falls_back_to_default_not_500` — sets all
+  three numeric overrides to garbage, asserts the three helper functions
+  return their defaults AND a valid delivery still returns 200.
+
+**Verification (SANDBOX PRE-CHECK ONLY — container Python 3.11.15, fresh
+venv with the `webhook` extra; NOT Yehor's Python 3.14.4 real machine):**
+- Isolated new 2 tests: `2 passed`.
+- Full `tests/test_webhook.py`: `17 passed, 1 warning in 1.04s` (15
+  pre-existing + 2 new). The pre-existing `test_rate_limit_returns_429_
+  after_threshold` (valid-sig requests still hit 429 after threshold) and
+  the four body-size 413 tests all still green under the new ordering.
+- **Yehor must run `uv run pytest --cov` on his real machine for the
+  authoritative number.** Expected: previous webhook count + 2, coverage
+  flat (webhook.py is in `pyproject.toml`'s coverage `omit` list, and the
+  change is a reorder + guards + tests, no new measured lines elsewhere).
+
+Files written to the working tree via the device bridge (mtime-guarded,
+no rejections): `src/patchward/webhook.py`, `tests/test_webhook.py`.
+Review patch also handed over: `webhook_and_tests.patch`. No `git add`,
+no commit.
+
+Proposed one-line STATE.md addition (for Yehor to promote after his
+review + real test run — agent did NOT write STATE.md): under "Webhook
+security posture", update the rate-limit line to —
+"Rate limiter moved to run AFTER HMAC verification (staged 2026-07-17,
+session 022, uncommitted at time of writing) — counts only HMAC-valid
+traffic, closing the anonymous-flood starvation / webhook-disable vector;
+proven by `test_failed_hmac_does_not_consume_rate_limit_budget`. Guarded
+env-var parse added (malformed override -> documented default, no 500).
+Body-size fast-path-before-read unchanged; streaming ASGI limit still
+out of scope per ADR-030. Sandbox pre-check 17/17 test_webhook.py green;
+pending Yehor's `uv run pytest --cov` on Python 3.14.4 and his commit."
+
+### Session 023 — Phase 9 hardening: range-validate the three webhook env-var parsers (2026-07-17)
+
+Fix + self-review only. Staged into the working tree, **NOT committed** —
+HEAD unchanged at `4b6a023` (`git rev-parse HEAD` after the edit, object
+read). Lands on top of the session-022 post-HMAC reorder; the reorder,
+post-HMAC placement, and existing tests were NOT touched.
+
+**Base + reliability.** `git ls-remote origin main` again blocked by the
+sandbox proxy (`HTTP 403 after CONNECT`). Local object reads: HEAD ==
+`refs/remotes/origin/main` == `4b6a023`. **Remote parity still needs
+Yehor's own `git ls-remote`.** Per the twice-seen stale-upload-mount bug,
+this session read the REAL file via `device_bash` and anchored every step
+on sha256, not the upload mount: the session-022 on-device webhook.py was
+`cdc455aa…` (verified byte-identical to my container base before editing);
+the final staged webhook.py is `fc7254b3…` and test_webhook.py is
+`e3d42cf8…`, both re-read from disk after writing and confirmed equal to
+the delivered files.
+
+**The fix (only `import math` + the three parser functions changed —
+proved by `diff -u` against the `cdc455aa…` base; handler ordering,
+`_check_body_size` logic, `_verify_signature`, `_check_rate_limit`, and
+event dispatch are byte-identical).** All three numeric-override parsers
+now RANGE-validate, not just parse, in one uniform shape (read raw ->
+absent = default -> parse-or-None -> range-check -> bad = warn+default ->
+else return value):
+- `_rate_limit_window_seconds()`: after `float(raw)`, rejects
+  `not math.isfinite(value) or value <= 0`. Closes the inf/nan/-inf hole —
+  `float()` accepts those without raising, so the old `except ValueError`
+  never caught them; an infinite window makes the sliding-window eviction
+  never expire a timestamp -> permanent 429 once full.
+- `_rate_limit_max_requests()`: after `int(raw)`, rejects `value < 1`
+  (a 0/negative max = 429 on the first request, forever).
+- `_max_body_bytes()`: after `int(raw)`, rejects `value < 1` (a <1 byte
+  cap = every request 413s). `math` added to imports for isfinite.
+No new env vars / config surface; no behavior change for valid in-range
+values.
+
+**Tests added (10 new cases, existing tests untouched):**
+- `test_window_seconds_out_of_range_falls_back_to_default` — parametrized
+  over `inf`, `nan`, `-inf`, `-1`, `0`; asserts the helper returns 60.0
+  AND the endpoint serves 200.
+- `test_rate_limit_max_out_of_range_falls_back_to_default` — `0`, `-5`.
+- `test_max_body_bytes_out_of_range_falls_back_to_default` — `0`, `-5`.
+- `test_infinite_window_env_still_expires_limiter_recovers` — the STRONG
+  one: WINDOW="inf" (guarded to 60s) + MAX=1, fill the window (200), next
+  is 429, then age the recorded timestamp past the window and assert the
+  next request 200s again — proving the limiter RECOVERS, not just "no
+  500".
+
+**Verification (SANDBOX PRE-CHECK ONLY — container Python 3.11.15, fresh
+venv with the `webhook` extra; NOT Yehor's Python 3.14.4 real machine):**
+- Isolated new/extended: `10 passed`.
+- Full `tests/test_webhook.py`: `27 passed, 1 warning` (17 prior + 10 new).
+- Adversarial negative control: ran the new tests against the UNGUARDED
+  session-022 webhook (`cdc455aa…`) — `3 failed` as expected
+  (`test_infinite_window…recovers` fails `429 == 200`; window `inf`/`-inf`
+  cases fail), confirming the tests genuinely discriminate the fix from
+  its absence rather than passing vacuously.
+- **Yehor must run `uv run pytest --cov` on Python 3.14.4** for the
+  authoritative number. Expect prior webhook count + 10, coverage flat
+  (webhook.py is in `pyproject.toml` coverage `omit`; change is guards +
+  tests only).
+
+Files written to the working tree via the device bridge (mtime-guarded,
+no rejections), no `git add`, no commit: `src/patchward/webhook.py`
+(`fc7254b3…`), `tests/test_webhook.py` (`e3d42cf8…`). Review patch handed
+over: `hardening.patch`.
+
+Proposed one-line STATE.md addition (for Yehor to promote after review +
+real test run — agent did NOT write STATE.md/BACKLOG.md/STRATEGY.md):
+under "Webhook security posture" —
+"Env-var parsers hardened to range-validate (staged 2026-07-17, session
+023, uncommitted): window rejects inf/nan/-inf/<=0 via math.isfinite;
+max-requests and max-body-bytes reject <1 — closes the permanent-429 /
+permanent-413 outage holes the reorder review flagged. Uniform warn+
+default fail-safe, no new config surface. Sandbox pre-check 27/27
+test_webhook.py green + adversarial negative control (3 expected fails on
+the unguarded version); pending Yehor's `uv run pytest --cov` on Python
+3.14.4 and his commit."
