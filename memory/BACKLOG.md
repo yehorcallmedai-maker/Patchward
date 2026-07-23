@@ -932,18 +932,115 @@ pending (drafted, not yet confirmed landed as of this entry).
   Yehor's own machine — same pattern as Session 012, not worth a design
   discussion.
 
-## 16. Internal `Repomend`-naming debt in the real Patchward codebase (NEW, surfaced 2026-07-22, Session 022) — not triaged, not started
-Surfaced as a side effect of closing item 8 (callmed-landing rename), not
-independently investigated — treat the details below as a starting point,
-not a full scope. `grep -rli "repomend" src/ tests/` found **15 files**,
-`grep -rno -i "repomend" src/ tests/ | wc -l` found **59 occurrences**,
-including a live class name still in production use: `RepomendConfig` in
-`src/patchward/config.py`, imported and used in `src/patchward/webhook.py`
-and elsewhere. This is internal naming, not user-facing product identity —
-lower urgency than items 8/9 were, but a real rename (not just a docstring
-fix): renaming a class used across 15 files needs a proper find-usages
-pass, not a blind string swap, and should get its own dedicated session
-rather than being folded into unrelated work. **WSJF: not yet scored** —
-needs triage first (full usage inventory, decide if `RepomendConfig` is
-public API/exported anywhere that would make this a breaking change).
-**Owner:** unassigned, agent-startable once triaged.
+## 16. Internal `Repomend`-naming debt in the real Patchward codebase — TRIAGED AND EXECUTED 2026-07-23 (Session 023), staged uncommitted for Yehor's review
+Surfaced 2026-07-22 (Session 022) as a side effect of closing item 8. This
+session (023) did the full triage the prior entry called for, then executed
+the safe part of the rename. **Triage (independently re-verified against a
+fresh clone, not just trusted from this file):** of the original 59
+occurrences / 15 files (`src/`, `tests/`), a full literal-quoted-string grep
+(not just the identifier grep) found exactly ONE occurrence that crosses a
+process/serialization boundary — `REPOMEND_NETWORK_POLICY`, an env var set by
+`docker_sandbox.py` and read by `docker/entrypoint.sh` (itself outside the
+original 15-file scope, since that grep was `src/`+`tests/`-only). The other
+58 are pure Python identifiers (the `RepomendConfig` class name, its
+imports, type hints, and docstrings) with no `__all__` export, no
+`README`/`docs` exposure beyond one internal design doc, and no top-level
+`from patchward import RepomendConfig` pattern anywhere — confirmed
+non-breaking. A second env var, `REPOMEND_FIXTURE_REPO` (test-only, read via
+`os.environ.get` with a hardcoded fallback default, not referenced in any CI
+workflow or doc), was also found and included.
+
+**Executed this session:**
+- `RepomendConfig` → `PatchwardConfig` across all 12 files (6 `src/`, 6
+  `tests/`) — find-usages based, not a blind string swap; verified via
+  fresh grep that zero case-insensitive "repomend" references remain in any
+  of those 12 files.
+- `test_repomend_toml_example_exists` → `test_patchward_toml_example_exists`
+  (`tests/test_distribution.py`) and `test_repomend_config_has_verifier` →
+  `test_patchward_config_has_verifier` (`tests/test_orchestrator.py`) — pure
+  internal test-function-name renames.
+- `REPOMEND_FIXTURE_REPO` → `PATCHWARD_FIXTURE_REPO` in `tests/test_golden_dataset.py`
+  and `tests/test_fix_gen.py`. **Flag for Yehor:** if you have this env var
+  set anywhere in your own shell profile/CI (not found in this repo's CI
+  configs or docs, but that doesn't rule out a personal setup), it needs
+  updating there too — otherwise those two test files just silently fall
+  back to their hardcoded default path, not a hard failure.
+- `REPOMEND_NETWORK_POLICY` (the security-relevant one, controls the
+  scanner sandbox's egress policy — BUILD_PLAN §2's line-by-line review
+  class): kept BOTH names live, transitionally, rather than a straight
+  rename. Traced two things directly from source before deciding this: (1)
+  `docker/entrypoint.sh` applies `iptables -P OUTPUT DROP` unconditionally
+  and only adds ACCEPT rules on an exact `PYPI_ONLY`/`NPM_ONLY` string
+  match — confirmed **fail-closed**, a name mismatch degrades to
+  more-restrictive, never opens egress. (2) `docker_sandbox.py`'s
+  `BASE_IMAGE` is a digest-pinned, manually-built local image
+  (`patchward-scanner:0.1.0@sha256:...`, built 2026-06-12, comment says
+  "update after deliberate image rebuild only") — so editing
+  `docker/entrypoint.sh` in the repo does **not** reach that already-built
+  image until a deliberate rebuild; skew during that window is real, just
+  safe-direction. Given that, `docker_sandbox.py` now sets both
+  `PATCHWARD_NETWORK_POLICY` (canonical) and `REPOMEND_NETWORK_POLICY`
+  (legacy) to the same value; `entrypoint.sh` reads the new name with a
+  fallback to the old one, iptables logic itself untouched;
+  `docker/scanner.Dockerfile`'s comments updated to mention both names.
+  `tests/test_docker_sandbox.py` updated to assert both env vars are
+  present (3 tests) plus docstring/comment updates (4 more lines) — same
+  480/2/15 pass count as baseline, nothing broken.
+- Deliberately **NOT** touched this pass: the Docker image tag name
+  (`repomend-scanner:0.1.0` in `docker/scanner.Dockerfile`'s build
+  instructions) and the installed entrypoint binary name
+  (`/usr/local/bin/repomend-entrypoint`) — both only take effect on a
+  future deliberate image rebuild anyway, so bundling their rename with
+  that rebuild (not with this internal-identifier pass) avoids mixing a
+  naming cleanup with an image-rebuild decision. See new item 17.
+- Also deliberately not touched: `.bandit` and `.env.example` comment-level
+  "RepoMend"/"repomend-fixture" mentions — the former is old-product-name
+  branding (same category as item 8, but internal comments, not user-facing
+  product copy — low priority, optional, not scoped into item 16), the
+  latter (`repomend-fixture`) is the *actual name* of Yehor's real external
+  GitHub fork used for E2E testing (see item 11/14) — renaming the string
+  in a comment would misdocument a real external repo, not clean anything
+  up. Left alone on purpose, not missed.
+
+**Verification:** full `uv run --python 3.13 --extra webhook pytest --cov`
+in the sandbox after all edits → `480 passed, 2 skipped, 15 deselected,
+90.60% coverage` — identical pass/skip/deselect counts to this session's
+own pre-edit baseline (see `.strategy/STRATEGY.md` Session 023 open entry),
+confirming the rename broke nothing. Diff: 17 files changed, 97
+insertions, 59 deletions — delivered to Yehor as a patch file plus the
+full corrected files, written **uncommitted** to the D:\ working tree for
+his own line-by-line review and commit, per standing process (items 8/9's
+same pattern). No git commits made from the sandbox.
+**Owner:** Yehor, for the `git diff` review + commit only; the actual
+content work is done for the non-deferred scope.
+
+## 17. Rebuild `patchward-scanner` image, re-pin its digest, then drop the legacy `REPOMEND_NETWORK_POLICY` (NEW, surfaced 2026-07-23, Session 023) — not started, not agent-startable
+Deferred scope split off from item 16's execution. Two things bundled
+together because they're the same event: (1) the Docker image tag
+(`repomend-scanner:0.1.0`, `docker/scanner.Dockerfile`) and the installed
+entrypoint binary name (`/usr/local/bin/repomend-entrypoint`) still carry
+the old name — renaming them only matters at image-build time, so there's
+no point doing it except as part of a real rebuild; (2) `docker_sandbox.py`
+currently sets both `PATCHWARD_NETWORK_POLICY` and legacy
+`REPOMEND_NETWORK_POLICY` to the same value specifically because the
+currently-pinned image (`patchward-scanner:0.1.0@sha256:...`, built
+2026-06-12) bakes in the OLD `entrypoint.sh` that only reads the legacy
+name — that dual-set only needs to exist until this item lands.
+**Why this is a Directing-Engineer action, not agent-startable:** rebuilding
+the image pulls whatever `python:3.12-slim` base and `semgrep`/`bandit`/
+`pip-audit`/`eslint`/node-20 versions are current at rebuild time — per
+`docker_sandbox.py`'s own comment, those are pinned versions
+(`semgrep==1.165.0`, `bandit==1.9.4`, `pip-audit==2.10.1`, `eslint@8.57.1`),
+so a rebuild is a real dependency-version event with its own before/after
+scan-result verification needs, not something to trigger as a side effect
+of a naming cleanup. **Steps for whoever does this (Yehor, or an agent
+explicitly asked to do just this, later):** rebuild
+(`docker build -f docker/scanner.Dockerfile -t patchward-scanner:0.1.0 .`,
+updating the tag in that same command to drop "repomend" if renaming the
+tag too), re-pin the digest in `docker_sandbox.py`'s `BASE_IMAGE` constant
+(`docker inspect ... --format "{{.Id}}"`), sanity-check scan results
+before/after on the fixture repo, then remove `REPOMEND_NETWORK_POLICY`
+from `docker_sandbox.py`, `docker/entrypoint.sh`'s fallback, and the
+transitional assertions in `tests/test_docker_sandbox.py`.
+**Owner:** Yehor (or agent, once explicitly asked — this is a scoped,
+well-understood follow-up, just not something to bundle into item 16).

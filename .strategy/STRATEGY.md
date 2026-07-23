@@ -126,12 +126,67 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   files (e.g. `RepomendConfig` class) — logged as new BACKLOG item 16, not
   acted on.
 
+- [2026-07-23] Session 023 open verified fresh via methods independent of
+  the resume prompt and of each other: (1) `git ls-remote origin main` →
+  `0def73afd058c873ca4622ed4f27ab3c9f8177c4`, one commit past the
+  `5c5a479` that `NEXT_SESSION_START.md` cited as "last known" — expected
+  self-reference gap per H2 (that final commit is the one that landed the
+  very file being read), not real drift; confirmed via a second, separate
+  fresh `git clone`'s `git log` showing the same commit as
+  `docs: close Session 022 - items 8/9 shipped, item 16 logged, H4
+  corrected, test-gap resolved`. (2) Diffed all 5 memory files (this
+  file, `BACKLOG.md`, `STATE.md`, `NEXT_SESSION_START.md`,
+  `project_session_log.md`) on the D:\ mount against that fresh clone —
+  byte-identical, zero uncommitted drift (H8 check, clean this time). (3)
+  Fly `/healthz` fresh `WebFetch` → `{"status":"ok"}`. (4) PyPI: the
+  `pypi.org/project/patchward/` HTML page 404'd under `WebFetch` (likely
+  bot/robots blocking, not a package-removal signal — `pypi.org/pypi/.../json`
+  was explicitly `ROBOTS_DISALLOWED`), so used a genuinely different
+  method instead: `pip index versions patchward` from sandbox bash, which
+  found `0.1.0 Requires-Python >=3.12` as an ignored-but-listed version —
+  confirms the package is live on PyPI without needing the blocked HTML
+  route. (5) callmed-landing: fresh `WebFetch` of the live
+  `callmedai.com` confirms 0 "RepoMend" mentions, "Patchward" branding
+  present, and the exact corrected CLI line (`uv tool install patchward`)
+  — the Session 022 fix is confirmed deployed and stable one day later,
+  closing the loose end `NEXT_SESSION_START.md` flagged (item 4 of its
+  housekeeping list); the specific git hash for that private repo remains
+  unconfirmed from this sandbox (no credentials), same limitation as
+  before, but the live-content match is now itself a second day of
+  confirmation. (6) Test suite: ran a real `uv run --python 3.13 --extra
+  webhook pytest --cov` in a **brand-new fresh clone in a brand-new
+  sandbox instance** (not the same container as any prior session) →
+  `480 passed, 2 skipped, 15 deselected, 90.59% coverage` — exact match to
+  Session 022's sandbox figure, now independently reproduced in a second,
+  unrelated sandbox instance (strong evidence this is a stable, real
+  result and not an artifact of one container's state), and still
+  consistent with Yehor's own-machine 483/90.46% given the known
+  fixture_repo submodule gap (BACKLOG 7d). (7) BACKLOG item 16: fresh
+  `grep -rli "repomend" src/ tests/` and `grep -rno -i "repomend" src/
+  tests/ | wc -l` in the fresh clone reproduced **exactly 15 files, 59
+  occurrences**, matching the file list `BACKLOG.md` already named — no
+  drift in this claim either. Went further than re-verifying the count:
+  checked whether `RepomendConfig` is public API before scoping a rename
+  — it is **not** exported from `src/patchward/__init__.py` (which only
+  defines `__version__`), not in any module's `__all__`, not referenced
+  from `README.md` or any `docs/` file except one internal design doc
+  (`docs/intake_phase5.md`), and no test or source file imports it via a
+  top-level `from patchward import RepomendConfig` pattern — only via
+  `from patchward.config import RepomendConfig`. This is new triage
+  information beyond what `BACKLOG.md` item 16 already said, and it
+  points toward "safe, internal-only rename" rather than "breaking
+  change," pending Yehor's go-ahead to execute (see Open threads).
+
 ## Open threads
 - BACKLOG 12: CRA/GDPR — external legal input, unchanged
-- BACKLOG 16 (new): ~59 internal "repomend" references across 15 files in
-  the real Patchward codebase (`RepomendConfig` class in `config.py`/
-  `webhook.py` and others) — untriaged, needs a usage inventory before
-  scoping as a real rename job
+- BACKLOG 16: ~59 internal "repomend" references across 15 files in the
+  real Patchward codebase (`RepomendConfig` class in `config.py`, used in
+  `webhook.py`, `pr_publisher.py`, `fix_gen.py`, `subagent.py`,
+  `pipeline.py`, and 6 test files) — **usage inventory now done (Session
+  023 open, see Current state above): confirmed non-public-API, no
+  external exposure found.** Ready to execute as a real find-usages-based
+  rename (not a blind string swap) as soon as Yehor says go; not yet
+  scored WSJF or started.
 - `pending_change_cancelled` — noted in BACKLOG item 5's closing text as a
   low-priority open question (does it exist as a distinct Marketplace
   action needing the same `is_entitled()` reasoning?) — not urgent
@@ -437,6 +492,19 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   correctly wouldn't have papered over a wrong guess if the collect-only
   diff hadn't found a clean, complete explanation.
 
+- [2026-07-23, Session 023 open] Verified fresh (see Current state above
+  for full detail): git HEAD, all 5 memory files' clean/mount-vs-clone
+  state, Fly health, PyPI liveness (via a method independent of the one
+  that 404'd), callmed-landing live content, a full independent sandbox
+  pytest run, and BACKLOG item 16's occurrence count — all CONFIRMED, 0
+  drift. Went beyond re-verification to do new triage work: confirmed
+  `RepomendConfig` is not public API (not exported, no external doc/
+  README exposure), which is new information that de-risks BACKLOG item
+  16 as an execution candidate. L2 goal proposed: triage-plus-execute
+  BACKLOG item 16 (the `RepomendConfig`/internal-repomend rename) pending
+  Yehor's go-ahead, per `NEXT_SESSION_START.md`'s own framing of it as
+  "agent-startable once he says go."
+
 - [2026-07-22, Session 022 CLOSE] Formal close-out run via the
   `session-close` skill, explicitly instructed NOT to trust any hash or
   "confirmed" claim from the conversation transcript. Result: Patchward's
@@ -489,3 +557,77 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   heuristic promotions this close (H8 was already promoted mid-session,
   correctly not re-promoted twice); H4's correction stands as logged
   mid-session, carried through the close unchanged.
+
+- [2026-07-23 open] Of 7 checkable claims (git HEAD via ls-remote, git
+  HEAD via fresh clone, memory files clean vs. mount, Fly health, PyPI
+  liveness, callmed-landing live content, BACKLOG 16 occurrence count):
+  **7/7 CONFIRMED**, each via a method independent of the resume prompt's
+  own claims (ls-remote + a second fresh clone for HEAD; direct `diff`
+  for memory cleanliness; fresh `WebFetch` for Fly; `pip index versions`
+  for PyPI after the more obvious `WebFetch` route was blocked by
+  robots.txt/bot-detection, not treated as a dead end; fresh `WebFetch`
+  for callmed-landing; fresh `grep` for BACKLOG 16). **1.00 on checkable
+  claims.** The test-suite figure (480/2/15/90.59%) is not counted as one
+  of the 7 above since it wasn't an explicit STRATEGY.md claim this
+  session opened with, but it independently reproduced Session 022's
+  sandbox figure exactly in an unrelated sandbox instance — a strong,
+  unprompted corroboration worth noting for calibration even though it
+  wasn't itself "graded." No heuristic promotions or demotions this
+  open — H1/H2/H4/H8 all behaved exactly as documented, no surprises.
+
+- [2026-07-23, Session 023 continued] Yehor confirmed BACKLOG item 16 as
+  the L2 goal, then pushed back twice on the scope before agreeing to
+  execute — both times with a substantive technical point, both times
+  checked directly against source rather than taken on trust: (1) asked
+  whether any of the 59 references cross a serialization/deployment
+  boundary, given Patchward is now a live webhook + published package, not
+  just a library — a full literal-quoted-string grep (not just the
+  identifier grep already done) found exactly one that does
+  (`REPOMEND_NETWORK_POLICY`), plus a second, lower-stakes one found
+  independently while checking (`REPOMEND_FIXTURE_REPO`, test-only). (2)
+  asked about fail-open-vs-fail-closed and image-rebuild skew for that env
+  var specifically — traced both directly: `docker/entrypoint.sh` applies
+  `iptables -P OUTPUT DROP` unconditionally and only ACCEPTs on an exact
+  string match, so a mismatch is fail-closed, never fail-open; and
+  `docker_sandbox.py`'s `BASE_IMAGE` is a digest-pinned, manually-rebuilt
+  image (built 2026-06-12), so skew during a naming transition is real but
+  safe-direction. Executed on that basis: 58 pure-identifier occurrences
+  renamed (`RepomendConfig` → `PatchwardConfig` across 12 files, 2 test
+  function names, `REPOMEND_FIXTURE_REPO` → `PATCHWARD_FIXTURE_REPO`), the
+  one boundary-crossing var handled via a transitional dual-set/dual-read
+  rather than a straight rename (both names live until BACKLOG 17's image
+  rebuild lands), and the Docker image tag/binary name deliberately
+  deferred to that same item 17 rather than bundled in. Full detail in
+  `memory/BACKLOG.md` item 16 (now marked EXECUTED) and new item 17.
+  Verification: a real `uv run --python 3.13 --extra webhook pytest --cov`
+  after all edits reproduced the exact same `480 passed, 2 skipped, 15
+  deselected` counts as this session's own pre-edit baseline (90.60% vs.
+  90.59% coverage, +1 statement from added comment lines) — the rename
+  broke nothing, confirmed by re-running the suite, not by inspection
+  alone. A final full-repo grep confirmed zero remaining case-insensitive
+  "repomend" hits outside the deliberately-deferred set (docker image
+  tag/binary name, `.bandit`/`.env.example` comment-level branding, and
+  historical `memory`/`reports`/`runs` artifacts — none of which are code
+  BACKLOG 16 was ever scoped to touch). No git commits made from the
+  sandbox — all 17 changed files written uncommitted to Yehor's D:\
+  working tree, plus a `.patch` file, for his own line-by-line review and
+  commit, same standing process as items 8/9.
+
+## Calibration record (continued)
+- [2026-07-23, Session 023 execution phase] Of the claims made during
+  execution (59-vs-58-vs-1 classification, fail-closed behavior, digest-pin
+  skew possibility, post-edit test counts, final zero-remaining-references
+  grep): **all 5 CONFIRMED** via a method independent of assertion — the
+  classification via an actual literal-string grep (not inferred from the
+  identifier grep alone), fail-closed via reading the real `entrypoint.sh`
+  iptables sequence line by line, digest-pinning via the real `BASE_IMAGE`
+  constant and its comment, test counts via an actual full-suite re-run
+  post-edit, and the final grep via a real repo-wide search after all
+  edits landed. 1.00 on checkable claims. Worth noting for calibration:
+  this is the first session where the *user's own claims* (raised as
+  pushback on a proposed plan, not as memory-file content) were the thing
+  under verification, rather than a memory file or a prior session's
+  report — the two-pass discipline applied the same way regardless of
+  source, per H3's spirit (Tier 2 sources are leads, not gating facts,
+  whether they come from another project's memory file or from a
+  question asked mid-session).
