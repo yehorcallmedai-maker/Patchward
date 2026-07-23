@@ -25,14 +25,18 @@
 #   belt-and-suspenders: /etc/hosts guarantees name→IP mapping, iptables
 #   enforces which IPs are actually reachable.
 #
-# REPOMEND_NETWORK_POLICY is set by docker_sandbox.py via -e flag.
+# PATCHWARD_NETWORK_POLICY is set by docker_sandbox.py via -e flag (canonical
+# name, BACKLOG 16/17 rename). REPOMEND_NETWORK_POLICY is accepted as a
+# fallback for images built before this rename — docker_sandbox.py sets both
+# to the same value during the transition, so this only matters if an old
+# pinned image is combined with a caller that stops setting the legacy var.
 # Values: OFFLINE | PYPI_ONLY | NPM_ONLY
-# If unset, defaults to OFFLINE (deny-all).
+# If unset (both names absent), defaults to OFFLINE (deny-all).
 # =============================================================================
 
 set -e
 
-POLICY="${REPOMEND_NETWORK_POLICY:-OFFLINE}"
+POLICY="${PATCHWARD_NETWORK_POLICY:-${REPOMEND_NETWORK_POLICY:-OFFLINE}}"
 
 # ---------------------------------------------------------------------------
 # Step 1 — resolve destination IPs before any egress rules are applied.

@@ -159,6 +159,16 @@ class DockerSandbox:
             docker_cmd += ["--cap-add", "NET_ADMIN"]
 
         # Pass policy to entrypoint script — used to select which IPs to allow.
+        # BACKLOG 16/17: PATCHWARD_NETWORK_POLICY is the canonical name (the
+        # "repomend" internal-naming cleanup). REPOMEND_NETWORK_POLICY is set
+        # alongside it, transitionally, because the pinned scanner image
+        # (BASE_IMAGE above, patchward-scanner:0.1.0@sha256:...) still bakes
+        # in the OLD entrypoint.sh, which only reads the legacy name — editing
+        # entrypoint.sh in this repo does not reach that already-built image
+        # until it is deliberately rebuilt and the digest above is re-pinned
+        # (see BACKLOG 17). Both vars carry the same value, so behavior is
+        # identical either way. Drop the legacy var once BACKLOG 17 lands.
+        docker_cmd += ["-e", f"PATCHWARD_NETWORK_POLICY={network_policy.name}"]
         docker_cmd += ["-e", f"REPOMEND_NETWORK_POLICY={network_policy.name}"]
 
         # Env vars: credentials structurally excluded — C-P2-04

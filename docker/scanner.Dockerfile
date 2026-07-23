@@ -77,13 +77,21 @@ RUN npm install -g eslint@8.57.1
 #
 # The script is the container entrypoint. It:
 #   1. Applies default OUTPUT DROP policy (deny-by-default)
-#   2. Resolves destination IPs for the policy passed via REPOMEND_NETWORK_POLICY
+#   2. Resolves destination IPs for the policy passed via
+#      PATCHWARD_NETWORK_POLICY (canonical, BACKLOG 16/17) or the legacy
+#      REPOMEND_NETWORK_POLICY fallback (see entrypoint.sh)
 #   3. Inserts ACCEPT OUTPUT rules for resolved IPs on ports 80/443
 #   4. Execs the scanner command (replaces shell process — no wrapper overhead)
 #
 # Step 3 MUST run before step 2 (resolution needs network; DROP blocks it).
-# REPOMEND_NETWORK_POLICY values: OFFLINE | PYPI_ONLY | NPM_ONLY
+# PATCHWARD_NETWORK_POLICY / REPOMEND_NETWORK_POLICY values: OFFLINE | PYPI_ONLY | NPM_ONLY
 # ---------------------------------------------------------------------------
+# NOTE (BACKLOG 17, not this pass): the image tag (repomend-scanner:0.1.0
+# below) and the installed binary name (repomend-entrypoint) still carry the
+# old name. Left untouched here deliberately — they only take effect on the
+# next deliberate image rebuild (see docker_sandbox.py's BASE_IMAGE comment),
+# so renaming them is bundled with that rebuild, not this internal-identifier
+# pass, to avoid mixing a naming cleanup with an image-rebuild decision.
 COPY docker/entrypoint.sh /usr/local/bin/repomend-entrypoint
 RUN chmod +x /usr/local/bin/repomend-entrypoint
 
