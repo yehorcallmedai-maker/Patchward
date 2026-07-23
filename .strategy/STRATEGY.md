@@ -1,17 +1,17 @@
-﻿# Project Memory вЂ” Patchward
+# Project Memory — Patchward
 
 ## Mission
 Ship Patchward as a publishable, credible open-source Python codebase-audit
 tool: PyPI release chain working end-to-end, webhook deployed on Fly, site
 (callmed-landing) reflecting the Patchward name. (inferred from
-memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
+memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 
 ## Success criteria
-1. вњ… `workflow_dispatch` publish to PyPI succeeds via OIDC Trusted Publisher.
-   MET 2026-07-22 вЂ” `patchward` v0.1.0 live on PyPI, Tier-0 verified.
-2. вњ… callmed-landing copy says Patchward, not RepoMend (0 grep hits). MET
-   2026-07-22 вЂ” 45в†’0 verified; corrected files await Yehor's commit.
-3. Test suite green at в‰Ґ90% coverage on Yehor's machine.
+1. ✅ `workflow_dispatch` publish to PyPI succeeds via OIDC Trusted Publisher.
+   MET 2026-07-22 — `patchward` v0.1.0 live on PyPI, Tier-0 verified.
+2. ✅ callmed-landing copy says Patchward, not RepoMend (0 grep hits). MET
+   2026-07-22 — 45→0 verified; corrected files await Yehor's commit.
+3. Test suite green at ≥90% coverage on Yehor's machine.
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
@@ -21,14 +21,14 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   the local `D:\` mount: (1) `git ls-remote origin main` from the cloud
   sandbox's own bash, (2) a fresh `git clone` of the repo + `git log -1`,
   (3) a direct `raw.githubusercontent.com` fetch of `src/patchward/webhook.py`
-  at this exact hash, sha256-compared against the fresh clone's copy вЂ”
+  at this exact hash, sha256-compared against the fresh clone's copy —
   identical (`fc7254b3...f1a229`). This is 4 commits ahead of the
   `7654b1e` this file previously cited: `0c6a742` (rate limiting /
-  body-size limits / `X-GitHub-Delivery` logging) в†’ `793a1d0` (docs close)
-  в†’ `4b6a023` (3 defense-in-depth spy tests proving the post-read
-  body-size check) в†’ `3d1ec08` (Phase 9 security-boundary hardening).
+  body-size limits / `X-GitHub-Delivery` logging) → `793a1d0` (docs close)
+  → `4b6a023` (3 defense-in-depth spy tests proving the post-read
+  body-size check) → `3d1ec08` (Phase 9 security-boundary hardening).
 - [2026-07-21] **BACKLOG item 5 (Phase 9 Exposure Gate) is FULLY CLOSED,
-  COMMITTED AND PUSHED** вЂ” not merely staged, and further along than
+  COMMITTED AND PUSHED** — not merely staged, and further along than
   either `BACKLOG.md`'s or `NEXT_SESSION_START.md`'s own uncommitted
   local drafts said (both existed on disk, partially correcting the
   "pending Yehor's commit" framing, but both stopped at commit `793a1d0`
@@ -40,71 +40,71 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   tests, proven discriminating via negative control against the unguarded
   variant." Verified directly against the diff: the rate limiter call was
   moved to run *after* `_verify_signature` (so unauthenticated floods
-  can't consume the rate-limit budget вЂ” a real starvation-vector fix, not
+  can't consume the rate-limit budget — a real starvation-vector fix, not
   cosmetic), and the three env-parser helpers
   (`_max_body_bytes`/`_rate_limit_max_requests`/`_rate_limit_window_seconds`)
   now reject non-finite/out-of-range values via `math.isfinite()` and
   range checks instead of a bare `except ValueError`, falling back to
   documented defaults. `test_infinite_window_env_still_expires_limiter_recovers`
-  is a genuine negative-control test вЂ” it proves the guard doesn't just
+  is a genuine negative-control test — it proves the guard doesn't just
   suppress a 500, it proves the limiter actually *recovers* afterward,
   which an unguarded `float("inf")` would never do. **Test-count
   cross-check (independent of trusting any reported total):** counted the
-  actual test functions/parametrize cases added in each commit's diff вЂ”
+  actual test functions/parametrize cases added in each commit's diff —
   `4b6a023` adds 3, `3d1ec08` adds 12 (6 functions, 9 of which are
-  parametrized range-validation cases + 2 non-range-validation) в†’ 468
+  parametrized range-validation cases + 2 non-range-validation) → 468
   (Session 020 close figure) + 3 + 12 = **483**, exactly matching what
   was reported at session open. **What is NOT independently re-verified
   this session:** the actual `483 passed, 2 skipped, 15 deselected,
-  90.46% coverage, Python 3.14.4` pytest run вЂ” this sandbox has no
-  Python в‰Ґ3.12 interpreter and can't fetch one
-  (`uv python install 3.12` в†’ 403 from the python-build-standalone
+  90.46% coverage, Python 3.14.4` pytest run — this sandbox has no
+  Python ≥3.12 interpreter and can't fetch one
+  (`uv python install 3.12` → 403 from the python-build-standalone
   release CDN, consistent with H4). Treat the real-machine run as Tier 1
   (self-reported, not reproduced here) but strongly corroborated by the
   arithmetic cross-check above. Also Tier 1, not Tier 0: the specific
-  claim of "two adversarial reviews, both clean" вЂ” the *outcome* (the
+  claim of "two adversarial reviews, both clean" — the *outcome* (the
   guard hole and its fix) is fully confirmed in the diff; the *review
   process itself* (how many passes, by whom) isn't checkable from repo
   artifacts and is corroborated only by the commit message's own wording.
-- [2026-07-21] Fly webhook healthy вЂ” fresh `WebFetch` this session в†’
+- [2026-07-21] Fly webhook healthy — fresh `WebFetch` this session →
   `{"status":"ok"}` (Tier 1; direct bash `curl` to `patchward-webhook.fly.dev`
   fails with connection status 000 from this sandbox's own egress
-  restrictions, consistent with H4 вЂ” not a health signal).
-- [2026-07-21, CLOSED at session close] `webhook-reqs.txt` вЂ” Yehor
+  restrictions, consistent with H4 — not a health signal).
+- [2026-07-21, CLOSED at session close] `webhook-reqs.txt` — Yehor
   gitignored it (commit `3ecc3e4`); confirmed untracked (`git ls-files`
   empty) and the `.gitignore` line present, both re-verified fresh at
   close. No longer an open thread.
 - [2026-07-21, CLOSED at session close] `memory/Patchward_Turning-Point_Industrial-Plan_2026-07-16.md`
-  mojibake вЂ” confirmed a non-issue, twice independently: this session's
-  own non-ASCII character census (only legitimate `вЂ”`/`в†’`/`вЂ“`/`В·`/`в‰Ґ`/`В§`/`в‰¤`,
+  mojibake — confirmed a non-issue, twice independently: this session's
+  own non-ASCII character census (only legitimate `—`/`→`/`–`/`·`/`≥`/`§`/`≤`,
   no replacement characters or double-encoding artifacts) and Yehor's own
   `Get-Content -Encoding UTF8` re-read, both clean. The file was never
   corrupted; the working hypothesis (an earlier unqualified `Get-Content`
   call rendering valid UTF-8 as mojibake in a non-UTF-8 console code
   page) is plausible but is itself a Tier 1 causal claim about a prior
-  command never directly observed вЂ” the file-state finding is Tier 0,
+  command never directly observed — the file-state finding is Tier 0,
   the "why" is not.
-- [2026-07-21] PR #1283 disclosure comment (unrelated repo) вЂ” not chased
+- [2026-07-21] PR #1283 disclosure comment (unrelated repo) — not chased
   this session per standing instruction ("your pace," unrelated repo).
   Still UNVERIFIED, unchanged.
 - [2026-07-21] No agent-startable code work is queued. Confirmed: the
   only remaining open BACKLOG items (8 site rename, 9 PyPI publisher
   verification, 12 CRA/GDPR legal) are all Yehor-or-external-only, same
-  as every prior session's finding вЂ” nothing new surfaced this session
+  as every prior session's finding — nothing new surfaced this session
   to contradict that.
 - [2026-07-22] Session 022 open reconfirmed HEAD fresh via two
   independent methods: `git ls-remote origin main` and a sandbox-local
   fresh clone both return `07f97d356c0e931ce0e9006b08acfd920345662f`
-  ("docs: close Session 021"), matching the SHA cited at resume вЂ”
+  ("docs: close Session 021"), matching the SHA cited at resume —
   exactly the commit chain this file already describes above, no drift.
-  Fly `/healthz` fresh `WebFetch` в†’ `{"status":"ok"}` (curl still
+  Fly `/healthz` fresh `WebFetch` → `{"status":"ok"}` (curl still
   blocked per H4, not a health signal).
 - [2026-07-22] `memory/project_session_log.md` on the D:\ mount carries
   ~240 uncommitted lines (real Session 021-023 narrative on the webhook
   rate-limiter reorder and env-parser hardening work) not present at git
-  HEAD вЂ” confirmed via `diff` against a fresh clone; git's last touch to
+  HEAD — confirmed via `diff` against a fresh clone; git's last touch to
   that file was `793a1d0`. Narrative only, no code/config drift, not
-  urgent вЂ” but this is the fact that triggered H8's promotion (see
+  urgent — but this is the fact that triggered H8's promotion (see
   Heuristics). `.strategy/STRATEGY.md`, `memory/BACKLOG.md`, and
   `memory/NEXT_SESSION_START.md` were all diffed identical mount-vs-HEAD
   (no drift there).
@@ -116,47 +116,47 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   confirmation). Item 8: `C:\Dev\Projects` connected mid-session,
   surfacing the real callmed-landing and Autonomous-Core repos for the
   first time; the "34 occurrences" estimate was DRIFTED (a line-count,
-  not a word-count вЂ” real figure was 45), and the investigation caught 3
+  not a word-count — real figure was 45), and the investigation caught 3
   occurrences that were actively wrong technical instructions (stale CLI
   install command, wrong branch-naming convention, wrong PyPI namespace),
-  not just old branding вЂ” all corrected, cross-checked against the real
+  not just old branding — all corrected, cross-checked against the real
   `src/patchward/` source, written uncommitted to Yehor's working tree for
   his own review/commit. Surfaced a new, untriaged finding: ~59 internal
   "repomend" references remain in the real Patchward codebase across 15
-  files (e.g. `RepomendConfig` class) вЂ” logged as new BACKLOG item 16, not
+  files (e.g. `RepomendConfig` class) — logged as new BACKLOG item 16, not
   acted on.
 
 - [2026-07-23] Session 023 open verified fresh via methods independent of
-  the resume prompt and of each other: (1) `git ls-remote origin main` в†’
+  the resume prompt and of each other: (1) `git ls-remote origin main` →
   `0def73afd058c873ca4622ed4f27ab3c9f8177c4`, one commit past the
-  `5c5a479` that `NEXT_SESSION_START.md` cited as "last known" вЂ” expected
+  `5c5a479` that `NEXT_SESSION_START.md` cited as "last known" — expected
   self-reference gap per H2 (that final commit is the one that landed the
   very file being read), not real drift; confirmed via a second, separate
   fresh `git clone`'s `git log` showing the same commit as
   `docs: close Session 022 - items 8/9 shipped, item 16 logged, H4
   corrected, test-gap resolved`. (2) Diffed all 5 memory files (this
   file, `BACKLOG.md`, `STATE.md`, `NEXT_SESSION_START.md`,
-  `project_session_log.md`) on the D:\ mount against that fresh clone вЂ”
+  `project_session_log.md`) on the D:\ mount against that fresh clone —
   byte-identical, zero uncommitted drift (H8 check, clean this time). (3)
-  Fly `/healthz` fresh `WebFetch` в†’ `{"status":"ok"}`. (4) PyPI: the
+  Fly `/healthz` fresh `WebFetch` → `{"status":"ok"}`. (4) PyPI: the
   `pypi.org/project/patchward/` HTML page 404'd under `WebFetch` (likely
-  bot/robots blocking, not a package-removal signal вЂ” `pypi.org/pypi/.../json`
+  bot/robots blocking, not a package-removal signal — `pypi.org/pypi/.../json`
   was explicitly `ROBOTS_DISALLOWED`), so used a genuinely different
   method instead: `pip index versions patchward` from sandbox bash, which
-  found `0.1.0 Requires-Python >=3.12` as an ignored-but-listed version вЂ”
+  found `0.1.0 Requires-Python >=3.12` as an ignored-but-listed version —
   confirms the package is live on PyPI without needing the blocked HTML
   route. (5) callmed-landing: fresh `WebFetch` of the live
   `callmedai.com` confirms 0 "RepoMend" mentions, "Patchward" branding
   present, and the exact corrected CLI line (`uv tool install patchward`)
-  вЂ” the Session 022 fix is confirmed deployed and stable one day later,
+  — the Session 022 fix is confirmed deployed and stable one day later,
   closing the loose end `NEXT_SESSION_START.md` flagged (item 4 of its
   housekeeping list); the specific git hash for that private repo remains
   unconfirmed from this sandbox (no credentials), same limitation as
   before, but the live-content match is now itself a second day of
   confirmation. (6) Test suite: ran a real `uv run --python 3.13 --extra
   webhook pytest --cov` in a **brand-new fresh clone in a brand-new
-  sandbox instance** (not the same container as any prior session) в†’
-  `480 passed, 2 skipped, 15 deselected, 90.59% coverage` вЂ” exact match to
+  sandbox instance** (not the same container as any prior session) →
+  `480 passed, 2 skipped, 15 deselected, 90.59% coverage` — exact match to
   Session 022's sandbox figure, now independently reproduced in a second,
   unrelated sandbox instance (strong evidence this is a stable, real
   result and not an artifact of one container's state), and still
@@ -164,14 +164,14 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   fixture_repo submodule gap (BACKLOG 7d). (7) BACKLOG item 16: fresh
   `grep -rli "repomend" src/ tests/` and `grep -rno -i "repomend" src/
   tests/ | wc -l` in the fresh clone reproduced **exactly 15 files, 59
-  occurrences**, matching the file list `BACKLOG.md` already named вЂ” no
+  occurrences**, matching the file list `BACKLOG.md` already named — no
   drift in this claim either. Went further than re-verifying the count:
   checked whether `RepomendConfig` is public API before scoping a rename
-  вЂ” it is **not** exported from `src/patchward/__init__.py` (which only
+  — it is **not** exported from `src/patchward/__init__.py` (which only
   defines `__version__`), not in any module's `__all__`, not referenced
   from `README.md` or any `docs/` file except one internal design doc
   (`docs/intake_phase5.md`), and no test or source file imports it via a
-  top-level `from patchward import RepomendConfig` pattern вЂ” only via
+  top-level `from patchward import RepomendConfig` pattern — only via
   `from patchward.config import RepomendConfig`. This is new triage
   information beyond what `BACKLOG.md` item 16 already said, and it
   points toward "safe, internal-only rename" rather than "breaking
@@ -180,40 +180,40 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   verified at close.** `main` @ `e4f3cca0684ea04654094e0cb0620664151f1f32`
   ("docs(memory): close BACKLOG 16, log item 17"), confirmed via fresh
   `git ls-remote` and a fresh `git clone` whose file content is
-  byte-identical to what this session authored вЂ” see the Session 023
+  byte-identical to what this session authored — see the Session 023
   CLOSE entry in Session log for the full verification chain, including
   one real finding (the D:\ mount's `.strategy/STRATEGY.md` had regressed
-  to pre-session content after the push вЂ” fixed this close, see
+  to pre-session content after the push — fixed this close, see
   H9-candidate; a matching claim about `BACKLOG.md` was itself corrected,
-  see the CORRECTION entry вЂ” that file was fine all along). New BACKLOG 17
+  see the CORRECTION entry — that file was fine all along). New BACKLOG 17
   tracks the deferred scanner-image rebuild.
 
 ## Open threads
-- BACKLOG 12: CRA/GDPR вЂ” external legal input, unchanged
+- BACKLOG 12: CRA/GDPR — external legal input, unchanged
 - BACKLOG 17 (NEW, Session 023): rebuild `patchward-scanner` image, re-pin
   its digest in `docker_sandbox.py`, then drop the transitional legacy
   `REPOMEND_NETWORK_POLICY` env var and rename the image tag
   (`repomend-scanner:0.1.0`) and entrypoint binary
   (`/usr/local/bin/repomend-entrypoint`). Directing-Engineer action, not
-  agent-startable вЂ” a rebuild pulls current dependency versions
+  agent-startable — a rebuild pulls current dependency versions
   (`semgrep`/`bandit`/`pip-audit`/`eslint`), which needs its own
   before/after scan-result sanity check, not something to trigger as a
   side effect of a naming cleanup. See `memory/BACKLOG.md` item 17 for the
-  exact steps. No urgency вЂ” the dual-name transitional design is safe
+  exact steps. No urgency — the dual-name transitional design is safe
   indefinitely until this lands.
-- `pending_change_cancelled` вЂ” noted in BACKLOG item 5's closing text as a
+- `pending_change_cancelled` — noted in BACKLOG item 5's closing text as a
   low-priority open question (does it exist as a distinct Marketplace
-  action needing the same `is_entitled()` reasoning?) вЂ” not urgent
+  action needing the same `is_entitled()` reasoning?) — not urgent
 - ssh-audit fork: 2 stale repomend/* branches, optional cleanup
-- PR #1283 disclosure comment, unrelated repo вЂ” Yehor's own pace
-- `memory/STATE.md` stale relative to reality вЂ” still describes the
+- PR #1283 disclosure comment, unrelated repo — Yehor's own pace
+- `memory/STATE.md` stale relative to reality — still describes the
   webhook's security posture as of commit `0bb0286`, predating the
-  entire Phase 9 chain (`0c6a742` в†’ `4b6a023` в†’ `3d1ec08`). Low priority
+  entire Phase 9 chain (`0c6a742` → `4b6a023` → `3d1ec08`). Low priority
   (this file already treats STATE.md as secondary, not a source of
   gating facts), flagged 2026-07-22 for whenever memory upkeep is next
-  in scope вЂ” not a queued session goal unless Yehor wants it to be.
+  in scope — not a queued session goal unless Yehor wants it to be.
 - Detailed engineering memory lives in memory/ (STATE.md, BACKLOG.md,
-  project_session_log.md) вЂ” this file is the calibration layer, not a fork of it
+  project_session_log.md) — this file is the calibration layer, not a fork of it
 
 ## Heuristics (earned)
 - H1 [active, promoted 2026-07-15, evidence: Session 018 close + Session
@@ -223,16 +223,16 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   boundary: only remote-ref operations (`git ls-remote`), a **fresh
   `git clone`**, and direct fetches of hosted content
   (`raw.githubusercontent.com` via `web_fetch` or sandbox bash, both
-  reachable) are fully trustworthy вЂ” local git object reads against an
+  reachable) are fully trustworthy — local git object reads against an
   existing mounted checkout cannot be assumed safe. **Session 021
   addendum: cloning fresh into the sandbox's own filesystem (not reading
-  the D:\ mount at all) sidesteps this entire class of bug** вЂ” used this
+  the D:\ mount at all) sidesteps this entire class of bug** — used this
   session for all git-state verification, zero mount-staleness issues
   encountered as a result.
 - H2 [active, promoted 2026-07-15, evidence: twice in Session 018 close]:
-  Never cite "the current commit hash" inside a committed handoff file вЂ”
+  Never cite "the current commit hash" inside a committed handoff file —
   structurally always stale. Run git ls-remote at session open instead.
-- H3 [active, carried from project rules, evidence: Sessions 015вЂ“018]:
+- H3 [active, carried from project rules, evidence: Sessions 015–018]:
   Tier 2 sources (another project's memory files, unauthenticated proxies)
   are leads, never gating facts.
 - H4 [active, promoted 2026-07-16, evidence: Sessions 020, 021]: this
@@ -241,23 +241,23 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   `curl`) even though `web_fetch`, `pip install` from PyPI, `git`
   operations against `github.com`/`api.github.com`, and direct `curl` to
   `raw.githubusercontent.com` all work. Don't assume a bash-level network
-  failure means the target is down or the technique is unusable вЂ” test
+  failure means the target is down or the technique is unusable — test
   the specific host/tool combination before concluding "network
   blocked." **Session 021: this is also why a real `uv run pytest`
   re-run isn't possible from this sandbox** (`requires-python = ">=3.12"`,
   sandbox has 3.11.15, and fetching 3.12+ via `uv python install` hits
-  this exact block) вЂ” a standing, not per-session, limitation.
-  **Session 022 correction вЂ” Tier 0 vs Tier 1, kept separate on purpose:**
+  this exact block) — a standing, not per-session, limitation.
+  **Session 022 correction — Tier 0 vs Tier 1, kept separate on purpose:**
   **Tier 0 (directly observed):** `/usr/bin/python3.13` exists in this
   sandbox right now; `uv run patchward ...` found and used it with zero
-  network calls, and a real `uv run pytest --cov` executed successfully вЂ”
+  network calls, and a real `uv run pytest --cov` executed successfully —
   `480 passed, 2 skipped, 15 deselected, 90.59% coverage`. **Tier 1
   (plausible, NOT independently confirmed):** the inference that H4's
   original diagnosis was merely *incomplete* (tested "fetch a new
   interpreter," never checked "is one already present") rather than the
   sandbox's base image having genuinely changed between sessions. Nobody
   re-ran the old failing `uv python install 3.12` command in this exact
-  environment to see if it still fails the same way вЂ” both explanations
+  environment to see if it still fails the same way — both explanations
   predict the same observed outcome, so this is genuinely underdetermined
   from what was actually checked, same distinction this file already
   draws for the Session 021 mojibake finding. **Do not treat "just check
@@ -266,7 +266,7 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   **The 480-vs-483 test-count gap is now fully resolved, Tier 0:** a
   `--collect-only` diff between this sandbox (Python 3.13) and Yehor's
   machine (Python 3.14.4) found the exact 3 missing test IDs, all in
-  `tests/fixture_repo/tests/test_clean.py` вЂ” not a version/platform
+  `tests/fixture_repo/tests/test_clean.py` — not a version/platform
   marker at all, but `tests/fixture_repo`'s known bare-gitlink-with-no-
   `.gitmodules` state (BACKLOG 7d): a plain `git clone` in the sandbox
   leaves that submodule directory empty, so those 3 tests never collect
@@ -275,11 +275,11 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
 - H5 [active, promoted 2026-07-16, evidence: Session 020]: before calling
   a status-check/entitlement condition a "bug" from code alone, check
   what the upstream system (here, GitHub's own webhook docs) actually
-  says that status means вЂ” a correct reading of the code is not the same
+  says that status means — a correct reading of the code is not the same
   as a correct reading of the domain.
 - H6 [active, promoted 2026-07-16, evidence: 3 occurrences in Session
   020]: after using `Edit` on a source or test file in this sandbox, do
-  not trust bash's own view of that file for running tests вЂ” re-read via
+  not trust bash's own view of that file for running tests — re-read via
   `Read` and, if bash's line count/`ast.parse` disagrees, rewrite it
   byte-for-byte through a bash heredoc before trusting any sandbox test run.
 - H7 [active, promoted 2026-07-16, evidence: Session 020's Correction 1-3
@@ -287,12 +287,12 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   within the same session, re-paste the actual evidence (diff, raw
   command output) rather than asserting "already done."
 - H8 [active, PROMOTED 2026-07-22, evidence: two independent occurrences
-  across two different files вЂ” Session 021 (`BACKLOG.md` +
+  across two different files — Session 021 (`BACKLOG.md` +
   `NEXT_SESSION_START.md`, partial uncommitted corrections stopping short
   of true HEAD) and Session 022 (`memory/project_session_log.md`, ~240
   uncommitted lines of real Session 021-023 narrative, last touched by
   git at `793a1d0`)]: local disk can be ahead of git in ways
-  `git log`/`git clone` will never show вЂ” a memory file can carry real,
+  `git log`/`git clone` will never show — a memory file can carry real,
   substantive uncommitted content for multiple sessions running. This is
   now a standing step, not a one-off check: at session open, diff every
   memory file on the D:\ mount against a fresh clone before assuming
@@ -301,16 +301,16 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   happened this session.)
 
 ## Failed approaches (ledger)
-- [2026-07-15] Trusting sandbox `git status` for close-out verification вЂ”
+- [2026-07-15] Trusting sandbox `git status` for close-out verification —
   false report caught twice (Session 018, this session). Retry only if the
   mount sync mechanism verifiably changes.
 - [2026-07-21] Trying to install a Python 3.12+ interpreter in-sandbox via
-  `uv python install` to re-run the real test suite вЂ” blocked by H4 (403
+  `uv python install` to re-run the real test suite — blocked by H4 (403
   from the python-build-standalone release CDN). **SUPERSEDED 2026-07-22:**
   fetching a *new* interpreter is still blocked, but this session found
-  `/usr/bin/python3.13` already present вЂ” `uv run pytest` used it directly
+  `/usr/bin/python3.13` already present — `uv run pytest` used it directly
   with no network fetch and a real run succeeded (480/2/15, 90.59% cov,
-  vs. Yehor's 483/2/15, 90.46% вЂ” 3-test collection gap, **RESOLVED same
+  vs. Yehor's 483/2/15, 90.46% — 3-test collection gap, **RESOLVED same
   session via `--collect-only` diff: `tests/fixture_repo`'s bare-gitlink
   submodule has no content after a plain sandbox clone, see H4/STATE.md**).
   The real fix for future sessions: check for an existing compatible
@@ -327,7 +327,7 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   resolved; real self-correction on `pending_change` held under Yehor's
   independent re-check; nothing committed all session.
 - [2026-07-21, Session 021 open] Opened with a device-bridge outage at
-  session start (folder not yet connected) вЂ” worked around entirely via
+  session start (folder not yet connected) — worked around entirely via
   a fresh `git clone` of `https://github.com/yehorcallmedai-maker/Patchward.git`
   from the cloud sandbox, which turned out to be sufficient for all
   git-state and code-content verification (see H1 addendum). Device
@@ -335,13 +335,13 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   local-only checks (`webhook-reqs.txt` existence, Turning-Point file
   mojibake) and to discover the uncommitted partial-reconciliation drafts
   (see H8-candidate). Found: BACKLOG item 5 is further along than any
-  memory file said вЂ” genuinely closed through `3d1ec08`, not `793a1d0`.
+  memory file said — genuinely closed through `3d1ec08`, not `793a1d0`.
   Drift: `.strategy/STRATEGY.md` (both committed and local-uncommitted
   copies) still cited `7654b1e` and "pending Yehor's commit"; `BACKLOG.md`
   and `NEXT_SESSION_START.md` had uncommitted local partial fixes that
   themselves stopped 2 commits short of true HEAD; the mojibake claim
   did not reproduce against the file as currently saved. L2 goal: finish
-  the memory reconciliation through true HEAD across all three files вЂ”
+  the memory reconciliation through true HEAD across all three files —
   this session's edits (STRATEGY.md full rewrite, BACKLOG.md item 5
   section, NEXT_SESSION_START.md new addendum) do that. No git commits
   made from the sandbox (standing rule); files written to `D:\` for
@@ -349,49 +349,49 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
 - [2026-07-22, Session 022 open] Verified fresh via two independent
   methods: `git ls-remote origin main` and a sandbox-local fresh clone
   both confirm HEAD `07f97d3` ("docs: close Session 021"), matching the
-  SHA cited at resume exactly вЂ” 0 drift on git state. Fly `/healthz`
-  fresh `WebFetch` в†’ `{"status":"ok"}`. Diffed the D:\ mount against the
+  SHA cited at resume exactly — 0 drift on git state. Fly `/healthz`
+  fresh `WebFetch` → `{"status":"ok"}`. Diffed the D:\ mount against the
   fresh clone for `.strategy/STRATEGY.md`, `memory/BACKLOG.md`,
   `memory/NEXT_SESSION_START.md` (all identical, no drift) and
-  `memory/STATE.md` (identical but stale in content вЂ” flagged in Open
+  `memory/STATE.md` (identical but stale in content — flagged in Open
   threads) and `memory/project_session_log.md` (real difference: ~240
   uncommitted lines of Session 021-023 narrative on disk, invisible to
   git). That last finding is H8-candidate's second occurrence across a
-  second file в†’ promoted to H8 (see Heuristics). BACKLOG item 5 (Phase 9)
-  reconfirmed fully closed; no agent-startable code work queued вЂ” L2 goal
+  second file → promoted to H8 (see Heuristics). BACKLOG item 5 (Phase 9)
+  reconfirmed fully closed; no agent-startable code work queued — L2 goal
   is pending Yehor's choice among BACKLOG 8/9/12, none of which an agent
   can start without his or external input first. No git commits made from
   the sandbox this session; only this memory file touched, written back
   to `D:\` for Yehor's own review and commit.
 - [2026-07-22, Session 022 continued] Yehor picked "9 then 8." Item 9:
-  confirmed PyPI's pending-publisher environment field showed `(Any)` вЂ”
+  confirmed PyPI's pending-publisher environment field showed `(Any)` —
   identified as PyPI's own UI placeholder for "no restriction" (italic +
   parenthesized, not literal typed text), so no OIDC mismatch risk;
   guided Yehor through GitHub's UI to trigger `workflow_dispatch`
   (screenshots at each step); verified the result two independent ways
-  (Actions run status via `WebFetch`, and the live PyPI release page) вЂ”
+  (Actions run status via `WebFetch`, and the live PyPI release page) —
   real publish, real Tier-0 confirmation, not inferred. Item 8: `C:\Dev\Projects`
-  got connected, re-ran Groundв†’Verifyв†’Synthesize scoped to item 8 per
+  got connected, re-ran Ground→Verify→Synthesize scoped to item 8 per
   Yehor's explicit request; found the "34 occurrences" figure was a
   line-count undercounting the true 45 word-occurrences, and found 3
   occurrences were stale technical claims (CLI command, branch-naming
-  convention, PyPI namespace) rather than pure branding вЂ” cross-checked
+  convention, PyPI namespace) rather than pure branding — cross-checked
   each against the real `src/patchward/` source before writing the fix,
   not paraphrased from memory. Executed the fix (case-sensitive two-pass
-  swap + one manual HTML-entity-encoded correction), verified 45в†’0,
+  swap + one manual HTML-entity-encoded correction), verified 45→0,
   delivered diffs + corrected files, wrote them uncommitted to Yehor's
   `callmed-landing` working tree. Did not commit or push either repo's
-  changes вЂ” Yehor's own review stays the gate, per standing process.
+  changes — Yehor's own review stays the gate, per standing process.
 - [2026-07-22, Session 022 continued] Pre-commit double-check on item 8's
   two riskiest claims, both independently verified rather than trusted
   from the diff text: (1) rendered `security.html` in real headless
-  Chromium and read the actual visible text вЂ” confirmed
+  Chromium and read the actual visible text — confirmed
   `patchward/fix-<finding-id>` displays correctly, not as literal HTML
   entities; (2) ran the real `patchward --help` / `patchward fix --help`
-  вЂ” confirmed the page's CLI sample (`patchward fix --repo .`) matches
+  — confirmed the page's CLI sample (`patchward fix --repo .`) matches
   exactly. Bonus finding in the process: this sandbox has
   `/usr/bin/python3.13` already present, which `uv` used directly with no
-  network fetch, enabling a real `uv run pytest --cov` вЂ” see H4 correction
+  network fetch, enabling a real `uv run pytest --cov` — see H4 correction
   and the superseded Failed-approaches entry. Nothing committed by the
   agent this session in either repo; Yehor has the reviewed diffs and the
   commit sequence to run himself.
@@ -407,13 +407,13 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   results, Fly health, the exact commit hash, the hosted-content-hash
   technique's validity, both memory-drift claims, webhook-reqs.txt's
   existence, "no agent-startable work queued"), 1 DRIFTED (Turning-Point
-  mojibake вЂ” not reproduced against the file as saved), 2 UNVERIFIED
-  (the real pytest run itself вЂ” sandbox can't get Python в‰Ґ3.12, only
+  mojibake — not reproduced against the file as saved), 2 UNVERIFIED
+  (the real pytest run itself — sandbox can't get Python ≥3.12, only
   cross-checked arithmetically; the CRLF/`git diff --stat -w` mount-noise
-  trick вЂ” not exercised, since this session avoided the mount for git
+  trick — not exercised, since this session avoided the mount for git
   ops entirely via H1's fresh-clone addendum). **0.75 on checkable
   claims (9/12).** First session to score below 1.00 across this
-  project's calibration history вЂ” driven by one real drift (mojibake,
+  project's calibration history — driven by one real drift (mojibake,
   a claim that simply didn't hold up, not a memory-hygiene failure) and
   two claims this session's method choices left genuinely untested
   rather than confirmed-or-refuted. Not below the 0.7-for-two-sessions
@@ -423,15 +423,15 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
 ## Session log (close)
 - [2026-07-21, Session 021 close] Reconciliation commits landed and
   independently re-verified: `2074db3` (memory rewrite, diffed
-  byte-identical against the agent's drafts вЂ” zero corruption in the
-  writeв†’commit chain) and `3ecc3e4` (Yehor's own `webhook-reqs.txt`
+  byte-identical against the agent's drafts — zero corruption in the
+  write→commit chain) and `3ecc3e4` (Yehor's own `webhook-reqs.txt`
   gitignore fix). Real `uv run pytest --cov` pasted from Yehor's machine
   at HEAD `3ecc3e4`: 483 passed, 2 skipped, 15 deselected, 90.46%
-  coverage, Python 3.14.4 вЂ” converts the one remaining Tier 1 claim in
+  coverage, Python 3.14.4 — converts the one remaining Tier 1 claim in
   the Phase 9 chain to Tier 0. Mojibake and `webhook-reqs.txt` both
   closed (see Current state / Open threads above). Full detail:
   `memory/SESSION_CLOSE_2026-07-21.md`. No further agent-startable work
-  queued вЂ” next session opens by having Yehor pick among BACKLOG 8/9/12.
+  queued — next session opens by having Yehor pick among BACKLOG 8/9/12.
 
 ## Calibration record (close)
 - [2026-07-21 close] Of this close's own claims (git state, commit
@@ -440,14 +440,14 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   byte-diff of committed vs. drafted content, `.gitignore`/`git ls-files`
   checks), 1 PARTIALLY confirmed (the file-clean finding is Tier 0; the
   specific causal story for the earlier garbled read stays Tier 1,
-  correctly labeled as inference, not fact). Roughly 7.5/8 (~0.94) вЂ”
+  correctly labeled as inference, not fact). Roughly 7.5/8 (~0.94) —
   a real recovery from the open's 0.75, and consistent with that 0.75
   being the audit getting more rigorous rather than the project getting
   less reliable: the one open-session drift (mojibake) is now resolved
   as a genuine non-issue, and the two open-session unverified items
   (real pytest run, mount-noise trick) resolved to one real Tier-0
   confirmation and one correctly-avoided-not-needed. No heuristic
-  promotions this close вЂ” H8-candidate (uncommitted local reconciliation
+  promotions this close — H8-candidate (uncommitted local reconciliation
   drafts) had no second occurrence to test against this close, stays a
   candidate at 1 occurrence.
 
@@ -458,13 +458,13 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   report (ls-remote + fresh clone as two separate confirmations of the
   same SHA; fresh WebFetch for Fly; direct `diff` for every mount-vs-HEAD
   comparison). 1.00 on checkable claims. One heuristic promoted
-  (H8-candidate в†’ H8) on real second-occurrence evidence, not asserted.
+  (H8-candidate → H8) on real second-occurrence evidence, not asserted.
 
 - [2026-07-22, Session 022 continued] Of the execution-phase claims (PyPI
   environment-field reading, workflow_dispatch result, PyPI release-page
   content, item 8's occurrence count, the 3 technical corrections' factual
   basis): all CONFIRMED via a method independent of the initial read in
-  each case вЂ” the `(Any)` reading was corroborated by the actual publish
+  each case — the `(Any)` reading was corroborated by the actual publish
   succeeding with no identity-mismatch error (if the reading had been
   wrong, the real-world publish would have failed, and it didn't); the
   Actions run and the PyPI release page are two separate, independently
@@ -472,7 +472,7 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   verified by a different grep invocation (`-o` vs `-c`) than the one that
   produced the original "34" estimate; each of the 3 technical corrections
   was checked against the real source file, not asserted from the prior
-  session's or Autonomous-Core's description. 1.00 on checkable claims вЂ”
+  session's or Autonomous-Core's description. 1.00 on checkable claims —
   no drift found in this execution phase itself (the drift was in the
   *prior* estimate this phase was verifying against, correctly caught).
 
@@ -480,7 +480,7 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   naming line renders as visible text not raw entities; CLI sample matches
   real `--help` output; H4's "no compatible Python in-sandbox" premise):
   2 CONFIRMED via a method independent of the diff text itself (real
-  headless-Chromium render, real `--help` invocation), 1 DRIFTED вЂ”
+  headless-Chromium render, real `--help` invocation), 1 DRIFTED —
   H4's blanket "real pytest runs stay Yehor-machine-only" turned out to
   be broader than the evidence supported; a compatible interpreter was
   present all along, just never checked for. 1.00 on the claims this
@@ -493,16 +493,16 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   `--collect-only` diff (this sandbox's Python 3.13 output vs. Yehor's
   Python 3.14.4 output, both generated the same way, staged and diffed
   directly rather than eyeballed) found exactly 3 missing test IDs, all in
-  `tests/fixture_repo/tests/test_clean.py` вЂ” root cause CONFIRMED (not
+  `tests/fixture_repo/tests/test_clean.py` — root cause CONFIRMED (not
   inferred): that submodule is a bare gitlink with no `.gitmodules`, so a
   plain `git clone` in the sandbox leaves it empty. Not a Python-version
-  or platform marker, as originally guessed вЂ” a known, pre-existing
+  or platform marker, as originally guessed — a known, pre-existing
   submodule-checkout gap (BACKLOG 7d). 1.00 on this check's own claim
-  (exactly 3 IDs, exact file, confirmed empty directory) вЂ” genuinely
+  (exactly 3 IDs, exact file, confirmed empty directory) — genuinely
   closed, not left dangling. Also worth noting for calibration: the
   original hypothesis going in ("likely a skipif marker on version/
   platform") was wrong, but the check was structured to catch that (step
-  4's "if no marker explains it, stop and flag, don't guess further") вЂ”
+  4's "if no marker explains it, stop and flag, don't guess further") —
   correctly wouldn't have papered over a wrong guess if the collect-only
   diff hadn't found a clean, complete explanation.
 
@@ -510,7 +510,7 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   for full detail): git HEAD, all 5 memory files' clean/mount-vs-clone
   state, Fly health, PyPI liveness (via a method independent of the one
   that 404'd), callmed-landing live content, a full independent sandbox
-  pytest run, and BACKLOG item 16's occurrence count вЂ” all CONFIRMED, 0
+  pytest run, and BACKLOG item 16's occurrence count — all CONFIRMED, 0
   drift. Went beyond re-verification to do new triage work: confirmed
   `RepomendConfig` is not public API (not exported, no external doc/
   README exposure), which is new information that de-risks BACKLOG item
@@ -526,27 +526,27 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   re-verified via fresh `git ls-remote` (matched the transcript's claim
   exactly) AND a fresh `git clone` whose `.strategy/STRATEGY.md`,
   `memory/BACKLOG.md`, `memory/STATE.md` are byte-identical to this
-  agent's own authored drafts вЂ” zero corruption end to end.
+  agent's own authored drafts — zero corruption end to end.
   `memory/project_session_log.md`'s "missed in prior commit" follow-up fix
   (`5c5a479`) also confirmed: file size/content in the fresh clone matches
   exactly what was already sitting uncommitted on the D:\ mount pre-fix.
   **callmed-landing's claimed hash (`75f1a7b79ed635fa296cec3d890346e1d9860fab`)
-  could NOT be independently confirmed** вЂ” `git ls-remote` from this
+  could NOT be independently confirmed** — `git ls-remote` from this
   sandbox failed with "could not read Username... terminal prompts
   disabled" (private repo, no credentials here). Used a different,
   genuinely independent method instead: fresh `WebFetch` of the live
-  `callmedai.com` site вЂ” confirms 0 "RepoMend" mentions, "Patchward"
+  `callmedai.com` site — confirms 0 "RepoMend" mentions, "Patchward"
   branding present, and the exact corrected CLI line
   (`uv tool install patchward`). This proves the *deploy*, which is
   arguably more meaningful than the hash, but the specific commit hash
-  itself stays UNVERIFIED by this agent вЂ” flagged plainly rather than
+  itself stays UNVERIFIED by this agent — flagged plainly rather than
   assumed from the conversation's own claim, per H2/H3. Also flagged, not
   chased: the "hanging credential-prompt push cancelled without
   diagnosis" incident was never independently observed by this agent,
-  only reported secondhand вЂ” the clean end-state is confirmed, the
+  only reported secondhand — the clean end-state is confirmed, the
   incident's mechanics are not. Full close-out: `memory/SESSION_CLOSE_2026-07-22.md`.
   `memory/NEXT_SESSION_START.md` rewritten clean (not another addendum
-  layer вЂ” flagged explicitly as a deliberate full rewrite, not silent,
+  layer — flagged explicitly as a deliberate full rewrite, not silent,
   since this file had grown to 210 lines of nested corrections and this
   file already carries the full historical ledger).
 
@@ -556,17 +556,17 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   Fly health, PyPI page, callmed-landing live-site content, callmed-landing
   exact hash): **7 CONFIRMED** via a method independent of the conversation's
   own claims, **1 CONFIRMED via single-method only** (working-tree cleanliness
-  вЂ” device listing is the only check available, appropriately flagged as
+  — device listing is the only check available, appropriately flagged as
   such rather than treated as equal-strength to the dual-method checks),
-  **1 UNVERIFIED** (callmed-landing's exact commit hash вЂ” genuinely
+  **1 UNVERIFIED** (callmed-landing's exact commit hash — genuinely
   blocked by lack of sandbox credentials to a private repo, not a
   shortcut). **~0.94 on checkable claims (8.5/9-ish, treating the
-  single-method one as partial credit)** вЂ” consistent with this project's
+  single-method one as partial credit)** — consistent with this project's
   pattern of closes scoring higher than opens (stricter checking applied
   earlier in the session pays off at close) and, more importantly, this is
   the first close where an UNVERIFIED item was caused by a genuine
   environment limitation (no auth to a private repo) rather than a method
-  choice that could have been better вЂ” worth distinguishing from
+  choice that could have been better — worth distinguishing from
   "should have checked harder" style gaps in future calibration. No new
   heuristic promotions this close (H8 was already promoted mid-session,
   correctly not re-promoted twice); H4's correction stands as logged
@@ -584,30 +584,30 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   claims.** The test-suite figure (480/2/15/90.59%) is not counted as one
   of the 7 above since it wasn't an explicit STRATEGY.md claim this
   session opened with, but it independently reproduced Session 022's
-  sandbox figure exactly in an unrelated sandbox instance вЂ” a strong,
+  sandbox figure exactly in an unrelated sandbox instance — a strong,
   unprompted corroboration worth noting for calibration even though it
   wasn't itself "graded." No heuristic promotions or demotions this
-  open вЂ” H1/H2/H4/H8 all behaved exactly as documented, no surprises.
+  open — H1/H2/H4/H8 all behaved exactly as documented, no surprises.
 
 - [2026-07-23, Session 023 continued] Yehor confirmed BACKLOG item 16 as
   the L2 goal, then pushed back twice on the scope before agreeing to
-  execute вЂ” both times with a substantive technical point, both times
+  execute — both times with a substantive technical point, both times
   checked directly against source rather than taken on trust: (1) asked
   whether any of the 59 references cross a serialization/deployment
   boundary, given Patchward is now a live webhook + published package, not
-  just a library вЂ” a full literal-quoted-string grep (not just the
+  just a library — a full literal-quoted-string grep (not just the
   identifier grep already done) found exactly one that does
   (`REPOMEND_NETWORK_POLICY`), plus a second, lower-stakes one found
   independently while checking (`REPOMEND_FIXTURE_REPO`, test-only). (2)
   asked about fail-open-vs-fail-closed and image-rebuild skew for that env
-  var specifically вЂ” traced both directly: `docker/entrypoint.sh` applies
+  var specifically — traced both directly: `docker/entrypoint.sh` applies
   `iptables -P OUTPUT DROP` unconditionally and only ACCEPTs on an exact
   string match, so a mismatch is fail-closed, never fail-open; and
   `docker_sandbox.py`'s `BASE_IMAGE` is a digest-pinned, manually-rebuilt
   image (built 2026-06-12), so skew during a naming transition is real but
   safe-direction. Executed on that basis: 58 pure-identifier occurrences
-  renamed (`RepomendConfig` в†’ `PatchwardConfig` across 12 files, 2 test
-  function names, `REPOMEND_FIXTURE_REPO` в†’ `PATCHWARD_FIXTURE_REPO`), the
+  renamed (`RepomendConfig` → `PatchwardConfig` across 12 files, 2 test
+  function names, `REPOMEND_FIXTURE_REPO` → `PATCHWARD_FIXTURE_REPO`), the
   one boundary-crossing var handled via a transitional dual-set/dual-read
   rather than a straight rename (both names live until BACKLOG 17's image
   rebuild lands), and the Docker image tag/binary name deliberately
@@ -616,14 +616,14 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   Verification: a real `uv run --python 3.13 --extra webhook pytest --cov`
   after all edits reproduced the exact same `480 passed, 2 skipped, 15
   deselected` counts as this session's own pre-edit baseline (90.60% vs.
-  90.59% coverage, +1 statement from added comment lines) вЂ” the rename
+  90.59% coverage, +1 statement from added comment lines) — the rename
   broke nothing, confirmed by re-running the suite, not by inspection
   alone. A final full-repo grep confirmed zero remaining case-insensitive
   "repomend" hits outside the deliberately-deferred set (docker image
   tag/binary name, `.bandit`/`.env.example` comment-level branding, and
-  historical `memory`/`reports`/`runs` artifacts вЂ” none of which are code
+  historical `memory`/`reports`/`runs` artifacts — none of which are code
   BACKLOG 16 was ever scoped to touch). No git commits made from the
-  sandbox вЂ” all 17 changed files written uncommitted to Yehor's D:\
+  sandbox — all 17 changed files written uncommitted to Yehor's D:\
   working tree, plus a `.patch` file, for his own line-by-line review and
   commit, same standing process as items 8/9.
 
@@ -631,7 +631,7 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
 - [2026-07-23, Session 023 execution phase] Of the claims made during
   execution (59-vs-58-vs-1 classification, fail-closed behavior, digest-pin
   skew possibility, post-edit test counts, final zero-remaining-references
-  grep): **all 5 CONFIRMED** via a method independent of assertion вЂ” the
+  grep): **all 5 CONFIRMED** via a method independent of assertion — the
   classification via an actual literal-string grep (not inferred from the
   identifier grep alone), fail-closed via reading the real `entrypoint.sh`
   iptables sequence line by line, digest-pinning via the real `BASE_IMAGE`
@@ -641,7 +641,7 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   this is the first session where the *user's own claims* (raised as
   pushback on a proposed plan, not as memory-file content) were the thing
   under verification, rather than a memory file or a prior session's
-  report вЂ” the two-pass discipline applied the same way regardless of
+  report — the two-pass discipline applied the same way regardless of
   source, per H3's spirit (Tier 2 sources are leads, not gating facts,
   whether they come from another project's memory file or from a
   question asked mid-session).
@@ -652,40 +652,40 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   confirmed. Per this project's own standing rule (never trust a reported
   hash or transcript without re-verifying), ran a full independent
   close-out rather than accepting the narrative. **Findings:**
-  (1) `git ls-remote origin main` from a fresh sandbox process в†’
-  `e4f3cca0684ea04654094e0cb0620664151f1f32` вЂ” matches the reported hash
+  (1) `git ls-remote origin main` from a fresh sandbox process →
+  `e4f3cca0684ea04654094e0cb0620664151f1f32` — matches the reported hash
   exactly, Tier 0. (2) A fresh `git clone` shows the 3 commits exactly as
-  described (`171ccf8` rename, `a979741` dual-env-var, `e4f3cca` memory) вЂ”
+  described (`171ccf8` rename, `a979741` dual-env-var, `e4f3cca` memory) —
   diffed all 17 changed source/config/docker files plus `memory/BACKLOG.md`
   against this session's own authored drafts: **byte-identical, zero
   corruption**, confirming the push carried exactly what was staged, not a
   reconstruction. (3) The "commit gap" Yehor's own narrative flagged as
   worth checking (last hash this conversation had confirmed, `5c5a479`,
-  vs. the claimed parent `0def73a`) does **not exist** вЂ” `git log --oneline
+  vs. the claimed parent `0def73a`) does **not exist** — `git log --oneline
   5c5a479..0def73a` returns only `0def73a` itself, i.e. `0def73a` is
   `5c5a479`'s direct child. This was a drift in the narrative, not in the
   repo; corrected here for the record, not chased further since it doesn't
   change anything material. (4) A real `uv run --python 3.13 --extra
   webhook pytest --cov` against the actual pushed HEAD (not the pre-push
   staged copy) reproduced `480 passed, 2 skipped, 15 deselected, 90.60%
-  coverage` exactly вЂ” confirms the merge didn't regress anything, checked
+  coverage` exactly — confirms the merge didn't regress anything, checked
   by running the suite again, not by re-reading the diff. (5) **Real
   finding, not a rubber-stamp:** diffing the D:\ mount's *current* files
   against this verified HEAD turned up a genuine divergence, isolated to
-  exactly 2 of the 17 changed files вЂ” `memory/BACKLOG.md` and
+  exactly 2 of the 17 changed files — `memory/BACKLOG.md` and
   `.strategy/STRATEGY.md` on Yehor's own disk right now still show the
   **pre-Session-023** content (the old, not-yet-triaged BACKLOG item 16,
   and a STRATEGY.md with zero Session 023 entries at all), while GitHub's
   HEAD has the full, correct Session 023 content byte-identical to what
   this agent authored mid-session. All 15 non-memory changed files (every
   `.py`, `docker/entrypoint.sh`, `docker/scanner.Dockerfile`) matched HEAD
-  exactly on the mount вЂ” the divergence is isolated to these 2 memory
+  exactly on the mount — the divergence is isolated to these 2 memory
   files specifically, consistent with something (most plausibly an editor
   buffer open on the old content, autosaved after the commit) reverting
   just the files that were open for review. **This is the mirror image of
   H8**: not local-ahead-of-git (real uncommitted work at risk of being
   lost), but local-*behind*-git (the good content is already safely
-  pushed, but the local working tree doesn't reflect it) вЂ” lower risk
+  pushed, but the local working tree doesn't reflect it) — lower risk
   since nothing is lost, but a real hazard if left alone: a future blind
   `git add -A` from this state would stage a *revert* of Yehor's own
   memory update. Fixed directly this close: both files rewritten on the
@@ -693,31 +693,31 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   additions, so the mount and git agree again as of this write. (6) Minor,
   non-blocking observation: all three of Yehor's commits carry the
   identical author timestamp (`Thu Jul 23 15:20:05 2026 +0200` down to the
-  second) вЂ” mechanically inconsistent with the interactive, sequential
+  second) — mechanically inconsistent with the interactive, sequential
   `git add`/`git status`/`git commit` sequence narrated in the pasted
   transcript (each step should take at least a few real seconds). Flagged
   per H7's spirit (verify the mechanics, don't just accept the narrative)
-  вЂ” does not change that the *end state* is fully verified correct; only
+  — does not change that the *end state* is fully verified correct; only
   the *process* narrative doesn't quite match the evidence, similar to
   Session 022's unverified "hanging credential-prompt" incident mechanics.
   (7) callmed-landing live site re-confirmed a third time (0 "RepoMend", 
-  "Patchward" present, exact CLI line) вЂ” stable across sessions. (8)
+  "Patchward" present, exact CLI line) — stable across sessions. (8)
   Working-tree stragglers reconfirmed via device listing, all correctly
   untracked and non-blocking: `webhook-reqs.txt` (gitignored, as designed),
   `collected_314.txt` (pre-existing, unrelated to this session),
   `BACKLOG16_rename.patch` (this session's own delivered patch file, now
-  redundant since the rename landed вЂ” safe to delete). Full close-out:
+  redundant since the rename landed — safe to delete). Full close-out:
   `memory/SESSION_CLOSE_2026-07-23.md`.
 
 - [2026-07-23, Session 023 close, CORRECTION] The finding above overstated
   the divergence. Yehor ran his own `git status` directly on his machine
   (ground truth, not through this agent's device-bridge tools) and it
-  showed only `.strategy/STRATEGY.md` as modified вЂ” **`memory/BACKLOG.md`
+  showed only `.strategy/STRATEGY.md` as modified — **`memory/BACKLOG.md`
   was NOT modified, i.e. it matched HEAD all along.** This agent's own
   bridge-based diff had reported both files as reverted; that BACKLOG.md
   half of the finding was itself wrong, almost certainly a stale-cache
   read on this agent's side coinciding with the device bridge's
-  disconnect/reconnect around the same time вЂ” H1's own warning ("mount
+  disconnect/reconnect around the same time — H1's own warning ("mount
   reads can serve stale content") applying to this agent's tooling, not
   just to a hypothetical. The STRATEGY.md divergence was real (confirmed
   independently by Yehor's own `git status`, not just this agent's read).
@@ -728,21 +728,21 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   already matched); this agent then re-applied the close-out's additional
   entries on top of that verified-correct base and re-delivered.
 
-## Heuristics (earned) вЂ” candidates
+## Heuristics (earned) — candidates
 - H9-candidate [1 occurrence, Session 023 close, narrowed on correction]:
   after Yehor reports committing/pushing memory-file changes, independently
   diff the D:\ mount's *current* copy against a fresh clone of the pushed
-  HEAD вЂ” not just `git ls-remote` for the hash, AND prefer Yehor's own
+  HEAD — not just `git ls-remote` for the hash, AND prefer Yehor's own
   direct `git status`/`git diff` output over this agent's device-bridge
   reads when the two disagree, since the bridge itself can serve stale
   content (see the correction entry above). A successful push does not
   guarantee the local working tree still reflects what was committed;
   something (an editor autosave on a stale buffer is the leading suspect)
   can revert a file back to its pre-session content on disk after the
-  commit already landed safely вЂ” confirmed for `STRATEGY.md` specifically
+  commit already landed safely — confirmed for `STRATEGY.md` specifically
   this session, not for `BACKLOG.md` (that part of the original finding
   was a bridge-read artifact, not a real revert). This is the mirror image
-  of H8 (local ahead of git, real work at risk) вЂ” here local fell
+  of H8 (local ahead of git, real work at risk) — here local fell
   *behind* git after a genuine push, lower-risk since nothing is lost, but
   still worth catching before the next session assumes the mount reflects
   reality. Needs one more genuine occurrence, per this project's own
@@ -755,22 +755,22 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md вЂ” confirm with Yehor)
   authored drafts, the flagged commit-gap question, post-merge test suite,
   mount-vs-HEAD consistency for all 17 changed files, callmed-landing live
   content, working-tree straggler status): **7 CONFIRMED** via a method
-  independent of the user's own narrative, **1 DRIFTED** вЂ” the mount-vs-
+  independent of the user's own narrative, **1 DRIFTED** — the mount-vs-
   HEAD check (finding #5) initially reported both `BACKLOG.md` and
   `STRATEGY.md` as reverted; not because this session's own work was
   wrong, but because local disk had regressed after the push (real for
   STRATEGY.md) combined with a stale bridge-read on this agent's own side
-  (the BACKLOG.md half вЂ” corrected once Yehor's own direct `git status`
+  (the BACKLOG.md half — corrected once Yehor's own direct `git status`
   disagreed with this agent's read and was trusted over it). Scored as a
   drift caught, not a miss: the point of this close's rigor was to catch
-  exactly this class of problem, and вЂ” with a second layer of "trust the
+  exactly this class of problem, and — with a second layer of "trust the
   user's direct tool output over your own bridge read when they
-  disagree" вЂ” it did, including catching this agent's own partial
-  over-claim. **0.94 on checkable claims (7.5/8)** вЂ” consistent with this
+  disagree" — it did, including catching this agent's own partial
+  over-claim. **0.94 on checkable claims (7.5/8)** — consistent with this
   project's pattern that closes run stricter checks than the narratives
   they're checking, and, this time, stricter than this agent's own first
   pass too. No heuristic promoted this close (H9-candidate needs a second
-  genuine occurrence вЂ” this session supplies one confirmed instance,
+  genuine occurrence — this session supplies one confirmed instance,
   narrowed to STRATEGY.md only); no heuristic demoted; H1/H2/H3/H7/H8 all
   behaved exactly as documented, with H1's scope now explicitly understood
   to include this agent's own device-bridge reads, not just local git
