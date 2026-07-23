@@ -38,7 +38,7 @@ from typing import TYPE_CHECKING, Any
 from patchward.worktree_common import git_commit_all
 
 if TYPE_CHECKING:
-    from patchward.config import RepomendConfig
+    from patchward.config import PatchwardConfig
     from patchward.run_log import RunLog
 
 
@@ -444,13 +444,13 @@ class FixGenSubagent:
         self,
         client: Any = None,
         api_key: str | None = None,
-        config: "RepomendConfig | None" = None,
+        config: "PatchwardConfig | None" = None,
     ) -> None:
         """
         Args:
             client: Optional pre-built Anthropic client (inject mock in tests).
             api_key: Optional explicit API key; falls back to ANTHROPIC_API_KEY env var.
-            config: Optional RepomendConfig; provides fix_gen.max_turns override (AC-P3-10).
+            config: Optional PatchwardConfig; provides fix_gen.max_turns override (AC-P3-10).
         """
         if client is not None:
             self._client = client

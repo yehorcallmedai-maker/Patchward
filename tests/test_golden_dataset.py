@@ -1,7 +1,7 @@
 # KS-TRACE: AC-P3-09
 # | assumption: ≥1 of 3 fixture findings fixed = ≥30% repair success rate;
 # |             re-scan uses semgrep p/python on the patched worktree file;
-# |             fixture repo must be checked out at tests/fixture_repo or REPOMEND_FIXTURE_REPO
+# |             fixture repo must be checked out at tests/fixture_repo or PATCHWARD_FIXTURE_REPO
 # | test: this file — @integration, requires ANTHROPIC_API_KEY + semgrep on PATH
 """
 Golden dataset gate — Phase 3 AC-P3-09.
@@ -21,7 +21,7 @@ Report: per-finding status + totals printed to stdout.
 
 Skip conditions:
   - ANTHROPIC_API_KEY not set
-  - tests/fixture_repo not found AND REPOMEND_FIXTURE_REPO not set
+  - tests/fixture_repo not found AND PATCHWARD_FIXTURE_REPO not set
   - semgrep not on PATH
 """
 from __future__ import annotations
@@ -125,7 +125,7 @@ def test_golden_dataset_repair_rate() -> None:
     individual failures are expected and acceptable as long as ≥1 passes.
 
     Requires: ANTHROPIC_API_KEY · semgrep on PATH · fixture repo at tests/fixture_repo
-              or REPOMEND_FIXTURE_REPO env var.
+              or PATCHWARD_FIXTURE_REPO env var.
     """
     # --- prerequisite checks ---
     api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -133,7 +133,7 @@ def test_golden_dataset_repair_rate() -> None:
         pytest.skip("ANTHROPIC_API_KEY not set")
 
     fixture_repo = Path(os.environ.get(
-        "REPOMEND_FIXTURE_REPO",
+        "PATCHWARD_FIXTURE_REPO",
         Path(__file__).parent / "fixture_repo",
     ))
     if not fixture_repo.exists():
@@ -240,7 +240,7 @@ _SUBPROCESS_FINDING = GOLDEN_FINDINGS[0]
 def _get_fixture_repo() -> "Path | None":
     """Return fixture repo path or None if not found (shared skip logic)."""
     repo = Path(os.environ.get(
-        "REPOMEND_FIXTURE_REPO",
+        "PATCHWARD_FIXTURE_REPO",
         Path(__file__).parent / "fixture_repo",
     ))
     return repo if repo.exists() else None
@@ -268,7 +268,7 @@ def test_verifier_end_to_end_verified() -> None:
     fixture_repo = _get_fixture_repo()
     if fixture_repo is None:
         pytest.skip(
-            "Fixture repo not found — set REPOMEND_FIXTURE_REPO or place "
+            "Fixture repo not found — set PATCHWARD_FIXTURE_REPO or place "
             "fixture at tests/fixture_repo"
         )
 
@@ -336,7 +336,7 @@ def test_verifier_end_to_end_failed_unpatched() -> None:
     fixture_repo = _get_fixture_repo()
     if fixture_repo is None:
         pytest.skip(
-            "Fixture repo not found — set REPOMEND_FIXTURE_REPO or place "
+            "Fixture repo not found — set PATCHWARD_FIXTURE_REPO or place "
             "fixture at tests/fixture_repo"
         )
 
@@ -393,7 +393,7 @@ def test_verifier_end_to_end_failed_out_of_bounds() -> None:
     fixture_repo = _get_fixture_repo()
     if fixture_repo is None:
         pytest.skip(
-            "Fixture repo not found — set REPOMEND_FIXTURE_REPO or place "
+            "Fixture repo not found — set PATCHWARD_FIXTURE_REPO or place "
             "fixture at tests/fixture_repo"
         )
 
@@ -473,7 +473,7 @@ def test_end_to_end_pr() -> None:
     fixture_repo = _get_fixture_repo()
     if fixture_repo is None:
         pytest.skip(
-            "Fixture repo not found — set REPOMEND_FIXTURE_REPO or place "
+            "Fixture repo not found — set PATCHWARD_FIXTURE_REPO or place "
             "fixture at tests/fixture_repo"
         )
 
@@ -607,7 +607,7 @@ def test_batch_two_findings() -> None:
         pytest.skip("Fixture repo not found")
 
     from patchward.config import (
-        RepomendConfig,
+        PatchwardConfig,
         GithubConfig,
         BatchConfig,
         ModelsConfig,
@@ -623,7 +623,7 @@ def test_batch_two_findings() -> None:
         base_branch="main",
     )
 
-    cfg = RepomendConfig(
+    cfg = PatchwardConfig(
         repo_path=str(fixture_repo),
         github=GithubConfig(
             owner="yehorcallmedai-maker",
@@ -727,7 +727,7 @@ def test_multi_finding_e2e() -> None:
         BatchConfig,
         GithubConfig,
         ModelsConfig,
-        RepomendConfig,
+        PatchwardConfig,
         RepoConfig,
     )
     from patchward.pipeline import run_batch
@@ -754,7 +754,7 @@ def test_multi_finding_e2e() -> None:
         repo="patchward-fixture",
         base_branch="main",
     )
-    cfg = RepomendConfig(
+    cfg = PatchwardConfig(
         repo_path=str(fixture_repo),
         github=GithubConfig(
             owner="yehorcallmedai-maker",

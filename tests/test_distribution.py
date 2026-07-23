@@ -12,7 +12,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent
 
 
-def test_repomend_toml_example_exists() -> None:
+def test_patchward_toml_example_exists() -> None:
     """patchward.toml.example must be present at project root.
     (AC-P7-07)"""
     assert (PROJECT_ROOT / "patchward.toml.example").exists(), (

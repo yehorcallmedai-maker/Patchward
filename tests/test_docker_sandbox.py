@@ -8,7 +8,7 @@ Test categories:
   1. require_docker() — fail-fast unit tests (AC-P2-02)
   2. _build_docker_cmd() — structural invariants: --rm, :ro, --network, no credentials
   3. Per-scanner network policy assertions
-  3b. C-P3-08 structural tests — --cap-add NET_ADMIN and REPOMEND_NETWORK_POLICY env var
+  3b. C-P3-08 structural tests — --cap-add NET_ADMIN and PATCHWARD_NETWORK_POLICY (legacy REPOMEND_NETWORK_POLICY, transitionally) env var
   4. AC-P2-01 integration tests — requires Docker running
   5. AC-P3-01/AC-P3-02 egress hardening integration tests — requires Docker + patchward-scanner:0.1.0
 """
@@ -131,7 +131,7 @@ def test_credentials_not_in_container_when_passed_in_extra_env() -> None:
 def test_credentials_absent_with_no_extra_env() -> None:
     """AC-P2-05: no credential keys in docker command when extra_env is None.
 
-    REPOMEND_NETWORK_POLICY is always present in the command — intentional (C-P3-08).
+    PATCHWARD_NETWORK_POLICY (and, transitionally, REPOMEND_NETWORK_POLICY) are always present in the command — intentional (C-P3-08).
     This test only asserts that credential keys are structurally absent.
     """
     sandbox = DockerSandbox()
@@ -142,7 +142,7 @@ def test_credentials_absent_with_no_extra_env() -> None:
         extra_env=None,
     )
     cmd_str = " ".join(cmd)
-    # REPOMEND_NETWORK_POLICY always present — expected, not a credential.
+    # PATCHWARD_NETWORK_POLICY & REPOMEND_NETWORK_POLICY always present — expected, not a credential.
     # Credential keys must be structurally absent — C-P2-04.
     for cred_key in _CREDENTIAL_KEYS:
         assert cred_key not in cmd_str, (
@@ -271,7 +271,7 @@ def test_custom_image_used_when_passed() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 3b. C-P3-08 structural tests — NET_ADMIN cap + REPOMEND_NETWORK_POLICY env var
+# 3b. C-P3-08 structural tests — NET_ADMIN cap + PATCHWARD_NETWORK_POLICY (+ legacy REPOMEND_NETWORK_POLICY) env var
 # ---------------------------------------------------------------------------
 
 def test_pypi_only_gets_net_admin_cap() -> None:
@@ -313,35 +313,51 @@ def test_offline_does_not_get_net_admin_cap() -> None:
 
 
 def test_pypi_only_passes_policy_env_var() -> None:
-    """C-P3-08: REPOMEND_NETWORK_POLICY=PYPI_ONLY must be passed to entrypoint."""
+    """C-P3-08: PATCHWARD_NETWORK_POLICY=PYPI_ONLY must be passed to entrypoint.
+
+    REPOMEND_NETWORK_POLICY (legacy) is asserted too, transitionally — see
+    BACKLOG 16/17: docker_sandbox.py sets both until the pinned scanner
+    image is rebuilt with an entrypoint.sh that only needs the new name.
+    """
     sandbox = DockerSandbox()
     cmd = sandbox._build_docker_cmd(
         ["pip-audit", "-r", "requirements.txt"],
         Path("/repo"),
         NetworkPolicy.PYPI_ONLY,
     )
+    assert "PATCHWARD_NETWORK_POLICY=PYPI_ONLY" in cmd
     assert "REPOMEND_NETWORK_POLICY=PYPI_ONLY" in cmd
 
 
 def test_npm_only_passes_policy_env_var() -> None:
-    """C-P3-08: REPOMEND_NETWORK_POLICY=NPM_ONLY must be passed to entrypoint."""
+    """C-P3-08: PATCHWARD_NETWORK_POLICY=NPM_ONLY must be passed to entrypoint.
+
+    REPOMEND_NETWORK_POLICY (legacy) is asserted too, transitionally — see
+    BACKLOG 16/17.
+    """
     sandbox = DockerSandbox()
     cmd = sandbox._build_docker_cmd(
         ["npm", "audit", "--json"],
         Path("/repo"),
         NetworkPolicy.NPM_ONLY,
     )
+    assert "PATCHWARD_NETWORK_POLICY=NPM_ONLY" in cmd
     assert "REPOMEND_NETWORK_POLICY=NPM_ONLY" in cmd
 
 
 def test_offline_passes_policy_env_var() -> None:
-    """C-P3-08: REPOMEND_NETWORK_POLICY=OFFLINE must be passed to entrypoint."""
+    """C-P3-08: PATCHWARD_NETWORK_POLICY=OFFLINE must be passed to entrypoint.
+
+    REPOMEND_NETWORK_POLICY (legacy) is asserted too, transitionally — see
+    BACKLOG 16/17.
+    """
     sandbox = DockerSandbox()
     cmd = sandbox._build_docker_cmd(
         ["semgrep", "--sarif", "."],
         Path("/repo"),
         NetworkPolicy.OFFLINE,
     )
+    assert "PATCHWARD_NETWORK_POLICY=OFFLINE" in cmd
     assert "REPOMEND_NETWORK_POLICY=OFFLINE" in cmd
 
 

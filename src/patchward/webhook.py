@@ -47,7 +47,7 @@ from patchward.config import (
     GithubConfig,
     ModelsConfig,
     RepoConfig,
-    RepomendConfig,
+    PatchwardConfig,
     VerifierConfig,
 )
 from patchward.credential_proxy import CredentialProxy
@@ -289,7 +289,7 @@ async def trigger_scan_for_installation(installation_id: int, repo_full_name: st
             logger.error("[webhook] ANTHROPIC_API_KEY not set — cannot run pipeline")
             return
 
-        cfg = RepomendConfig(
+        cfg = PatchwardConfig(
             repo_path=tmp_dir / repo,
             fix_gen=FixGenConfig(),
             verifier=VerifierConfig(),

@@ -29,7 +29,7 @@ from patchward.credential_proxy import CredentialProxy
 from patchward.worktree_common import git_push_branch
 
 if TYPE_CHECKING:
-    from patchward.config import RepomendConfig
+    from patchward.config import PatchwardConfig
     from patchward.fix_gen import FixResult
     from patchward.run_log import RunLog
     from patchward.verifier import VerifierResult
@@ -51,7 +51,7 @@ class PRPublisher:
 
     def __init__(
         self,
-        config: "RepomendConfig",
+        config: "PatchwardConfig",
         credential_proxy: CredentialProxy,
         http_client: httpx.Client | None = None,
     ) -> None:

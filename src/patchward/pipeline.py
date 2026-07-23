@@ -28,7 +28,7 @@ from patchward.verifier import Verifier
 from patchward.worktree_common import sanitize_branch_component
 
 if TYPE_CHECKING:
-    from patchward.config import RepomendConfig, RepoConfig
+    from patchward.config import PatchwardConfig, RepoConfig
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ async def _with_retry(
 
 async def run_repo_pipeline(
     repo: "RepoConfig",
-    cfg: "RepomendConfig",
+    cfg: "PatchwardConfig",
     semaphore: asyncio.Semaphore,
     api_key: str,
     github_token: str,
@@ -320,7 +320,7 @@ async def run_repo_pipeline(
 
 
 async def run_batch(
-    cfg: "RepomendConfig",
+    cfg: "PatchwardConfig",
     api_key: str,
     github_token: str,
     run_log: RunLog | None = None,

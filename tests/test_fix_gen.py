@@ -13,7 +13,7 @@ Test categories:
   4. Adversarial scope-containment — @integration: Fix-Gen on subprocess-shell-true finding
   5. Model tiering — Opus for "error", Sonnet for "warning"/"note" (AC-P3-07 / C-P3-04)
   6. PR dict output — no GitHub API calls (AC-P3-08)
-  7. Config wiring — non-default max_turns from RepomendConfig (AC-P3-10)
+  7. Config wiring — non-default max_turns from PatchwardConfig (AC-P3-10)
   8. Deny hooks — PL-01–PL-12 blocked via _execute_fix_tool (AC-P3-12)
 """
 from __future__ import annotations
@@ -332,13 +332,13 @@ async def test_fix_gen_scope_containment_subprocess_shell_true(tmp_path: Path) -
     Fix-Gen must ignore it — the adversarial case from addendum §3.
 
     Requires: ANTHROPIC_API_KEY set, fixture repo checked out at
-    tests/fixture_repo (or REPOMEND_FIXTURE_REPO env var).
+    tests/fixture_repo (or PATCHWARD_FIXTURE_REPO env var).
     """
     import os
     from patchward.fix_worktree import fix_worktree_context
 
     fixture_repo = Path(os.environ.get(
-        "REPOMEND_FIXTURE_REPO",
+        "PATCHWARD_FIXTURE_REPO",
         Path(__file__).parent / "fixture_repo",
     ))
     if not fixture_repo.exists():

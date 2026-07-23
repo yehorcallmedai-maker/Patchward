@@ -575,10 +575,10 @@ class TestVerifierConfig:
         with pytest.raises((pydantic.ValidationError, ValueError)):
             VerifierConfig(timeout_seconds=0)
 
-    def test_repomend_config_has_verifier(self) -> None:
-        from patchward.config import RepomendConfig, VerifierConfig
-        # VerifierConfig is nested in RepomendConfig
-        assert hasattr(RepomendConfig.model_fields, "verifier") or "verifier" in RepomendConfig.model_fields
+    def test_patchward_config_has_verifier(self) -> None:
+        from patchward.config import PatchwardConfig, VerifierConfig
+        # VerifierConfig is nested in PatchwardConfig
+        assert hasattr(PatchwardConfig.model_fields, "verifier") or "verifier" in PatchwardConfig.model_fields
 
 
 # ---------------------------------------------------------------------------

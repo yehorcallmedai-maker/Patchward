@@ -21,7 +21,7 @@ from patchward.config import (
     BatchConfig,
     GithubConfig,
     ModelsConfig,
-    RepomendConfig,
+    PatchwardConfig,
     RepoConfig,
 )
 from patchward.pipeline import run_batch, run_repo_pipeline
@@ -35,8 +35,8 @@ def _make_cfg(
     tmp_path: Path,
     n_repos: int = 3,
     max_concurrent: int = 3,
-) -> RepomendConfig:
-    """Build a minimal RepomendConfig with n fake RepoConfig entries."""
+) -> PatchwardConfig:
+    """Build a minimal PatchwardConfig with n fake RepoConfig entries."""
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir(exist_ok=True)
     repos = [
@@ -48,7 +48,7 @@ def _make_cfg(
         )
         for i in range(n_repos)
     ]
-    cfg = RepomendConfig(
+    cfg = PatchwardConfig(
         repo_path=repo_dir,
         batch=BatchConfig(max_concurrent=max_concurrent),
         models=ModelsConfig(),

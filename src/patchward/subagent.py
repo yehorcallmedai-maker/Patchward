@@ -224,7 +224,7 @@ class ScannerSubagent:
         Args:
             client: Pre-built Anthropic client (injected in tests).
             api_key: Explicit API key; falls back to env var.
-            config: Optional RepomendConfig; when provided,
+            config: Optional PatchwardConfig; when provided,
                 ``config.models.scanner_model`` overrides the
                 module-level SCANNER_MODEL constant.  (AC-P6-05)
         """

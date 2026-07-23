@@ -11,7 +11,7 @@ import typer
 
 from patchward.config import (
     load_config,
-    RepomendConfig,
+    PatchwardConfig,
     FixGenConfig,
     RepoConfig,
     BatchConfig,
@@ -132,7 +132,7 @@ def test_defaults_applied(tmp_path: Path) -> None:
 def test_fix_gen_max_turns_from_toml(tmp_path: Path) -> None:
     """
     [fix_gen] max_turns in toml overrides the default (10) — AC-P3-10.
-    Non-default value must propagate from toml → RepomendConfig.fix_gen.max_turns.
+    Non-default value must propagate from toml → PatchwardConfig.fix_gen.max_turns.
     """
     repo = tmp_path / "repo"
     repo.mkdir()

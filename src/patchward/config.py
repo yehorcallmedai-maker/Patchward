@@ -115,7 +115,7 @@ class ModelsConfig(BaseModel):
     fix_model: str = "claude-sonnet-4-6"
 
 
-class RepomendConfig(BaseModel):
+class PatchwardConfig(BaseModel):
     repo_path: Path
     semgrep_rules: str = "p/python"
     db_path: Path = Path("runs/state.db")
@@ -225,7 +225,7 @@ def _build_repos(
 def load_config(
     config_path: Path | None = None,
     dotenv_path: Path | None = None,
-) -> RepomendConfig:
+) -> PatchwardConfig:
     """Load and validate patchward.toml.
 
     Calls ``load_dotenv()`` before any credential access so that
@@ -305,7 +305,7 @@ def load_config(
         section["models"] = models_raw
 
     try:
-        cfg = RepomendConfig(**section)
+        cfg = PatchwardConfig(**section)
     except ValidationError as exc:
         typer.echo(
             f"[patchward] ERROR: invalid config:\n{exc}", err=True
@@ -335,7 +335,7 @@ def load_config(
     return cfg
 
 
-def validate_github_config(cfg: RepomendConfig) -> None:
+def validate_github_config(cfg: PatchwardConfig) -> None:
     """
     Abort with SystemExit(1) if [github] owner or repo is unset.
 

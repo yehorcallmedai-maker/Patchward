@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 
-from patchward.config import GithubConfig, RepomendConfig
+from patchward.config import GithubConfig, PatchwardConfig
 from patchward.credential_proxy import CredentialProxy
 from patchward.fix_gen import FixResult
 from patchward.pr_publisher import PRPublisher
@@ -28,10 +28,10 @@ from patchward.verifier import GateResult, VerifierResult
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_config(tmp_path: Path) -> RepomendConfig:
+def _make_config(tmp_path: Path) -> PatchwardConfig:
     repo = tmp_path / "repo"
     repo.mkdir(exist_ok=True)
-    return RepomendConfig(
+    return PatchwardConfig(
         repo_path=repo,
         github=GithubConfig(owner="acme", repo="my-app", base_branch="main"),
     )
@@ -277,14 +277,14 @@ class TestPRPublisher:
 
 def _make_publisher_with_mock_http(mock_http, tmp_path):
     """Build a PRPublisher with injectable mock HTTP client."""
-    from patchward.config import RepomendConfig, GithubConfig
+    from patchward.config import PatchwardConfig, GithubConfig
     from patchward.credential_proxy import CredentialProxy
     from patchward.pr_publisher import PRPublisher
     from unittest.mock import MagicMock
 
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir(exist_ok=True)
-    cfg = RepomendConfig(
+    cfg = PatchwardConfig(
         repo_path=repo_dir,
         github=GithubConfig(
             owner="acme", repo="my-app", base_branch="main"
