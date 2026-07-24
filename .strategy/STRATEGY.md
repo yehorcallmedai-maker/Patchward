@@ -265,14 +265,47 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   it wasn't the assigned task, just noted rather than silently ignored.
 
 ## Open threads
-- BACKLOG 12: CRA/GDPR — briefing packet delivered 2026-07-24 (Session
-  024), still genuinely open pending Yehor finding and engaging qualified
-  counsel; see Current state above and
+- BACKLOG 12: CRA/GDPR — briefing packet delivered AND pushed 2026-07-24
+  (Session 024, `main` @ `36b0a65`), corrected twice against re-verified
+  source before pushing; still genuinely open pending Yehor finding and
+  engaging qualified counsel — ~7 weeks to the 2026-09-11 reporting-
+  obligation date. See Current state above and
   `memory/BACKLOG12_counsel_briefing_packet_2026-07-24.md`
+- BACKLOG 19 (NEW, Session 024, pushed with `36b0a65`): the webhook path's
+  `git clone` persists `GITHUB_TOKEN` into the cloned repo's `.git/config`
+  in plaintext for the run's duration, and four log/echo sites forward
+  unfiltered git subprocess stdout/stderr with no scrubbing. Agent-
+  startable. **Yehor's own call: recommend treating as a pre-launch
+  consideration, not "logged, no urgency" like 18** — it sits on the
+  hosted webhook path he's about to put in front of paying Marketplace
+  customers. See `memory/BACKLOG.md` item 19 for the full trace and
+  proposed fix.
 - BACKLOG 18 (NEW, Session 024): `marketplace_purchases` has no
   retention/TTL policy — no deletion path exists in the codebase at all.
   Agent-startable, low urgency, cheap fix once prioritized — see
   `memory/BACKLOG.md` item 18 for the proposed approach.
+- Housekeeping, Session 024 close: a stray, empty `.git/index.lock` was
+  left in the Patchward mount by this close's own read-only verification
+  commands (`device_bash` can't remove it). Confirm it's gone before the
+  next git operation there — same one-line fix as the mid-session
+  commit-lock incident.
+- Memory hygiene: `.strategy/STRATEGY.md` has accumulated duplicate
+  "Session log (continued)" / "Calibration record (continued)" headers
+  instead of single append-only sections, and at least one entry is filed
+  under "Calibration record" that is really session narrative. Not urgent,
+  but worth a consolidation pass next time memory upkeep is in scope —
+  flagged at Session 024 close, not fixed (too risky to restructure in the
+  same pass as the session's substantive work).
+- Pattern worth watching, not yet a heuristic (needs a second session's
+  evidence per this file's own promotion rule): Session 024 caught two of
+  its own introduced errors before they shipped durably (a wrongly-cleared
+  "accurate" paragraph, and an overclaimed "no network access" phrase) —
+  both mid-correction-pass, both caught by Yehor's own re-read rather than
+  the session's own review catching them first. If a future session shows
+  the same pattern (self-introduced error caught only by the user's
+  independent re-read, not the session's own check), promote to a
+  heuristic: re-read your own just-written correction with the same
+  skepticism applied to the original defect, not just proofread it.
 - BACKLOG 17 (NEW, Session 023): rebuild `patchward-scanner` image, re-pin
   its digest in `docker_sandbox.py`, then drop the transitional legacy
   `REPOMEND_NETWORK_POLICY` env var and rename the image tag
@@ -1098,3 +1131,54 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   goes to BACKLOG 19 for Yehor to prioritize, not into more disclosure
   text on a page that already discloses the credential-isolation
   boundary's real scope.
+- [2026-07-24, Session 024 close] Patchward committed and pushed by Yehor
+  (`36b0a65`), confirmed at this close via a fresh clone's `git log -1`
+  AND a separate `git ls-remote origin main` — both agree. callmed-landing
+  committed locally (`68e612a`) — confirmed via `device_bash` reading the
+  mount directly (not the pasted terminal output): HEAD matches, `git
+  status --short` empty. **Production verified live, independent of
+  Yehor's own check:** a fresh `WebFetch` of `callmedai.com/privacy` finds
+  the new two-stage "transmitted to Anthropic" language present and the
+  old "raw repository contents are never sent" claim absent; a second
+  fetch of the homepage finds 0 "RepoMend" occurrences and "Patchward"
+  present, which retroactively confirms BACKLOG 8's rename has been live
+  since Session 022 — the deploy pipeline for `callmed-landing` works,
+  settling a question this project had operated on faith for three days.
+  **New finding at close, not present during the session itself:** a
+  stray, empty `.git/index.lock` was found in the Patchward mount, created
+  by this close's own read-only `git diff --stat -w`/`git status` calls —
+  `device_bash` cannot remove it (the same documented limitation that
+  blocked the mid-session commit attempt earlier). Flagged for Yehor to
+  clear before his next git command there; not a sign anything actually
+  broke. The ~57-file CRLF-only diff was re-checked and is still exactly
+  zero real content under `-w` — durable, correctly still untouched.
+  **Self-introduced-error count for this session, stated plainly rather
+  than smoothed over: two.** The "Credential isolation" paragraph was
+  wrongly cleared as accurate in the first correction pass (caught by
+  Yehor's second pass), and the "no network access"/"no egress" framing
+  was introduced by this session's own rationale-clause edit (caught by
+  Yehor's own re-read of the diff before the second commit). Both were
+  caught before shipping durably, both are logged here rather than
+  quietly folded into "corrected" language — two occurrences in one
+  session is worth naming as a pattern, not dismissing as noise.
+  Full close-out: `memory/SESSION_CLOSE_2026-07-24.md` (written this
+  close, pending Yehor's own commit alongside this file).
+
+## Calibration record (close, Session 024)
+- [2026-07-24 close] Of 7 checkable close-time claims (Patchward
+  push/hash, BACKLOG.md items 18/19 present in the pushed commit,
+  callmed-landing local commit + clean tree, the two overclaim strings
+  gone from disk, corrected copy live in production, the CRLF diff still
+  zero under `-w`, BACKLOG 17 status): **6/7 CONFIRMED** via a method
+  independent of how each claim was first reported (fresh clone,
+  `device_bash` direct read, and `WebFetch` against production — three
+  different mechanisms, none reusing another's result), **1/7
+  UNVERIFIED** (BACKLOG 17 — out of this session's scope, not re-checked,
+  correctly not asserted either way). **1 DRIFTED, found only by this
+  close's own check, not carried in from the session:** the stray
+  `.git/index.lock`, created by the close's own verification commands. **
+  0.86 on checkable claims (6/7), with the one miss self-caught at close
+  rather than left for Yehor to discover.** Two self-introduced-and-caught
+  errors logged this session (see Open threads) — first time this
+  specific pattern has been named explicitly; watching for a second
+  occurrence before promoting a heuristic.
