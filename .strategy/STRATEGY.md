@@ -265,6 +265,10 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   it wasn't the assigned task, just noted rather than silently ignored.
 
 ## Open threads
+- BACKLOG 20: CLOSED same day as a false alarm — see `memory/BACKLOG.md`
+  item 20. The site is genuinely correct and live at the plain URLs,
+  confirmed via a real browser read. Retained here only as a pointer, not
+  as an open item — nothing pending.
 - BACKLOG 12: CRA/GDPR — briefing packet delivered AND pushed 2026-07-24
   (Session 024, `main` @ `36b0a65`), corrected twice against re-verified
   source before pushing; still genuinely open pending Yehor finding and
@@ -1182,3 +1186,58 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   errors logged this session (see Open threads) — first time this
   specific pattern has been named explicitly; watching for a second
   occurrence before promoting a heuristic.
+- [2026-07-24, Session 024 — CORRECTION, same day, to the close entry
+  immediately above] The close's "Production verified live" claim was
+  wrong as a general statement. It was checked against exactly one path
+  (`callmedai.com/privacy`, which happened to be current) plus one
+  unrelated check on the bare homepage (RepoMend absence only — never
+  re-checked for the actual false on-premise/auditability claims there).
+  A further double-check, requested explicitly by Yehor as a second pass,
+  found: `callmedai.com/` (bare) and `callmedai.com/security` (bare) both
+  still serve OLD content — the homepage still has "your code never
+  leaves your infrastructure" and "fully auditable on-premise"; `/security`
+  serves a stub dated May 2026. `index.html`/`security.html` (explicit
+  `.html` extension) and cache-busted bare URLs all serve the fully
+  current, corrected content. Reproduced across separate fetches minutes
+  apart, ruling out this session's own tool-level 15-minute fetch cache as
+  the explanation. Working diagnosis (unconfirmed from this sandbox — no
+  DNS/header tooling reachable, consistent with H4): a CDN/edge cache
+  serving stale responses for the exact clean-URL cache keys, bypassed by
+  `.html` suffixes and query strings. **Not fixed — logged as BACKLOG 20,
+  marked highest urgency, and this is the actual open state of the site
+  correction, not "closed."** Lesson, stated plainly: verifying one path
+  and one unrelated string on a second path is not the same as verifying
+  the claim "the site is live" — a claim about "the site" needs the same
+  path a real visitor uses, checked for the actual thing being claimed,
+  not a proxy check that happened to be convenient.
+- [2026-07-24, Session 024 — SECOND correction, same day: BACKLOG 20 was
+  itself a false alarm] Yehor's own diagnostics (`curl.exe -sIL` on both
+  `/` and `/index.html`) showed `cf-cache-status: DYNAMIC` on both —
+  Cloudflare passes every request straight to origin, no edge caching —
+  which already undercut the CDN-cache theory. His Cloudflare Pages
+  dashboard then showed `callmed-landing`'s latest deployment (21 minutes
+  old, matching commit `68e612a`'s exact message) already live. **Decisive
+  check: a real Chrome browser (Claude-in-Chrome), navigated fresh to
+  `callmedai.com/` and `callmedai.com/security`, reading the actual
+  rendered page** — both fully current: homepage shows the corrected
+  on-premise/egress language, `/security` shows "Version 1.2" with every
+  corrected section present. **The site was never stale. `WebFetch`'s
+  "not found" results were wrong** — that tool fetches and summarizes
+  through a small model rather than returning raw bytes, and it
+  misreported presence/absence of specific strings on these two pages,
+  twice, across multiple independently-worded prompts. Root cause of
+  *why* `WebFetch` erred not fully chased (possibly its own internal
+  cache, possibly the summarization step) — not needed once the real
+  question (is the site correct?) was answered directly. BACKLOG 20
+  closed same-day as a false alarm. **New heuristic candidate (H10-
+  candidate, one occurrence — needs a second before promotion): for exact
+  presence/absence claims about live web content on this project, `curl`
+  raw bytes or a real browser read (Claude-in-Chrome) outrank `WebFetch`'s
+  summarized result — `WebFetch` is fine for gist/summary tasks but proved
+  unreliable here for an exact-string verification the close-out relied
+  on as fact.** This session's own two "self-introduced-and-caught" errors
+  (logged earlier) plus this false alarm makes three real corrections in
+  one close sequence — all caught before being acted on wrongly, all
+  because Yehor kept pushing for one more independent check rather than
+  accepting the previous one. That pattern — not any single fact — is the
+  actual result worth carrying forward.

@@ -1170,3 +1170,67 @@ any of the four log/echo sites above.
 **Owner:** unassigned — not urgent enough to block tonight's site-copy
 commit (the sentence is accurate), but real, and on the hosted path, not
 just theoretical. Yehor's call on priority/timing.
+
+## 20. `callmed-landing`'s corrected copy appeared not to be live at the plain URLs — CLOSED same day, FALSE ALARM (surfaced 2026-07-24 close, resolved 2026-07-24, same session)
+**WSJF: highest — this is the actual state of the item this whole session
+treated as its top priority.** Session 024's close-out claimed the
+data-flow corrections were "confirmed live in production," based on one
+fetch of `callmedai.com/privacy` (which happened to be current) and one
+fetch of `callmedai.com` for an unrelated check (RepoMend absence only —
+never checked for the actual false-claim strings). A second, more
+thorough double-check found this was wrong as a general claim:
+
+- `https://callmedai.com/` (bare root, no extension) — still serves the
+  OLD copy. Confirmed twice, independently, several minutes apart (ruling
+  out this tool's own 15-minute fetch cache as the explanation): "your
+  code never leaves your infrastructure" and "fully auditable on-premise"
+  are both still present.
+- `https://callmedai.com/security` (bare, no extension) — serves an even
+  older stub, dated May 2026 (predates even the June 2026 v1.1 revision,
+  let alone tonight's July 2026 v1.2).
+- `https://callmedai.com/index.html` and `https://callmedai.com/security.html`
+  (explicit `.html` extension) — both serve the fully current, corrected
+  copy. A cache-busting query string on the bare URLs also returns current
+  content.
+
+**Working diagnosis, not confirmed from this sandbox (no header/DNS access
+— `curl`/`dig` to arbitrary hosts blocked here, consistent with H4):** a
+CDN/edge cache is serving a stale cached response for the exact clean
+URLs (`/`, `/security`) while `.html`-suffixed and cache-busted requests
+bypass that cache key and reach current origin content. This is Yehor's
+to diagnose and fix — likely a dashboard cache-purge or a fresh deploy
+trigger on whichever platform serves the site (Vercel/Netlify/Cloudflare —
+not yet identified from this sandbox).
+
+**Why this matters more than anything else on this list:** the homepage
+and the security page's clean URL are exactly what a real visitor types
+or clicks — not the `.html` form. The false "code never leaves your
+infrastructure" / "fully auditable" claims that this entire session's
+urgent-priority site fix was meant to remove are, right now, still being
+shown to anyone who visits the plain URLs.
+
+**RESOLVED, same session, false alarm — root cause was this session's own
+tooling, not production.** Yehor's own diagnostics (real `curl.exe -sIL`
+from his machine) showed `cf-cache-status: DYNAMIC` on both `/` and
+`/index.html` — Cloudflare is NOT caching these responses at all, passing
+every request straight to origin — which already contradicted the CDN-
+cache hypothesis above. Yehor's own Cloudflare Pages dashboard screenshot
+then showed the `callmed-landing` project's latest deployment (21 minutes
+old at the time, matching commit `68e612a`'s message exactly) already live
+in production. **Final, decisive check: a real Chrome browser (via
+Claude-in-Chrome), navigated fresh to both `callmedai.com/` and
+`callmedai.com/security` and read the actual rendered page content —** the
+homepage shows the corrected "default-deny iptables" / two-stage Anthropic
+language; `/security` shows "Last updated: July 2026 · Version 1.2" with
+every corrected section present (`Credential isolation — Patchward`,
+`Three-gate verifier — Patchward`, `Transport security`, `Supply chain`,
+all current). **The site was never stale. The "stale" finding was an
+artifact of this session's own `WebFetch` tool** — which fetches a page
+and summarizes it through a small, fast model rather than returning raw
+bytes — reporting "not found" for strings that were, per the real browser,
+actually present. Root cause of the tool's error not fully determined
+(possibly its own internal cache, possibly the summarization step
+under/over-reporting on a long page) — not chased further since the
+underlying question (is the site correct?) is now answered definitively.
+See new heuristic candidate in `.strategy/STRATEGY.md`.
+**Owner:** none — closed. No action needed from Yehor.

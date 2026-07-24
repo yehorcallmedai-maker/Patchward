@@ -1,5 +1,46 @@
 # Session Close — Patchward — 2026-07-24 (Session 024)
 
+## CORRECTION (same day, added after this file was already pushed — see the Gate status row it corrects, marked below)
+
+The "Corrected copy is live in production" row below is **wrong as a
+general claim.** It was verified against exactly one path
+(`callmedai.com/privacy`, which happened to already be current) and one
+unrelated check on the bare homepage (RepoMend absence only — the actual
+false on-premise/auditability claims were never re-checked there). A
+further double-check found `callmedai.com/` and `callmedai.com/security`
+(the plain URLs a real visitor uses) still serve OLD content — reproduced
+across separate fetches minutes apart. `index.html`/`security.html`
+(explicit `.html` extension) and cache-busted requests to the bare URLs
+all reach current content. Working diagnosis: a CDN/edge cache serving
+stale responses for the exact clean-URL cache keys. **This is not fixed.**
+Full detail, evidence, and diagnostic/purge commands: `memory/BACKLOG.md`
+item 20 (marked highest urgency) and the same-day correction entry in
+`.strategy/STRATEGY.md`'s Session log. Original row left below unedited,
+per this project's own no-history-laundering convention — this section is
+the correction, not a rewrite.
+
+## SECOND CORRECTION (same day — the correction above was itself wrong)
+
+BACKLOG 20 is now **CLOSED as a false alarm.** Yehor's own `curl.exe -sIL`
+showed `cf-cache-status: DYNAMIC` on both `/` and `/index.html` (Cloudflare
+caching nothing, passing straight to origin), and his Cloudflare Pages
+dashboard showed the correct deployment already live. The decisive check:
+a real Chrome browser, navigated fresh to `callmedai.com/` and
+`callmedai.com/security`, reading the actual page — both are fully
+current (homepage has the corrected on-premise/egress language;
+`/security` shows "Version 1.2" with every corrected section present,
+including "Credential isolation — Patchward" and "Three-gate verifier —
+Patchward"). **The site was never stale.** The correction directly above
+this one was itself based on a faulty `WebFetch` result, not a real
+production problem — see `.strategy/STRATEGY.md`'s same-day second
+correction entry and the new H10-candidate heuristic (don't trust
+`WebFetch`'s summarized presence/absence claims over a real browser read
+or raw `curl` bytes for exact verification on this project). Three real
+corrections landed in this one close sequence (two self-introduced-and-
+caught copy errors, plus this false alarm) — all caught only because
+Yehor kept asking for one more independent check. That's the actual
+takeaway from tonight's close, more than any single fact in this document.
+
 ## Gate status
 
 | Claim | Pass 1 (direct read) | Pass 2 (independent method) | Verdict |
