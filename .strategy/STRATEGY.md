@@ -187,9 +187,92 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   H9-candidate; a matching claim about `BACKLOG.md` was itself corrected,
   see the CORRECTION entry — that file was fine all along). New BACKLOG 17
   tracks the deferred scanner-image rebuild.
+- [2026-07-24, Session 024 open] Verified fresh via methods independent of
+  the resume prompt: (1) `git ls-remote origin main` → `3e63587306d6...`,
+  matching the resume prompt's cited last-known hash exactly (the
+  mojibake-repair commit made after Session 023's own close, confirmed via
+  a fresh `git clone` + `git log` showing it as `8bdcbcd`'s direct child,
+  working tree clean). (2) Diffed all 6 memory files that matter
+  (`.strategy/STRATEGY.md`, `memory/BACKLOG.md`, `memory/STATE.md`,
+  `memory/NEXT_SESSION_START.md`, `memory/SESSION_CLOSE_2026-07-23.md`,
+  `memory/project_session_log.md`) on the D:\ mount against the fresh
+  clone — **byte-identical on all 6, zero drift.** This is the first
+  session-open check to explicitly re-test H9-candidate (mount falling
+  *behind* git after a push) since it opened at Session 023 close: it did
+  **not** reproduce — `.strategy/STRATEGY.md` and `memory/BACKLOG.md` both
+  matched HEAD cleanly this time. Also confirmed the mojibake-repair
+  commit (`3e63587`) itself: diffed its patch, found it replaced
+  Windows-1252-mis-decoded em-dashes/arrows (`вЂ”`, `в†’`) with correct UTF-8
+  em-dashes/arrows and stripped a leading BOM from `.strategy/STRATEGY.md`
+  — a real, now-resolved encoding corruption, not a false alarm; the
+  current committed content has zero mojibake and zero BOM, confirmed via
+  both pattern search and raw byte inspection of the first 3 bytes.
+  (3) Fly `/healthz`: fresh `WebFetch` → `{"status":"ok"}`; a direct bash
+  `curl` attempt failed with a proxy-level 403 (H4-consistent, not a health
+  signal). (4) PyPI: `pip index versions patchward` again showed
+  `0.1.0 Requires-Python >=3.12` filtered out by this sandbox's Python
+  3.11.15 — but this session went one step further than prior sessions and
+  fetched `pypi.org/simple/patchward/` directly (bypasses this sandbox's
+  proxy allowlist, which includes `pypi.org` in `no_proxy`) → HTTP 200,
+  explicitly listing the `patchward-0.1.0` wheel and sdist — a stronger,
+  more direct confirmation than `pip index`'s filtered-list inference.
+  (5) BACKLOG 16/17/12 status all reconfirmed unchanged from
+  `NEXT_SESSION_START.md`'s framing: 16 closed and pushed, 17 logged and
+  deliberately not started, 12 still open pending counsel. The two
+  optional-cleanup straggler files (`BACKLOG16_rename.patch`,
+  `collected_314.txt`) flagged at Session 023 close are already gone from
+  the working tree (confirmed via device listing) — cleanup done, no
+  action needed.
+- [2026-07-24, Session 024 continued] Yehor picked BACKLOG 12 over a pure
+  housekeeping pass, with a specific, well-reasoned rationale: item 12 is
+  the only unchecked pre-distribution gate item with real calendar-time
+  lead (finding + engaging counsel), and his launch window (2026-09-08 to
+  2026-09-11) lands close to the CRA's own timeline. He reframed the item
+  from one indivisible "needs counsel" block into an agent-startable
+  technical briefing-packet task (data inventory, product-facts sheet,
+  question list, draft disclaimer, fresh CRA-timeline re-verification)
+  plus a legal-determination remainder that stays counsel-only — with a
+  hard rule to keep those separate and never let the agent hedge toward a
+  legal conclusion. Executed via real source reads (not paraphrase): full
+  field-by-field inventory of `installations_db.py`'s three tables,
+  confirmed a genuine retention gap (`marketplace_purchases` has no
+  deletion path at all — logged as new BACKLOG item 18); traced
+  `fix_gen.py` + `credential_proxy.py` and found the existing "only the fix
+  prompt reaches the Anthropic API, scrubbed of credentials" description is
+  **not accurate as stated** — real repository source code reaches
+  Anthropic via the Fix-Gen subagent's `read_file` tool results, and
+  `CredentialProxy.scrub()` is called exactly once in the whole codebase
+  (`cli.py`, on CLI/log output), never on anything actually sent to
+  Anthropic — a real, source-verified correction, not an assumption. CRA
+  timeline re-verified via the European Commission's own CRA pages
+  (near-primary, not just re-asserting `BUILD_PLAN`'s original
+  secondary-sourced figure): confirmed 24h/72h/14-day Article 14 reporting,
+  binding 2026-09-11, AND surfaced a nuance prior memory didn't carry —
+  that date is specifically the reporting-obligation date, distinct from
+  the CRA's full conformity-assessment applicability date (2027-12-11).
+  Annex III category examples and the open-source-exemption threshold test
+  were explicitly left as open questions for counsel (sources found were
+  secondary and/or admitted the question was unresolved), per the session's
+  hard rule against hedging toward a legal conclusion. Delivered:
+  `memory/BACKLOG12_counsel_briefing_packet_2026-07-24.md` (packet),
+  `memory/BACKLOG.md` updated (item 12 status proposal + new item 18) —
+  both written uncommitted to Yehor's D:\ working tree via SendUserFile +
+  device-bridge write, same standing process as prior sessions' code/doc
+  deliverables. No git commits made from the sandbox. Incidental, honestly
+  flagged, out-of-scope finding noticed while reading source for the
+  packet: `README.md` still says "Patchward is not yet published to PyPI"
+  — stale since the 2026-07-22 PyPI publish; not fixed this session since
+  it wasn't the assigned task, just noted rather than silently ignored.
 
 ## Open threads
-- BACKLOG 12: CRA/GDPR — external legal input, unchanged
+- BACKLOG 12: CRA/GDPR — briefing packet delivered 2026-07-24 (Session
+  024), still genuinely open pending Yehor finding and engaging qualified
+  counsel; see Current state above and
+  `memory/BACKLOG12_counsel_briefing_packet_2026-07-24.md`
+- BACKLOG 18 (NEW, Session 024): `marketplace_purchases` has no
+  retention/TTL policy — no deletion path exists in the codebase at all.
+  Agent-startable, low urgency, cheap fix once prioritized — see
+  `memory/BACKLOG.md` item 18 for the proposed approach.
 - BACKLOG 17 (NEW, Session 023): rebuild `patchward-scanner` image, re-pin
   its digest in `docker_sandbox.py`, then drop the transitional legacy
   `REPOMEND_NETWORK_POLICY` env var and rename the image tag
@@ -775,3 +858,243 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   behaved exactly as documented, with H1's scope now explicitly understood
   to include this agent's own device-bridge reads, not just local git
   reads against the mount.
+
+## Session log (continued)
+- [2026-07-24, Session 024 open] Verified fresh: git HEAD (`3e63587`,
+  matching resume prompt exactly), all 6 memory files clean vs. a fresh
+  clone (H9-candidate re-tested, did not reproduce this session), Fly
+  health, PyPI liveness (via a second, more direct method than prior
+  sessions — a raw `pypi.org/simple/patchward/` fetch, not just
+  `pip index`), and BACKLOG 16/17/12 status. 0 drift. Confirmed the
+  mojibake-repair commit (`3e63587`) fixed a real Windows-1252
+  mis-decoding + stray BOM in `.strategy/STRATEGY.md` and
+  `memory/NEXT_SESSION_START.md` — not a false alarm, and clean now by
+  direct byte inspection. Full detail in Current state above.
+- [2026-07-24, Session 024 continued] Yehor chose BACKLOG 12 over pure
+  housekeeping, reframed it into an agent-startable briefing-packet task
+  plus a counsel-only remainder, and the agent executed the packet: data
+  inventory (with a genuine retention-gap finding, new BACKLOG 18), a
+  corrected data-flow fact about what reaches Anthropic (verified against
+  real source, not assumed), a question list, a draft disclaimer, and a
+  freshly re-verified CRA timeline with a nuance prior memory lacked
+  (reporting-obligation date vs. full-applicability date). BACKLOG 12
+  updated to "briefing packet ready, awaiting counsel" — not closed, since
+  the actual legal determination remains genuinely blocked on Yehor
+  engaging counsel. Full detail in Current state above and
+  `memory/BACKLOG12_counsel_briefing_packet_2026-07-24.md`. No git commits
+  made from the sandbox; packet + updated `BACKLOG.md` written uncommitted
+  to Yehor's D:\ working tree for his own review.
+
+## Calibration record (continued)
+- [2026-07-24 open] Of 4 checkable claims (git HEAD via ls-remote+clone,
+  all 6 memory files clean vs. fresh clone including the H9-candidate
+  re-test, Fly health, PyPI liveness): **4/4 CONFIRMED**, each via a method
+  independent of the resume prompt's own claims. PyPI's confirmation this
+  session used a genuinely stronger method than prior sessions (a direct
+  `pypi.org/simple/` fetch bypassing this sandbox's proxy allowlist,
+  rather than relying solely on `pip index`'s filtered/inferred listing).
+  **1.00 on checkable claims.** H9-candidate was explicitly re-tested and
+  did not reproduce — this is not itself a promotion or demotion event
+  (the heuristic tracks occurrences of the bug, not clean sessions), but
+  is worth recording: one clean re-check after the Session 023 fix, not
+  yet enough to call the fix durably proven, but no new evidence against
+  it either.
+- [2026-07-24, Session 024 continued] Of the execution-phase claims (the
+  `installations_db.py` field inventory and retention-gap finding, the
+  corrected Anthropic data-flow fact, the CRA timeline table, the
+  Annex III category examples, the DPIA background criteria): the data
+  inventory, retention gap, and data-flow correction are **CONFIRMED**
+  directly against real source (`installations_db.py`, `webhook.py`,
+  `fix_gen.py`, `credential_proxy.py`, verified via an explicit
+  `grep -rn "\.scrub("` across the whole repo, not assumed from a
+  docstring). The CRA timeline table is **CONFIRMED** via the European
+  Commission's own pages, a near-primary source, cross-checked against a
+  second independent explainer site — an improvement over the prior
+  secondary-sourced-only figure. The Annex III category list and the
+  open-source-exemption threshold test are correctly left **UNVERIFIED /
+  OPEN**, not forced to a conclusion — sources found were secondary and,
+  in the exemption case, explicitly stated the question as unresolved in
+  the source material itself. **Scored as fully calibrated for this
+  phase**: every claim that could be resolved from real source or a
+  near-primary regulatory page was resolved that way; every claim that
+  genuinely requires counsel was left open rather than hedged toward an
+  answer, matching this session's own hard rule. No heuristic promoted or
+  demoted this session — H1/H2/H3/H4/H7/H8 behaved as documented;
+  H9-candidate stays a candidate (one clean re-check, not a new bug
+  occurrence in either direction).
+
+- [2026-07-24, Session 024 continued — correction pass] Yehor independently
+  re-read the packet's own source citations and found three real problems
+  with the first draft, all re-verified fresh against source before
+  correcting (not accepted on his say-so, same discipline this project
+  applies to every other claim): (1) the packet's "`scrub()` called in
+  exactly one place" count was wrong — re-grepped and found two call sites
+  in `cli.py` (L139, L304) plus one in `credential_proxy.py:27` (confirmed
+  to be inside that module's own docstring example, not executable code)
+  plus five in tests; the substantive conclusion the count supported (zero
+  call sites in `fix_gen.py`/`subagent.py`) was unchanged and re-confirmed.
+  (2) the `read_file` finding was upgraded from "the subagent has a tool it
+  might use" to Tier 0, source-confirmed: the system prompts in
+  `fix_gen.py` **mandate** it on every path including decline (quoted
+  L224, L272, L547, L355 — the last confirming it is unrestricted within
+  the worktree, not scoped to the finding's line range). (3) a second data
+  path the first draft missed entirely: `subagent.py`'s triage stage (runs
+  *before* Fix-Gen) has its own `read_file`/`grep_files`/`glob_files` tool
+  surface (confirmed at `subagent.py:29-33` and the system prompt at
+  `subagent.py:129`) — repository content can reach Anthropic at two
+  independent stages, not one. Also added, newly verified rather than
+  merely requested: run logs under `runs/` are ~460 bytes each (confirmed
+  by directory listing showing dozens of files at that exact size) and one
+  was read in full — pure status/timestamp metadata, no prompt or file
+  content — so there is currently no audit trail of what was actually
+  transmitted to Anthropic. All four corrections applied to
+  `memory/BACKLOG12_counsel_briefing_packet_2026-07-24.md` in place (not a
+  rewrite), each re-verified against real source before writing, per
+  Yehor's own instruction to keep the correction pass factual and
+  unsoftened.
+- [2026-07-24, Session 024 continued — callmed-landing urgent fix] Yehor's
+  own judgment call, stated plainly as engineering judgment and not legal
+  advice: the live site's privacy/security copy claiming "raw repository
+  contents are never sent externally" / "your code never leaves your
+  infrastructure" / "only the fix prompt reaches the Anthropic API,
+  scrubbed of credentials" directly contradicts the same source-verified
+  finding above, and fixing a live, public, factually-contradicted claim
+  outranks counsel engagement on urgency. `C:\Dev\Projects` (present but
+  not connected at session start) was granted via
+  `device_request_folder_access`, scoped narrowly to
+  `C:\Dev\Projects\callmed-landing` only. Found the exact claim, verbatim,
+  in three files: `index.html` (FAQ JSON-LD "What is Patchward?", the
+  visible "On-premise, auditable" card, and the second FAQ entry),
+  `security.html` ("On-premise execution — Patchward" and "Inference
+  layer"), `privacy.html` ("Patchward — on-premise processing" and
+  "Third-party processors"). Corrected all seven locations to state the
+  two-stage (triage + fix-gen), unrestricted-within-worktree data flow
+  accurately, while leaving three adjacent paragraphs unchanged after
+  confirming they were already accurate as written: security.html's
+  "Credential isolation" paragraph (correctly scopes scrubbing to
+  logs/CLI output already) and privacy.html's "no repository data reaches
+  our systems" line (correctly scoped to CallMed AI's own systems, true as
+  written) — corrections were targeted, not a wholesale rewrite, and did
+  not touch Symbiote's already-honest full-file-transmission disclosures.
+  Bumped both legal pages' version markers (June 2026 v1.1 → July 2026
+  v1.2) per the page's own stated "Policy changes" convention. Delivered a
+  combined diff, a summary doc, and all three corrected files; written
+  uncommitted to the `callmed-landing` working tree for Yehor's own review
+  and one commit, same standing process as every other cross-repo
+  deliverable this project has produced. Not touched: whether the site's
+  own "notify active customers by email" policy clause applies here — left
+  as Yehor's business decision, not fabricated.
+- [2026-07-24, Session 024 continued — second correction pass + attempted
+  commit] Yehor read the corrected files directly and caught a real miss:
+  `security.html`'s "Credential isolation — Patchward" paragraph had been
+  cleared as accurate in the first pass but wasn't — "any text generated by
+  an agent... is scrubbed" is false (both real `scrub()` call sites are on
+  a scanner finding's `message` field, never on agent-generated text; zero
+  call sites in `fix_gen.py`/`subagent.py`). Rewrote it, and additionally
+  verified (not assumed) the paragraph's other claim: `docker_sandbox.py`
+  does structurally exclude credential keys from container `-e` flags and
+  asserts it before every run, but that guarantee does NOT extend to the
+  CLI's other subprocesses (`git` calls in `worktree_common.py`/
+  `webhook.py`, the non-Docker path in `scanner.py`) — none pass an
+  explicit `env=` override, so they inherit the full parent environment by
+  default. Also rescoped "fully auditable" in the Three-gate paragraph
+  (re-verified `run_log.py` + a real log) to describe only what the log
+  actually contains. Drafted an updated `llms.txt` (previously omitted
+  Patchward entirely, and used a different contact email than the rest of
+  the site — flagged for Yehor to confirm, not decided unilaterally).
+  **Final ground-truth sweep (via `device_bash` reading the actual file,
+  not this session's cached staging path) turned up 3 more live instances
+  of the same claim in `index.html`** that both prior passes had missed
+  (lines 143, 178, 219) — fixed those too. **Real anomaly, disclosed rather
+  than quietly resolved:** mid-pass, a check via this session's own
+  file-staging path showed the first pass's edits as if reverted; a
+  second, independent check via `device_bash` (reading the file directly,
+  a genuinely different mechanism) confirmed the edits were present all
+  along — the alarming read was stale cached content from this session's
+  own initial staging step, not the actual device state. Nothing was lost.
+  **Attempted commit of both repos per Yehor's own script:** `git add` of
+  the exact intended files succeeded and was verified via `git status` in
+  both `Patchward` and `callmed-landing` — but `git commit` failed
+  identically in both repos with `Operation not permitted` unlinking
+  `.git/index.lock` and temp objects. Root cause: this session's
+  device-bridge VM cannot delete/unlink files on the mounted folders (a
+  documented constraint of the bridge itself, confirmed via the tool's own
+  behavior, not a real concurrent git process) — git's commit step needs
+  to remove its own lock/temp files as part of normal operation and can't,
+  through this specific channel, on this specific mount. **No partial or
+  corrupt commit resulted in either repo** — `git log` in Patchward still
+  shows HEAD at `3e63587` unchanged, and both repos' staging areas hold
+  exactly the intended files, confirmed via `git status --short` after the
+  failed commit. Neither push was attempted after the commit failure
+  (network reachability to `github.com` from this same VM was also
+  independently confirmed absent — a `git ls-remote` test returned "403
+  from proxy after CONNECT," consistent with the cloud sandbox's own
+  earlier, separate finding of restricted egress to non-allowlisted hosts,
+  though this is a different network boundary — the user's local VM, not
+  the cloud container). **Unrelated finding, not part of this session's
+  task, not touched:** `git status`/`git diff --stat -w` in Patchward shows
+  ~57 files (mostly `src/patchward/*.py`, `tests/*.py`, and old `runs/
+  *.json`) with real `git diff` output but zero diff under `-w`
+  (whitespace-insensitive) — pure line-ending/whitespace churn, not content
+  changes; not staged, not committed, flagged for Yehor to investigate at
+  his convenience (likely a CRLF/LF mismatch from a Windows-side tool).
+  Both repos' actual commits and pushes remain for Yehor to run himself —
+  index.lock removal + `git commit`/`git push`, same commands he provided.
+- [2026-07-24, Session 024 continued — third pass: framing refinement +
+  two logged-not-acted items] Yehor confirmed all three second-pass
+  corrections as accurate on independent re-read, then flagged one
+  remaining framing gap: `security.html`'s "Credential isolation —
+  Patchward" paragraph stated correct facts but, unlike the neighboring
+  "Inference layer" paragraph, didn't explain *why* the boundary sits
+  where it does. Verified before writing (not assumed): `docs/
+  intake_phase2.md`'s own Phase 2 test contract treats scanned repository
+  content as adversarial — its "Adversarial / Break Case" section
+  specifies a fixture with a destructive-command-shaped comment and a
+  fake `ANTHROPIC_API_KEY=...` string embedded in scanned source, both
+  required to fail to reach a credential or escape the container — and
+  `architectural_decisions.md`'s ADR-013 states outright: "Threat model
+  includes prompt-injection payloads." Correction to the user's own
+  hypothesis, not just confirmation of it: the untrusted element is the
+  *scanned repository content*, not the scanner binaries themselves —
+  Semgrep/Bandit/etc. are version-pinned, vetted tools baked into a
+  maintained image (ADR-014), so "third-party scanner binaries are the
+  untrusted surface" slightly overstates it. Separately confirmed (
+  `worktree_common.py`, `pr_publisher.py`, `github_app_auth.py`) that git
+  push authentication does not rely on inherited-environment credential
+  passing at all — `_build_remote_url()` embeds `GITHUB_TOKEN` directly
+  into the HTTPS remote URL passed as a command argument to `git push`;
+  the existing "inherits full environment" sentence is still true as a
+  general subprocess fact but doesn't describe how the token itself
+  reaches git. Rewrote the paragraph to add the rationale clause and
+  correct this mechanism detail, without softening or removing the
+  original disclosure. Delivered, not yet committed (Yehor commits).
+  **Two items logged per explicit instruction, not acted on:** (1) the
+  stale-cache read from the prior pass is the third distinct
+  manifestation of the mount-staleness class this project has hit (H1,
+  H6, H8) — not a new heuristic, H1 already covers it, but worth a
+  standing note that this class recurs across different session/tool
+  combinations, not just one. (2) the ~57-file CRLF/whitespace-only diff
+  in Patchward (first flagged above) has now shown up as noise in
+  multiple sessions this week; a `.gitattributes` with `* text=auto` would
+  end it permanently — low priority, not blocking, Yehor's call on timing.
+- [2026-07-24, Session 024 continued — bounded token-trace check, new
+  BACKLOG 19] Before committing the amended paragraph, Yehor asked for a
+  read-only trace of whether `_build_remote_url()`'s token-bearing URL is
+  ever persisted to disk or reaches a log/error path. Confirmed: never via
+  `git remote add`/`set-url` (grepped clean); `git push` uses it inline
+  (argv-only, ephemeral, CLI path — clean). But `webhook.py`'s `git clone`
+  call does let git's own default behavior write the token into the
+  cloned repo's `.git/config`, un-scrubbed, for the full run duration
+  (cleaned up only in the outer `finally: shutil.rmtree`) — a real,
+  hosted-path-only exposure window with no CLI-path equivalent. Also
+  confirmed zero scrubbing across four log/echo sites fed by unfiltered
+  git subprocess stdout/stderr (`webhook.py:283`, `cli.py:544-548`,
+  `pipeline.py:266-274`, `webhook.py:311`) — `scrub()` is never called on
+  any git-related path. Logged as new BACKLOG item 19, a code fix, not a
+  copy question. Judgment call, stated plainly rather than deferred: the
+  security.html sentence itself doesn't overclaim (it describes the
+  mechanism, not a safety guarantee this contradicts), so it did not need
+  further editing and the commit was not held on this finding — the gap
+  goes to BACKLOG 19 for Yehor to prioritize, not into more disclosure
+  text on a page that already discloses the credential-isolation
+  boundary's real scope.

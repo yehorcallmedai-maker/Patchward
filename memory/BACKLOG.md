@@ -802,16 +802,47 @@ three unreferenced files are worth keeping at all, versus deleting
 outright — correcting content was the safe, reversible move; deletion is
 a call only he should make.
 
-## 12. Regulatory flags — CRA / GDPR classification
+## 12. Regulatory flags — CRA / GDPR classification — BRIEFING PACKET READY, AWAITING COUNSEL ENGAGEMENT (2026-07-24, Session 024)
 **WSJF: low urgency now, high cost if skipped before Phase 10.** Get
 Patchward's CRA Annex III classification and a lightweight GDPR
 DPIA/TTL policy on `installations_db.py` confirmed by someone qualified
-before any paid Marketplace listing — not after. See BUILD_PLAN §5 for the
-confirmed mechanics (24h/72h/14-day CRA reporting timeline, binding
-2026-09-11) and what's explicitly NOT yet confirmed (Patchward's own
-classification).
+before any paid Marketplace listing — not after.
+
+**Session 024 update:** this item is NOT closed — it is still genuinely
+blocked on finding and engaging qualified counsel, same as every prior
+session. What changed: the previously indivisible "needs counsel" label has
+been split into the actual legal determination (not agent-startable) and
+the technical briefing packet counsel needs before they can even answer
+(fully agent-startable, and the real reason this sat still for 3+ weeks —
+nobody had written it). That packet now exists:
+`memory/BACKLOG12_counsel_briefing_packet_2026-07-24.md`. It contains,
+strictly separated from any legal conclusion: (1) a field-by-field data
+inventory of `installations_db.py` read directly from source, including a
+confirmed retention gap (see new item 18 below); (2) a product-facts sheet
+covering all three real deployment models (CLI/PyPI, Docker sandbox,
+Fly-hosted webhook), the commercial model, jurisdiction, and third-party
+processors; (3) a corrected data-flow fact, verified against
+`fix_gen.py`/`credential_proxy.py` at HEAD `3e63587` — the "only the fix
+prompt reaches the Anthropic API, scrubbed of credentials" description is
+not accurate as stated (real repository source code is sent via the
+Fix-Gen subagent's `read_file` tool results, and `CredentialProxy.scrub()`
+is only ever called on CLI/log output in `cli.py`, never on anything
+actually sent to Anthropic); (4) a precise question list for counsel
+(manufacturer status, open-source exemption vs. a paid Marketplace
+listing, Annex III class, controller/processor role, DPIA need, DPA need);
+(5) a DRAFT (unpublished, not reviewed) pre-distribution disclaimer; (6) a
+freshly re-verified CRA timeline — the previously-cited 24h/72h/14-day
+reporting deadline, binding 2026-09-11, was confirmed again via the
+European Commission's own CRA pages (not just re-asserted from
+`BUILD_PLAN`'s original secondary-sourced figure), with one nuance the
+prior memory didn't carry explicitly: 2026-09-11 is specifically the
+Article 14 *reporting*-obligation date, not the CRA's full
+conformity-assessment applicability date (2027-12-11) — Yehor's launch
+window (2026-09-08 to 2026-09-11) lands directly on the earlier,
+reporting-obligation date regardless of how the harder Annex III
+classification question resolves.
 **Owner:** Yehor (external legal input required — not something the agent
-can resolve).
+can resolve; the packet above is the agent-startable part, now done).
 
 ---
 
@@ -1044,3 +1075,98 @@ from `docker_sandbox.py`, `docker/entrypoint.sh`'s fallback, and the
 transitional assertions in `tests/test_docker_sandbox.py`.
 **Owner:** Yehor (or agent, once explicitly asked — this is a scoped,
 well-understood follow-up, just not something to bundle into item 16).
+
+---
+
+## 18. `marketplace_purchases` has no retention/TTL policy — no deletion path exists at all (NEW, surfaced 2026-07-24, Session 024, during BACKLOG 12 triage)
+Confirmed by reading `src/patchward/installations_db.py` and every call site
+of it in `webhook.py`: `installations` and `installation_repos` rows are
+genuinely deleted via `delete_installation()` when GitHub sends
+`installation`/`action=deleted` (App uninstalled) — that path is real and
+correct. `marketplace_purchases` has no equivalent path anywhere — a
+`cancelled` status only ever updates the `status` column via
+`upsert_marketplace_purchase()`; the row itself is never removed by any
+code in this repository, even after the same account's `installations` row
+is deleted on uninstall. No TTL, no scheduled purge job, no
+data-minimization policy exists for this table. Practical effect: a GitHub
+account login plus its full historical plan/billing-cycle metadata is
+retained indefinitely.
+**Why this matters regardless of how BACKLOG 12's legal questions resolve:**
+"don't keep customer billing metadata forever with no policy" is good
+practice independent of the CRA/GDPR classification outcome, and this is
+also the exact factual gap that a GDPR DPIA (see item 12) would need
+covered.
+**Proposed fix, agent-startable whenever Yehor wants it scheduled:** add a
+retention policy — e.g. delete or anonymize a `marketplace_purchases` row N
+days after `status = "cancelled"` with no subsequent re-purchase for that
+`account_login` — plus a test asserting the purge actually happens. Small,
+isolated to `installations_db.py` and a new scheduled task in `webhook.py`
+or a standalone cron script; does not touch the CRA/GDPR legal questions
+themselves.
+**Owner:** unassigned — not urgent, but cheap to fix once prioritized.
+
+## 19. `GITHUB_TOKEN` reaches disk (webhook path) and unfiltered logs (both paths) — NEW, surfaced 2026-07-24, Session 024, during security.html copy verification
+**Origin:** Yehor asked for a bounded, read-only trace of `_build_remote_url()`'s
+output before publishing a security.html sentence describing it. The sentence
+itself checked out; the trace surfaced a real, separate code gap.
+
+**Confirmed, not persisted via `git remote add`/`set-url` anywhere in the
+codebase** (grepped `worktree_common.py`, `pr_publisher.py`,
+`github_app_auth.py`, `webhook.py` — zero matches). The token-bearing URL is
+used two ways:
+1. `worktree_common.py:295` — `["git", "push", "--force", remote_url, ...]`,
+   passed inline as an argv element to `git push`. Ephemeral, argv-only,
+   never touches `.git/config`. This is the CLI/worktree path (Yehor's own
+   machine) — clean.
+2. `webhook.py:278` — `["git", "clone", "--depth", "1", clone_url, ...]`.
+   Git's own default behavior writes the clone source URL — including the
+   embedded `x-access-token:<token>@github.com` — into the freshly cloned
+   repo's `.git/config` as the `origin` remote. Nothing in `webhook.py`
+   rewrites or strips it afterward. `tmp_dir` (and therefore that
+   `.git/config`) is only removed in the outer `finally: shutil.rmtree(...)`
+   — i.e. the token sits in plaintext on the Fly.io host's disk for the
+   full duration of the scan → fix-gen → verify → publish run, not just the
+   clone step. Cleanup does run on both success and exception paths
+   (Python `finally`), so this is not a permanent leak, but it is a real,
+   avoidable exposure window on the hosted path specifically — the CLI path
+   has no equivalent because the user already owns the local clone.
+
+**Also confirmed: no scrubbing on two log paths, either.** `scrub()` is
+never called on git subprocess output.
+- `webhook.py:283` — `logger.error("[webhook] clone failed for %s: %s",
+  repo_full_name, proc.stderr)` logs raw `git clone` stderr verbatim. Git is
+  well known to echo the full remote URL (credentials included) in several
+  of its own failure modes (e.g. `fatal: unable to access '<url>'`,
+  auth/connection errors) — whether it does so for this exact failure case
+  was not empirically tested this session, but the code applies zero
+  filtering regardless of what git prints.
+- `worktree_common.py:294-308`'s `git_push_branch()` raises
+  `RuntimeError(f"...stdout: {proc.stdout!r}\nstderr: {proc.stderr!r}")` on
+  a failed push — same unfiltered pattern. This propagates to two more
+  unfiltered sinks: `cli.py:544-548`'s `except Exception as pr_exc:
+  typer.echo(f"  [PR] Publish failed: {pr_exc}", err=True)` (CLI stderr),
+  and, on the webhook path, `pipeline.py:266-274`'s `err_str = str(exc) or
+  repr(exc)` → `result["error"] = err_str` + `logger.error("[pipeline]
+  error for %s: %s", repo_label, err_str)`, and that same `result` dict is
+  then logged again in full by `webhook.py:311`'s
+  `logger.info("[webhook] scan finished for %s: %s", repo_full_name,
+  result)`. **The run log itself (NDJSON, `run_log.py`) is not affected** —
+  `pipeline.py`'s `run_log.append_batch_result()` only ever writes the
+  `finding_status` string, never `err_str`, so this is specifically an
+  application-log (Fly.io `logger.*`) and CLI-stderr exposure, not a
+  run-log-artifact exposure.
+
+**Not acted on, deliberately — this is a code fix, not a copy question.**
+The security.html sentence this trace was checking ("embedded in the HTTPS
+remote URL passed as a command argument") remains accurate as written and
+was not changed further; it describes the delivery mechanism honestly
+without claiming a safety property this finding would contradict. This item
+tracks the actual gap for a future code fix: (a) strip credentials from the
+webhook path's cloned `.git/config` immediately after clone (or avoid
+embedding the token in the clone URL at all, e.g. via a short-lived
+credential helper), and (b) route git subprocess `stdout`/`stderr` through
+`CredentialProxy.scrub()` (or an equivalent token-aware redaction) before
+any of the four log/echo sites above.
+**Owner:** unassigned — not urgent enough to block tonight's site-copy
+commit (the sentence is accurate), but real, and on the hosted path, not
+just theoretical. Yehor's call on priority/timing.
