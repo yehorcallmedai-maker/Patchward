@@ -269,6 +269,18 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   item 20. The site is genuinely correct and live at the plain URLs,
   confirmed via a real browser read. Retained here only as a pointer, not
   as an open item — nothing pending.
+- The ~57-file "CRLF-only diff" flagged repeatedly this session (`git
+  diff --stat -w` → 0, so real content was never at risk) is **only
+  visible through `device_bash`'s view of the mount** — Yehor's own `git
+  status --short` on his real machine, run at final close, shows zero
+  modified files, only the two already-known untracked items. This is
+  consistent with the sandbox's own git config (likely `core.autocrlf`)
+  normalizing line endings differently than Yehor's local git, not a real
+  discrepancy in the repository. **No `.gitattributes` fix is needed on
+  Yehor's side** — that suggestion applied to what looked like a repo-wide
+  issue but was actually confined to how this sandbox's `device_bash`
+  reads the mount. Downgrade this from "low-priority cleanup for Yehor" to
+  "harmless artifact of the sandbox's own tooling, no action for anyone."
 - BACKLOG 12: CRA/GDPR — briefing packet delivered AND pushed 2026-07-24
   (Session 024, `main` @ `36b0a65`), corrected twice against re-verified
   source before pushing; still genuinely open pending Yehor finding and
