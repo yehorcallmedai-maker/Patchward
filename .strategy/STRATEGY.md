@@ -1253,3 +1253,103 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   because Yehor kept pushing for one more independent check rather than
   accepting the previous one. That pattern — not any single fact — is the
   actual result worth carrying forward.
+
+## Session log (continued) — Session 025
+
+- [2026-07-27, Session 025 open] Verified fresh via methods independent of the
+  resume prompt: `git ls-remote origin main` + a fresh `git clone` both →
+  `1132815` ("docs: clarify CRLF noise was sandbox-only"), matching the resume
+  prompt; all 7 memory files on the D:\ mount byte-identical (CRLF-normalized)
+  to that clone (H8 clean); Fly `/healthz` → `{"status":"ok"}`. 46 days to the
+  2026-09-11 CRA reporting date. Yehor chose BACKLOG 19 (GITHUB_TOKEN exposure)
+  as the session goal.
+
+- [2026-07-27, Session 025 — the BACKLOG 19 arc] Opened trace-and-scope-only
+  (no code) per Yehor's §2 discipline. Trace empirically FALSIFIED
+  `clone_url_with_token`'s docstring ("never written to disk"): a real
+  `git clone` with a token URL persists it to `.git/config`, and the webhook
+  mounts that `.git/` read-only into the adversarial scanner boundary — so the
+  live token sat inside the exact surface ADR-013 treats as hostile, every run.
+  Also found the unmitigated `str(TimeoutExpired)` argv leak both prior traces
+  missed. Base fix committed+pushed by Yehor as `37b3bfd`, verified byte-
+  identical via fresh clone. Adversarial pass #1 (independent Opus, patch-only,
+  guardrailed to the real tree) found FIVE credential-path issues incl. the
+  sharpest catch of the whole project: a cross-thread race where `scrub_text()`
+  iterating the live registry could raise `Set changed size` from inside the
+  `except` and surface the UNSCRUBBED exception — a scrubber leaking the token
+  it exists to redact, reachable only under the hosted threading model,
+  unfindable by reading. Follow-up fixed #3/#4/#5 + F1/F2 from pass #2;
+  pass #3 returned 0 leaks / 0 blockers + 3 robustness spin-offs (22/23/24).
+  Follow-up committed+pushed as `dee84e1` (verified byte-identical), deployed
+  to Fly image `sha256:ac54d18a…` (machine `7841600fd5e7e8`), `/healthz` green
+  confirmed by WebFetch AND a real Chrome browser read. BACKLOG 19 reconciled
+  to CLOSED in `memory/BACKLOG.md` (origin trace preserved). Full detail there.
+
+- [2026-07-27, Session 025 — corrections banked before they reached the record]
+  This session the two-pass / verify-against-the-tree discipline caught several
+  would-be-false claims before commit, worth logging honestly (both signs):
+  (1) Yehor's review two turns into the arc described a GIT_ASKPASS conversion
+  that did not exist in the tree — a hallucinated diff; caught by re-cloning
+  and grepping `37b3bfd` (zero askpass refs). (2) A "must-fix before commit"
+  blocker (token in argv via the inline helper) was empirically refuted by a
+  live `/proc/<pid>/cmdline` poll — the helper string carries the env-var NAME,
+  not the value. (3) Yehor asserted "the re-attack came back clean" for a pass
+  that had NOT been launched; caught and the real pass run, which then returned
+  0 leaks but 3 robustness items — not "clean." (4) A drafted CLOSED block and
+  commit message claimed the concurrency test "proves" #4; corrected to
+  review-verified-not-test-proven (the race is not deterministically testable —
+  a broken deterministic test I wrote myself was caught and removed rather than
+  shipped). (5) The self-authored F1 docstring over-claimed a "structural"
+  guarantee that `exc.cmd` did not deliver; the re-attack refuted it, and it
+  was made true (scrub `exc.cmd`) rather than softened.
+
+## Calibration record (continued) — Session 025
+
+- [2026-07-27, Session 025] The dominant calibration signal this session was
+  not a single confirmed/drifted count but a PATTERN: across a multi-pass
+  adversarial security remediation, every independent check (fresh clone,
+  `/proc` poll, real-browser `/healthz`, mutation-testing the tests, and three
+  adversarial passes) caught something the prior, more-confident layer had
+  asserted — including catches against the reviewing agent's own output and
+  against the user's own framing. Zero false claims reached the committed tree
+  or the closed memory. The concurrency-scrub leak (found only by an adversary
+  reasoning about the threading model) is logged as a §8.4 win of the highest
+  order. Score on the specific closing gate: state (c) reached and confirmed by
+  two independent methods; 1.00 on the checkable close claims (hash via
+  ls-remote+clone, image digest via `fly image show`, `/healthz` via
+  WebFetch+browser). #4's fix correctly recorded as construction-verified, not
+  test-proven — an honest UNVERIFIED-by-test label rather than an overclaim.
+
+## Heuristics (earned) — Session 025 additions
+
+- H11 [PROMOTED 2026-07-27, evidence: BACKLOG 19's review arc — one pass on
+  one boundary spawned items 21, 22, 23, AND 24, each a distinct adjacent
+  boundary the pass surfaced but that was out of the reviewed diff's scope]:
+  an adversarial pass on one security boundary reliably ENUMERATES adjacent
+  boundaries. Budget every security close to spawn its successors — do not
+  treat any one fix as the last, and when opening the next item (e.g. 22),
+  expect its own pass to spawn 25/26 the same way. This is the gate doing its
+  job (finding what's there before an attacker does), not scope creep. The
+  practical rule: scope-and-log the spin-offs as their own units (keep each
+  diff clean and separately reviewable), never fold them into the diff under
+  review, and never let a "clean of leaks" pass be recorded as "clean" when it
+  spawned robustness items — record both.
+
+- H12 [PROMOTED 2026-07-27, evidence: the `scrub_text` concurrency race + the
+  `str(TimeoutExpired)` argv leak, both real, both invisible to single-threaded
+  reading and to line-by-line review, both found only by an adversarial pass]:
+  for credential-boundary code on an internet-facing surface, an independent
+  adversarial pass (different model instance, patch-only, guardrailed to verify
+  every claim against the real tree) earns its cost and MUST run until a pass
+  finds zero LEAKS/BLOCKERS — the empty-of-leaks result, not a reviewer's
+  confidence, is the ship signal. Corollary from this session: some correct
+  fixes are not deterministically unit-testable (a GIL-atomic snapshot closing
+  a timing race); record those as construction-verified/review-verified, and do
+  NOT ship a fabricated "discriminating" test to paper over the gap.
+
+- H10-candidate [applied 2026-07-27, still a candidate]: applied proactively
+  this session — the closing `/healthz` gate was corroborated with a real Chrome
+  browser read rather than trusting WebFetch alone. No new WebFetch failure
+  occurred (it agreed with the browser this time), so no second failure to
+  promote on; the discipline of corroborating an exact-content web claim on
+  this project held and cost little.

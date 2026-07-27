@@ -1171,6 +1171,79 @@ any of the four log/echo sites above.
 commit (the sentence is accurate), but real, and on the hosted path, not
 just theoretical. Yehor's call on priority/timing.
 
+---
+
+**STATUS: CLOSED 2026-07-27 (Session 025).** Fix committed, pushed, deployed,
+and `/healthz`-confirmed on the new image. Verification chain, each step
+independent of the last:
+- Base fix committed+pushed as `37b3bfd`; five-finding follow-up committed+
+  pushed as `dee84e1`. Both verified via fresh `git ls-remote` + a fresh
+  `git clone` byte-compared against the authored trees (zero drift).
+- Deployed to Fly image `sha256:ac54d18a802e4db6d35d6574ad1188b90797630ca3cceb39c507490b06d6a8e3`
+  on machine `7841600fd5e7e8`, built from the `dee84e1` working tree
+  (`fly image show` digest matches the build manifest).
+- `/healthz` → `200 {"status":"ok"}` confirmed by TWO methods: WebFetch AND
+  a real Chrome browser read (Claude-in-Chrome), per this project's own
+  H10-candidate (WebFetch alone is not trusted for a closing gate). The
+  deploy emitted a transient "not listening on 0.0.0.0:8000" warning during
+  the rolling restart; the green `/healthz` on the new image proves the app
+  bound and the warning did not persist.
+
+**What the remediation actually covered.** This trace named two surfaces
+(.git/config persistence + unfiltered logs). Adversarial review of the fix
+surfaced three more, all closed:
+- (this trace) `.git/config` token persistence on the webhook clone →
+  closed: tokenless clone URL + inline env-reading credential helper; the
+  token never enters the URL, so git has nothing to persist.
+- (this trace) unfiltered git stderr/exception text at four log/echo sites →
+  closed: `scrub_text()` (pattern + register-at-mint layers) at all four.
+- (review #1) token in argv / `/proc/<pid>/cmdline` → closed: credential
+  travels via the subprocess environment + helper, never argv; empirically
+  confirmed token-free via a live `/proc` poll on Linux and a real
+  authenticated clone on Windows.
+- (review #1) `subprocess.TimeoutExpired` captures stdout/stderr AND argv on
+  the exception object → closed: handler scrubs `exc.stdout`/`exc.stderr`/
+  `exc.cmd` at source before re-raising argv-free.
+- (review #1) cross-thread race: `scrub_text()` iterating the live
+  `_RUNTIME_CREDENTIALS` set while another thread registered could raise
+  `Set changed size during iteration` FROM INSIDE the `except` block,
+  surfacing the original UNSCRUBBED exception via `__context__` — a scrubber
+  that leaks the token it exists to redact, reachable only under the hosted
+  webhook's real threading model. Closed: `for val in tuple(...)` GIL-atomic
+  snapshot. **This fix is review-verified / correct-by-construction, NOT
+  test-proven** — the race is not deterministically reproducible through the
+  public API, so the accompanying `test_scrub_text_concurrent_smoke` is an
+  honestly-labeled non-discriminating smoke test, not a red-on-revert proof.
+- (review #1) token regex leading `\b` defeated by a preceding word char
+  (e.g. percent-encoded `%3Aghs_...`) → closed: de-anchored; negative-control
+  test confirms the `{16,255}` floor still protects legitimate prose.
+- (review #3) `#3` the credential-helper reset was inside `if token:`, so the
+  tokenless webhook push borrowed ambient host credentials and issued
+  `erase` against them → closed: `credential_reset_args()` on every path,
+  fails loud with no credential.
+
+**Adversarial review: three passes, NOT "clean."** Pass 1 found the five
+findings above (plus items later split to 21/22/23). Pass 2 found two
+non-blocking issues in the fix itself (F1: `exc.cmd` unscrubbed + an
+over-claiming docstring; F2: a non-discriminating test) — both fixed. Pass 3
+(re-attack on the final tree) returned **0 leaks / 0 blockers**, and found
+**three robustness items** — logged as BACKLOG 22 (Gate 3 unsandboxed
+credential inheritance — the single largest pre-launch exposure, see item 22),
+23 (remaining unscrubbed error sinks), 24 (unbounded `_RUNTIME_CREDENTIALS`
+growth). The empty-of-leaks final pass was the convergence signal to ship;
+the three robustness spin-offs are honestly recorded, not swept into "clean."
+
+**Suite at close:** 505 passed / 3 skipped / 15 deselected, coverage 90.62%,
+Python 3.14.4 (Yehor's machine); reproduced 503/2/15 in-sandbox.
+
+**Spun off, still open:** 21 (dead `github_token` param — webhook may not push
+a PR at all), 22 (Gate 3 credential inheritance — NEXT security priority), 23,
+24. BACKLOG 19's credential-DELIVERY boundary is closed; item 22 is the
+credential-INHERITANCE boundary the same review found adjacent to it.
+
+**Owner:** CLOSED — no further action on item 19 itself.
+
+
 ## 20. `callmed-landing`'s corrected copy appeared not to be live at the plain URLs — CLOSED same day, FALSE ALARM (surfaced 2026-07-24 close, resolved 2026-07-24, same session)
 **WSJF: highest — this is the actual state of the item this whole session
 treated as its top priority.** Session 024's close-out claimed the
@@ -1234,3 +1307,160 @@ under/over-reporting on a long page) — not chased further since the
 underlying question (is the site correct?) is now answered definitively.
 See new heuristic candidate in `.strategy/STRATEGY.md`.
 **Owner:** none — closed. No action needed from Yehor.
+
+## 21. Suspected hosted-path breakage: `run_repo_pipeline` ignores its `github_token` param — the webhook likely cannot push a PR at all (NEW, surfaced 2026-07-27, Session 025, during BACKLOG 19 trace)
+
+**Status:** OPEN — logged only, deliberately NOT bundled into BACKLOG 19's
+security diff per the §2 keep-security-diffs-clean rule. Yehor's own
+framing at logging time: "this isn't cosmetic dead code... potentially a
+'the hosted product doesn't work' bug that deserves its own focused
+investigation, not a rider on a security commit."
+
+**The trace (all source-verified at HEAD `1132815`, Session 025):**
+- `run_repo_pipeline` accepts `github_token: str` (`pipeline.py:68`) and
+  never references it anywhere in its body — the only other occurrences
+  are `run_batch`'s own signature (`pipeline.py:325`) and its
+  pass-through (`pipeline.py:342`). Dead parameter.
+- The PR publisher instead builds its credential from a fresh
+  `CredentialProxy().load()` (`pipeline.py:233`) — i.e. the process
+  environment's `GITHUB_TOKEN`.
+- The Fly deployment sets no `GITHUB_TOKEN` secret: `fly.toml`'s own
+  secrets documentation lists `GITHUB_APP_ID`, `GITHUB_WEBHOOK_SECRET`,
+  `ANTHROPIC_API_KEY`, `GITHUB_APP_PRIVATE_KEY_B64` only.
+- Therefore on the webhook path: the freshly minted Installation Access
+  Token passed at `webhook.py` (`github_token=token`) goes nowhere, the
+  publisher's push credential is empty, and the push fails auth. The
+  webhook can clone and scan, but almost certainly cannot open a PR —
+  the hosted product's core output step.
+
+**What is verified vs. not:** the code path is unambiguous
+(source-verified, three files). NOT verified end-to-end — no live
+webhook run has been observed failing at push. First step of the
+investigation: reproduce (or refute) with a real webhook-triggered run
+against a test installation, then decide the fix — most plausibly
+threading the minted token through `run_repo_pipeline` into
+`PRPublisher`/`git_push_branch(token=...)`, whose BACKLOG 19 signature
+(`token` parameter, ephemeral credential helper) was designed to accept
+exactly this handoff without reintroducing any URL/argv embedding.
+
+**Note:** BACKLOG 19's fix deliberately preserved this behavior
+(empty token on the webhook path → same auth failure as before, now via
+a tokenless URL) so the two changes stay separately reviewable and
+separately revertable.
+
+**Owner:** agent-startable (investigation + fix proposal); the live
+webhook-run verification needs Yehor's test installation.
+
+## 22. Gate 3 (verifier test-suite gate) runs the cloned adversarial repo's OWN test suite unsandboxed, with inherited credentials in the environment (NEW, surfaced 2026-07-27, Session 025, BACKLOG 19 adversarial pass)
+
+**Status:** OPEN — pre-launch security item. Pre-existing (not introduced by
+BACKLOG 19); the adversarial re-attack on `37b3bfd` surfaced it. Distinct
+unit from BACKLOG 19 — deliberately NOT folded into the 19 follow-up, to
+keep that a clean credential-boundary diff (same §2 discipline that split
+21).
+
+**The finding (source-verified at `37b3bfd`, and demonstrated by the
+adversarial reviewer):**
+- `Verifier._gate_3_test_suite` (`verifier.py:745,778`) runs the cloned
+  repo's own tests via `subprocess.run(["python","-m","pytest",...])` and
+  `["npx","jest",...]` with **no `docker_sandbox`** (grep: zero references
+  in `verifier.py`, while scanners DO route through the sandbox via
+  `pipeline.py`→`run_all_scanners`) and **no `env=`** override — so the
+  child inherits the full parent `os.environ`.
+- The cloned repo is adversarial by design (ADR-013: prompt-injection in
+  scope; a `conftest.py` / jest config is arbitrary code execution). So
+  adversarial repo code runs as the same uid as the pipeline.
+- Two exposures for that code: (a) `PATCHWARD_GIT_TOKEN` is in the
+  concurrent git subprocess's environment — reviewer demonstrated a
+  same-uid poller recovering it from `/proc/<pid>/environ` while the real
+  clone ran (owner-only 0400, so strictly better than the pre-BACKLOG-19
+  world-readable `/proc/cmdline` + `.git/config`, but not closed); (b)
+  `CredentialProxy.load()` leaves `ANTHROPIC_API_KEY`/Langfuse keys in
+  `os.environ`, which Gate 3's child inherits directly — reviewer
+  demonstrated the adversarial child printing `INHERITED_ANTHROPIC=sk-ant-…`.
+  On the CLI path the long-lived `GITHUB_TOKEN` PAT is inherited the same
+  way, no race needed.
+
+**Why this is NOT a reason to change BACKLOG 19's credential mechanism:**
+a token in the subprocess *environment* is inherent to ANY env-based
+credential passing (GIT_ASKPASS included — it reads the token from an env
+var too). The mechanism is sound. The fix is at the Gate 3 boundary, not
+the credential layer: run Gate 3 inside the same `docker_sandbox` the
+scanners use (repo mounted read-only, credentials stripped via
+`get_container_env()`), OR at minimum spawn Gate 3 with an explicit
+`env=` scrubbed of all `_CREDENTIAL_KEYS` and never overlap it in time
+with a token-bearing git process. This is a design change with its own
+before/after behavior check (does sandboxing Gate 3 break legitimate test
+suites that need network / build tools?), so it is NOT a same-session
+side edit.
+
+**Blast-radius note:** this is the single largest pre-launch exposure
+found so far — it is the actual path by which adversarial repo content can
+reach a live credential, and it is worse than (and different from) the
+`.git/config` path BACKLOG 19's commit message named. Prioritize before
+Marketplace listing.
+
+**Owner:** agent-startable scoping; the sandbox-vs-env design decision and
+the "what does Gate 3 legitimately need" question are Yehor's.
+
+## 23. Unscrubbed error sinks, two of which persist to disk/DB (NEW, surfaced 2026-07-27, Session 025, BACKLOG 19 adversarial pass)
+
+**Status:** OPEN — low urgency, defense-in-depth. No token-bearing string
+is demonstrated reaching any of these post-BACKLOG-19 (the demonstrated
+leak surfaces were closed in `37b3bfd` + its follow-up); this tracks the
+remaining sinks of the same class the commit scrubbed, for completeness.
+
+**Sites (verified present at `37b3bfd`):** `pipeline.py:198-203/226/259/305`,
+`webhook.py:341` (logs the whole `result` dict), `cli.py:556-561`, and the
+two that PERSIST rather than just log: `cli.py:577`
+`finish_run(...error=str(exc))` → SQLite runs DB (`db.py`), and
+`cli.py:676` `run_log.append_batch_result(r)` → `runs/session_*.json` on
+disk (`run_log.py:90`). Proposed fix: route these through `scrub_text`
+before they hit a log stream or disk, same as the four sites BACKLOG 19
+already covers. Cheap, mechanical, but spread across unrelated functions —
+its own commit, not a rider.
+
+**Owner:** agent-startable.
+
+## 24. `_RUNTIME_CREDENTIALS` grows unbounded on the long-lived webhook → O(n) `scrub_text` (NEW, surfaced 2026-07-27, Session 025, BACKLOG 19 third adversarial re-attack)
+
+**Status:** OPEN — robustness, non-blocking, NOT a credential leak. Deliberately
+NOT folded into the BACKLOG 19 security commit (that diff had just passed a
+clean-of-leaks adversarial pass; adding a design change to it would expand the
+re-review surface for a non-security concern — same discipline that split 21/22/23).
+
+**The finding (demonstrated on the patched tree by the re-attack):**
+`credential_proxy._RUNTIME_CREDENTIALS` is a process-global, append-only set.
+`webhook.py:282` registers one minted installation token per run and never
+evicts; `cli.py:653` adds a second registration site. `scrub_text`
+(`credential_proxy.py:127`) iterates the whole snapshot doing `val in text`
+per call. Measured: registry 1k→41µs, 50k→4.4ms, 200k→21ms per scrub call
+(linear). A long-lived webhook process therefore (a) grows memory without
+bound and (b) slows every log/exception scrub over time. Mild self-DoS, no
+exposure. The docstring at `credential_proxy.py:99-101` calls the registry
+"append-only … harmless" — true for correctness/staleness, silent on this
+growth cost; update it as part of the fix.
+
+**Proposed approach (design decision, hence not a rider):** installation
+tokens expire server-side in ~1 hour, so an unbounded lifetime registry is
+overkill. Options: (a) bound the set with an LRU/size cap; (b) store
+(value, expiry) and evict expired entries on registration; (c) scope the
+registry per-run rather than process-global (the webhook already has a
+natural per-delivery boundary in `trigger_scan_for_installation`). (c) is the
+cleanest — it also shrinks the scrub cost to O(tokens-in-this-run). Needs a
+before/after check that scrubbing still covers every path within a run.
+
+**Owner:** agent-startable once the eviction/scoping policy is chosen.
+
+### Notes from the same re-attack (logged, no action — not reachable in this deployment)
+- `exc.cmd` scrub in `git_push_branch` (`worktree_common.py:365`) skips non-str
+  (bytes) elements. Theoretical only: `git_push_branch` always builds an
+  all-`str` cmd, so a real `TimeoutExpired.cmd` is fully scrubbed. No fix
+  unless a future caller passes bytes argv.
+- The inline credential helper (`git_credentials.py:52`) is host-unconditional
+  (`echo password=$PATCHWARD_GIT_TOKEN` for whatever host git asks about). All
+  three adversarial-repo vectors to reach a non-github host were checked and
+  found NOT reachable: clone is not `--recurse-submodules` (`webhook.py:298`),
+  git-lfs is absent from `docker/webhook.Dockerfile`, and clone does not
+  transfer/execute repo hooks. Revisit only if any of those change (e.g. lfs
+  added to the image, or submodule fetching enabled).
