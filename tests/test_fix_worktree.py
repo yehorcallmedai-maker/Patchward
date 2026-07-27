@@ -481,7 +481,11 @@ class TestGitPushBranch:
     """Unit tests for git_push_branch() — no real network calls."""
 
     def test_git_push_branch_correct_argv(self, tmp_path: Path) -> None:
-        """git push is called with [git, push, remote_url, branch:branch] (AC-P5-02)."""
+        """git push argv (AC-P5-02). BACKLOG 19 follow-up (finding #3):
+        the no-token path now prepends `-c credential.helper=` to clear
+        all configured helpers (so git cannot consult or `erase` an
+        ambient host credential store); the push verb + remote + refspec
+        are unchanged."""
         from unittest.mock import patch, MagicMock
         remote = "https://oauth2:token@github.com/acme/repo.git"
         branch = "patchward/fix-abc123"
@@ -491,9 +495,10 @@ class TestGitPushBranch:
             git_push_branch(tmp_path, remote, branch)
         mock_run.assert_called_once()
         args = mock_run.call_args[0][0]
-        assert args == ["git", "push", "--force", remote, f"{branch}:{branch}"], (
-            f"Unexpected argv: {args}"
-        )
+        assert args == [
+            "git", "-c", "credential.helper=",
+            "push", "--force", remote, f"{branch}:{branch}"
+        ], f"Unexpected argv: {args}"
         assert mock_run.call_args.kwargs["cwd"] == tmp_path
 
     def test_git_push_branch_raises_on_nonzero(self, tmp_path: Path) -> None:

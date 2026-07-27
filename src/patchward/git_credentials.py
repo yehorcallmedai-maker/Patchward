@@ -66,9 +66,31 @@ def tokenless_clone_url(owner: str, repo: str) -> str:
     return f"https://github.com/{owner}/{repo}.git"
 
 
+def credential_reset_args() -> list[str]:
+    """
+    Git argv fragment that clears ALL configured credential helpers for
+    this one invocation, WITHOUT installing ours.
+
+    Use on any git command that must run with no credential at all — so
+    that no system/global/repo helper, OS credential store, or ``.netrc``
+    is consulted, and (critically) so git never issues a ``get``/``store``
+    /``erase`` against a host credential store on that command. A command
+    run with only this and no credential fails LOUD (``could not read
+    Username``) rather than silently borrowing an ambient credential.
+
+    BACKLOG 19 follow-up (adversarial finding #3): the reset must apply
+    even when there is no token to supply — previously it was bundled
+    with the helper install and therefore skipped on the tokenless path
+    (every hosted webhook push, since Fly sets no GITHUB_TOKEN), leaving
+    the ambient host credential configuration in play.
+    """
+    return ["-c", "credential.helper="]
+
+
 def credential_helper_args() -> list[str]:
     """
-    Git argv fragment enabling the ephemeral helper.
+    Git argv fragment: clear all configured helpers, then install the
+    inline env-reading helper.
 
     Must be placed between ``git`` and the subcommand, e.g.::
 
@@ -81,7 +103,7 @@ def credential_helper_args() -> list[str]:
     here is persisted into the resulting clone's ``.git/config``.
     """
     return [
-        "-c", "credential.helper=",
+        *credential_reset_args(),
         "-c", f"credential.helper={_HELPER}",
     ]
 

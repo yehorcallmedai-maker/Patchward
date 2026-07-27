@@ -26,7 +26,11 @@ import subprocess
 from pathlib import Path
 
 from patchward.credential_proxy import scrub_text
-from patchward.git_credentials import credential_env, credential_helper_args
+from patchward.git_credentials import (
+    credential_env,
+    credential_helper_args,
+    credential_reset_args,
+)
 
 
 class GitVersionError(RuntimeError):
@@ -304,11 +308,21 @@ def git_push_branch(
 
     # KS-TRACE: AC-P5-02, AC-P5-03, C-P5-02, C-P5-03, C-P5-04, ADR-018, BACKLOG 19
     """
+    # BACKLOG 19 follow-up (finding #3): the credential-helper RESET must
+    # apply on every path, including the tokenless one. When token is
+    # falsy (e.g. the hosted webhook push — Fly sets no GITHUB_TOKEN, so
+    # _push_token() returns ""), we still clear all configured helpers so
+    # git cannot consult or `erase` an ambient host credential store; the
+    # push then fails loud (no credential) instead of silently borrowing
+    # whatever the host has configured. Only when a token is present do we
+    # additionally install our env-reading helper.
     cmd: list[str] = ["git"]
     env: dict[str, str] | None = None
     if token:
         cmd += credential_helper_args()
         env = credential_env(token)
+    else:
+        cmd += credential_reset_args()
     cmd += ["push", "--force", remote_url, f"{branch_name}:{branch_name}"]
     try:
         proc = subprocess.run(
@@ -321,10 +335,36 @@ def git_push_branch(
             errors="replace",
             env=env,
         )
-    except subprocess.TimeoutExpired:
-        # Never re-raise or str() the original: its message embeds the
-        # full argv (Python-side formatting, below git's own credential
-        # redaction). `from None` so tracebacks don't carry it either.
+    except subprocess.TimeoutExpired as exc:
+        # BACKLOG 19 follow-up — neutralize every token-bearing attribute
+        # AT SOURCE, not just behind a severed cause chain. `subprocess.run`
+        # attaches captured output to exc.stdout/exc.stderr, and exc.cmd
+        # holds the argv. We re-raise a fresh argv-free RuntimeError
+        # `from None` (which suppresses __context__ from stdlib-rendered
+        # tracebacks), but the original TimeoutExpired stays reachable as
+        # __context__ for code that walks it explicitly.
+        #
+        # Verified today none of these carry the token: git delivers the
+        # credential to the HELPER's stdout (consumed internally, not
+        # echoed to the push subprocess's own stdout/stderr), and exc.cmd
+        # is tokenless (the token travels via env/helper, never the
+        # URL/argv). We scrub all three anyway so the guarantee is
+        # structural — it holds even if a future GIT_TRACE mode writes the
+        # credential to stderr, OR a reintroduced token-bearing remote URL
+        # puts it back in argv (this scrubs exc.cmd for exactly that case).
+        #
+        # Residual, honestly noted (NOT claimed closed): the token is still
+        # a live local (`token`, `env`) in this frame, so a `capture_locals`
+        # traceback formatter (e.g. Sentry, TracebackException(capture_locals
+        # =True)) could recover it. Standard `str()`/`format_exception` do
+        # not. Closing that would require dropping the frame locals, out of
+        # scope here; see BACKLOG note.
+        exc.stdout = scrub_text(exc.stdout) if isinstance(exc.stdout, str) else None
+        exc.stderr = scrub_text(exc.stderr) if isinstance(exc.stderr, str) else None
+        if isinstance(exc.cmd, (list, tuple)):
+            exc.cmd = [scrub_text(a) if isinstance(a, str) else a for a in exc.cmd]
+        elif isinstance(exc.cmd, str):
+            exc.cmd = scrub_text(exc.cmd)
         raise RuntimeError(
             f"git push timed out after {timeout}s for branch {branch_name!r}"
         ) from None

@@ -12,7 +12,11 @@ import typer
 from patchward.config import load_config, validate_github_config
 from patchward.pipeline import run_batch
 from patchward.pr_publisher import PRPublisher
-from patchward.credential_proxy import CredentialProxy, scrub_text
+from patchward.credential_proxy import (
+    CredentialProxy,
+    register_runtime_credential,
+    scrub_text,
+)
 from patchward.db import (
     open_db,
     get_or_create_repo,
@@ -639,6 +643,14 @@ def batch(
     github_token: str = proxy._creds.get(  # noqa: SLF001
         "GITHUB_TOKEN", ""
     )
+    # BACKLOG 19 follow-up (finding #5): register the CLI-path push
+    # credential by value so scrub_text() redacts it exactly, not only
+    # via the GitHub-prefix pattern. A user-supplied GITHUB_TOKEN may be
+    # a classic 40-hex PAT or other non-prefixed form the pattern layer
+    # cannot match; register-at-mint closes that gap on this path the
+    # same way webhook.py does for the minted installation token.
+    if github_token:
+        register_runtime_credential(github_token)
     if not github_token:
         typer.echo(
             "[patchward] ERROR: GITHUB_TOKEN is required for "

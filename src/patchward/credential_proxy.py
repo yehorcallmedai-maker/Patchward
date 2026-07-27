@@ -73,9 +73,19 @@ _RUNTIME_CREDENTIALS: set[str] = set()
 # tokens are 36+ chars after the prefix; 16 floor avoids redacting short
 # prose lookalikes while still catching truncated real tokens), and
 # fine-grained PATs (github_pat_, base62 + underscores, much longer).
+#
+# BACKLOG 19 follow-up (finding #5): NO leading \b. A leading word
+# boundary is defeated by any preceding word character — e.g. a
+# percent-encoded URL (`...%3Aghs_<tok>`) or a `x-access-token:ghs_...`
+# run-on — which would leave the token unredacted. The prefixes are
+# distinctive enough that anchoring on the literal `gh?_`/`github_pat_`
+# is sufficient; we intentionally match mid-"word". We do NOT add a
+# classic 40-hex-only PAT pattern: 40-hex is indistinguishable from a
+# git object SHA and would redact every SHA in error output — those
+# tokens are covered by the register-at-mint / value layer instead.
 _GITHUB_TOKEN_RE = re.compile(
-    r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{16,255}\b"
-    r"|\bgithub_pat_[A-Za-z0-9_]{22,255}\b"
+    r"(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{16,255}"
+    r"|github_pat_[A-Za-z0-9_]{22,255}"
 )
 
 
@@ -106,7 +116,15 @@ def scrub_text(text: str) -> str:
     """
     if not text:
         return text
-    for val in _RUNTIME_CREDENTIALS:
+    # BACKLOG 19 follow-up (finding #4): snapshot the registry before
+    # iterating. register_runtime_credential() mutates the set from the
+    # event-loop thread while scrub_text() runs on a worker thread
+    # (asyncio.to_thread(publisher.publish) -> git_push_branch ->
+    # scrub_text). Iterating the live set raced "Set changed size during
+    # iteration", which raised from inside an `except` block and thereby
+    # surfaced the ORIGINAL, unscrubbed exception via __context__. tuple()
+    # is an atomic snapshot under CPython's GIL.
+    for val in tuple(_RUNTIME_CREDENTIALS):
         if val in text:
             text = text.replace(val, "[REDACTED]")
     return _GITHUB_TOKEN_RE.sub("[REDACTED-GITHUB-TOKEN]", text)

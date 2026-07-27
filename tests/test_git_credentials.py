@@ -37,8 +37,19 @@ FAKE_TOKEN = "ghs_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"
 
 @pytest.fixture(autouse=True)
 def _isolate_runtime_credentials():
-    """Snapshot/restore the module-global runtime-credential registry."""
+    """Give each scrub unit test a CLEAN module-global registry, then
+    restore whatever was there.
+
+    _RUNTIME_CREDENTIALS is process-global and append-only by design
+    (correct product behavior — the webhook accumulates minted tokens,
+    the CLI registers its GITHUB_TOKEN). That means earlier tests which
+    drive the webhook/CLI paths (e.g. test_async_pipeline's CLI-batch
+    tests) leave real fixture token values in it. These scrub unit tests
+    assert exact input/output equality, so they must start from empty —
+    snapshot-and-restore would inherit that pollution. Clear on entry,
+    restore the pre-existing set on exit so we don't perturb other files."""
     saved = set(credential_proxy._RUNTIME_CREDENTIALS)  # noqa: SLF001
+    credential_proxy._RUNTIME_CREDENTIALS.clear()  # noqa: SLF001
     yield
     credential_proxy._RUNTIME_CREDENTIALS.clear()  # noqa: SLF001
     credential_proxy._RUNTIME_CREDENTIALS.update(saved)  # noqa: SLF001
@@ -189,6 +200,58 @@ class TestScrubText:
     def test_empty_text_passthrough(self) -> None:
         assert scrub_text("") == ""
 
+    def test_token_redacted_when_preceded_by_word_char(self) -> None:
+        """BACKLOG 19 follow-up (finding #5): a leading \\b is defeated by
+        a preceding word char, so a percent-encoded or run-on token
+        escaped redaction. It must now be caught mid-'word'."""
+        tok = "ghs_" + "Z9y8X7w6V5u4T3s2R1q0P1o2N3m4L5k6"
+        for carrier in (
+            f"https%3A%2F%2Fx-access-token%3A{tok}%40github.com",  # URL-encoded
+            f"x-access-token:{tok}@github.com",                     # run-on colon
+            f"prefixword{tok}",                                     # bare word char
+        ):
+            out = scrub_text(carrier)
+            assert tok not in out, carrier
+            assert "[REDACTED-GITHUB-TOKEN]" in out, carrier
+
+    def test_scrub_text_concurrent_smoke(self) -> None:
+        """BACKLOG 19 follow-up (finding #4), SMOKE test only — read the
+        honest caveat before trusting it. The fix is `for val in
+        tuple(_RUNTIME_CREDENTIALS)`: scrub_text iterates a SNAPSHOT so a
+        concurrent register cannot raise 'Set changed size during
+        iteration'. That guarantee is correct BY CONSTRUCTION (verifiable
+        by reading credential_proxy.scrub_text), but it is NOT
+        deterministically unit-testable: the race window is timing- and
+        interpreter-dependent, and the re-attack confirmed this test stays
+        green even against the UNFIXED source, so it is NOT discriminating.
+        It is retained only as a low-value belt that would catch a gross
+        regression (e.g. scrub_text starting to raise outright). The real
+        assurance is the tuple() snapshot, reviewed line-by-line."""
+        import threading
+
+        errors: list[BaseException] = []
+
+        def register_loop() -> None:
+            # Bounded: enough churn to race the iterator, not so much it
+            # starves the GIL or bloats the (fixture-restored) set.
+            for i in range(2000):
+                register_runtime_credential(f"secret-value-{i:06d}")
+
+        def scrub_loop() -> None:
+            try:
+                for _ in range(2000):
+                    scrub_text("some log line with git push failed exit 1")
+            except BaseException as exc:  # noqa: BLE001
+                errors.append(exc)
+
+        threads = [threading.Thread(target=register_loop) for _ in range(2)]
+        threads += [threading.Thread(target=scrub_loop) for _ in range(4)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        assert not errors, f"scrub_text raced: {errors!r}"
+
 
 # ---------------------------------------------------------------------------
 # git_push_branch — token via helper, argv-free; TimeoutExpired sealed
@@ -212,9 +275,15 @@ class TestGitPushBranchCredentialPath:
         env = mock_run.call_args.kwargs["env"]
         assert env[GIT_TOKEN_ENV] == FAKE_TOKEN  # carried by env only
 
-    def test_no_token_preserves_plain_argv(self, tmp_path: Path) -> None:
-        """token=None keeps the pre-BACKLOG-19 argv shape and env=None —
-        callers without a credential are behaviorally unchanged."""
+    def test_no_token_still_resets_helpers_and_installs_none(
+        self, tmp_path: Path
+    ) -> None:
+        """BACKLOG 19 follow-up (finding #3): the tokenless path (every
+        hosted webhook push) must STILL clear all configured credential
+        helpers — so git cannot consult or `erase` an ambient host
+        credential store — but must NOT install our env-reading helper
+        and must pass env=None. Previously the reset was skipped entirely
+        when token was falsy, leaving the host's ambient config in play."""
         mock_ok = MagicMock()
         mock_ok.returncode = 0
         remote = "https://github.com/acme/repo.git"
@@ -223,7 +292,13 @@ class TestGitPushBranchCredentialPath:
         ) as mock_run:
             git_push_branch(tmp_path, remote, "fix-b")
         argv = mock_run.call_args[0][0]
-        assert argv == ["git", "push", "--force", remote, "fix-b:fix-b"]
+        assert argv == [
+            "git", "-c", "credential.helper=",
+            "push", "--force", remote, "fix-b:fix-b",
+        ]
+        # reset present exactly once; our inline helper NOT installed
+        assert argv.count("credential.helper=") == 1
+        assert not any(a.startswith("credential.helper=!") for a in argv)
         assert mock_run.call_args.kwargs["env"] is None
 
     def test_timeout_message_never_embeds_argv_or_token(self, tmp_path: Path) -> None:
@@ -252,6 +327,42 @@ class TestGitPushBranchCredentialPath:
         # and the chained-exception context must not resurrect the argv
         assert excinfo.value.__cause__ is None
         assert excinfo.value.__suppress_context__ is True
+
+    def test_timeout_neutralizes_captured_streams_at_source(
+        self, tmp_path: Path
+    ) -> None:
+        """BACKLOG 19 follow-up: even if a TimeoutExpired arrives carrying a
+        token in its captured .stdout/.stderr, the handler must neutralize
+        those stream ATTRIBUTES on the object before re-raising — not merely
+        sever the cause chain. Asserts against the stream attributes on the
+        surviving __context__, not just str(exception)."""
+        te = subprocess.TimeoutExpired(
+            cmd=["git", "push", "--force",
+                 f"https://x-access-token:{FAKE_TOKEN}@github.com/a/r.git", "b:b"],
+            timeout=60,
+            output=f"pushing... {FAKE_TOKEN} leaked to stdout",
+            stderr=f"fatal: unable to access '{FAKE_TOKEN}'",
+        )
+        with patch(
+            "patchward.worktree_common.subprocess.run", side_effect=te
+        ):
+            with pytest.raises(RuntimeError) as excinfo:
+                git_push_branch(
+                    tmp_path, "https://github.com/acme/repo.git", "fix-b",
+                    token=FAKE_TOKEN,
+                )
+        ctx = excinfo.value.__context__
+        assert isinstance(ctx, subprocess.TimeoutExpired)
+        # the captured streams on the original exception are neutralized
+        assert FAKE_TOKEN not in (ctx.stdout or "")
+        assert FAKE_TOKEN not in (ctx.stderr or "")
+        assert "[REDACTED-GITHUB-TOKEN]" in (ctx.stdout or "")
+        # and exc.cmd (argv) is scrubbed too — so a REGRESSION that put a
+        # token-bearing URL back in argv cannot survive on __context__.cmd
+        # (re-attack finding F1). Assert against the reconstructed argv:
+        assert FAKE_TOKEN not in " ".join(str(a) for a in ctx.cmd)
+        # and nothing token-shaped survives on the re-raised exception str
+        assert FAKE_TOKEN not in str(excinfo.value)
 
     def test_failure_stderr_is_scrubbed(self, tmp_path: Path) -> None:
         """If git stderr ever carries a token (older git, verbose modes),
