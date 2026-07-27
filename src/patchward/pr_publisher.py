@@ -107,7 +107,7 @@ class PRPublisher:
         self._check_branch_protection(branch)
         # If we reach here, branch is unprotected (404) or
         # unknown/403 — proceed with push.
-        git_push_branch(push_from, remote_url, branch)
+        git_push_branch(push_from, remote_url, branch, token=self._push_token())
 
         pr_title = self._build_pr_title(fix_result, finding)
         pr_body = self._build_pr_body(fix_result, verifier_result, finding)
@@ -131,18 +131,33 @@ class PRPublisher:
 
     def _build_remote_url(self) -> str:
         """
-        Construct https://x-access-token:<token>@github.com/<owner>/<repo>.git
+        Construct the TOKENLESS https://github.com/<owner>/<repo>.git
+        remote URL.
 
-        Token is fetched fresh from CredentialProxy on each call.
-        The returned URL must NEVER be logged or stored on self.
+        BACKLOG 19: the token is no longer embedded in this URL. It is
+        passed to git via the ephemeral credential helper in
+        git_push_branch() (see _push_token()), so it can never be
+        persisted to .git/config, appear in subprocess argv, or be
+        embedded in exception text (e.g. str(TimeoutExpired)).
 
-        # KS-TRACE: ADR-018, C-P5-03
+        # KS-TRACE: ADR-018, C-P5-03, BACKLOG 19
         """
-        creds = self._proxy._creds  # noqa: SLF001 — intentional internal access
-        token = creds.get("GITHUB_TOKEN", "")
         owner = self._cfg.github.owner
         repo = self._cfg.github.repo
-        return f"https://x-access-token:{token.strip()}@github.com/{owner}/{repo}.git"
+        return f"https://github.com/{owner}/{repo}.git"
+
+    def _push_token(self) -> str:
+        """
+        Fetch the push credential fresh from CredentialProxy.
+
+        Returned value must NEVER be logged or stored on self; it goes
+        only into git_push_branch(token=...), which supplies it to git
+        via the ephemeral helper.
+
+        # KS-TRACE: C-P5-03, BACKLOG 19
+        """
+        creds = self._proxy._creds  # noqa: SLF001 — intentional internal access
+        return creds.get("GITHUB_TOKEN", "").strip()
 
     def _github_headers(self) -> dict:
         """

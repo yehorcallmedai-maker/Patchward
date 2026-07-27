@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 import anthropic
 import typer
 
-from patchward.credential_proxy import CredentialProxy
+from patchward.credential_proxy import CredentialProxy, scrub_text
 from patchward.fix_gen import FixGenSubagent
 from patchward.fix_worktree import fix_worktree_context
 from patchward.pr_publisher import PRPublisher
@@ -264,7 +264,11 @@ async def run_repo_pipeline(
                     )
 
                 except Exception as exc:  # noqa: BLE001
-                    err_str = str(exc) or repr(exc)
+                    # BACKLOG 19: scrub — generic exception text can carry
+                    # credential material (e.g. a subprocess error string),
+                    # and result["error"] is later logged verbatim by the
+                    # webhook's scan-finished log line.
+                    err_str = scrub_text(str(exc) or repr(exc))
                     finding_status = "error"
                     result["error"] = err_str
                     logger.error(
@@ -309,7 +313,8 @@ async def run_repo_pipeline(
             return result
 
         except Exception as exc:  # noqa: BLE001
-            err_str = str(exc) or repr(exc)
+            # BACKLOG 19: scrub, same rationale as the per-finding handler.
+            err_str = scrub_text(str(exc) or repr(exc))
             logger.error(
                 "[pipeline] unhandled error for %s: %s",
                 repo_label,

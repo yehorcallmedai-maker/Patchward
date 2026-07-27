@@ -12,7 +12,7 @@ import typer
 from patchward.config import load_config, validate_github_config
 from patchward.pipeline import run_batch
 from patchward.pr_publisher import PRPublisher
-from patchward.credential_proxy import CredentialProxy
+from patchward.credential_proxy import CredentialProxy, scrub_text
 from patchward.db import (
     open_db,
     get_or_create_repo,
@@ -542,9 +542,11 @@ def fix(
                                             err=True,
                                         )
                                 except Exception as pr_exc:
+                                    # BACKLOG 19: scrub — push failure
+                                    # text can carry credential material.
                                     typer.echo(
                                         f"  [PR] Publish failed: "
-                                        f"{pr_exc}",
+                                        f"{scrub_text(str(pr_exc))}",
                                         err=True,
                                     )
                             else:

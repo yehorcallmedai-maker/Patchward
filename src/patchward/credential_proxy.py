@@ -29,6 +29,7 @@ Usage::
 from __future__ import annotations
 
 import os
+import re
 
 # ---------------------------------------------------------------------------
 # Single source of truth for credential key names.
@@ -41,6 +42,74 @@ _CREDENTIAL_KEYS: frozenset[str] = frozenset({
     "LANGFUSE_SECRET_KEY",
     "GITHUB_TOKEN",   # KS-TRACE: AC-P5-01, C-P5-03 | Phase 5 push credential
 })
+
+
+# ---------------------------------------------------------------------------
+# BACKLOG 19 — log/exception redaction for runtime-minted credentials.
+#
+# CredentialProxy.scrub() is value-based over env-loaded credentials, which
+# structurally cannot cover the webhook path's GitHub App Installation
+# Access Tokens: those are minted per-run at runtime (never present in
+# os.environ — the Fly deployment has no GITHUB_TOKEN secret at all), so
+# there is no loaded value to match. Two additional layers close that gap:
+#
+#   1. register_runtime_credential(): the mint site registers the exact
+#      token value the moment it exists, so scrub_text() can redact it
+#      by value.
+#   2. A pattern pass for GitHub-shaped tokens (ghp_/gho_/ghu_/ghs_/ghr_
+#      prefixes and fine-grained github_pat_), catching token-shaped
+#      strings nobody registered, from any source (defense in depth).
+#
+# scrub_text() is the shared scrubber for text bound for logs, CLI
+# output, or exception messages. It deliberately does NOT replace
+# CredentialProxy.scrub(), whose semantics (env-credential values in
+# scanner finding messages) are unchanged.
+# KS-TRACE: C-P5-03 | test: test_git_credentials.py
+# ---------------------------------------------------------------------------
+
+_RUNTIME_CREDENTIALS: set[str] = set()
+
+# GitHub token formats: classic/app prefixes with a base62 tail (real
+# tokens are 36+ chars after the prefix; 16 floor avoids redacting short
+# prose lookalikes while still catching truncated real tokens), and
+# fine-grained PATs (github_pat_, base62 + underscores, much longer).
+_GITHUB_TOKEN_RE = re.compile(
+    r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{16,255}\b"
+    r"|\bgithub_pat_[A-Za-z0-9_]{22,255}\b"
+)
+
+
+def register_runtime_credential(value: str) -> None:
+    """
+    Register a runtime-minted secret (e.g. a GitHub App Installation
+    Access Token) so scrub_text() redacts it by exact value.
+
+    Call at the mint site, the moment the secret exists. Empty /
+    whitespace-only values are ignored. The registry is process-global
+    and append-only for the process lifetime; tokens expire server-side
+    (installation tokens: ~1 hour), so entries going stale is harmless —
+    they only ever cause redaction, never exposure.
+    """
+    v = (value or "").strip()
+    if v:
+        _RUNTIME_CREDENTIALS.add(v)
+
+
+def scrub_text(text: str) -> str:
+    """
+    Redact credentials from text bound for logs, CLI output, or
+    exception messages.
+
+    Layer 1: exact-value replacement of every registered runtime
+    credential. Layer 2: pattern-based redaction of GitHub-shaped
+    tokens. Returns the input unchanged when there is nothing to redact.
+    """
+    if not text:
+        return text
+    for val in _RUNTIME_CREDENTIALS:
+        if val in text:
+            text = text.replace(val, "[REDACTED]")
+    return _GITHUB_TOKEN_RE.sub("[REDACTED-GITHUB-TOKEN]", text)
 
 
 class CredentialLeakError(RuntimeError):

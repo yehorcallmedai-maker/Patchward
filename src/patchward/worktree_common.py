@@ -25,6 +25,9 @@ import re
 import subprocess
 from pathlib import Path
 
+from patchward.credential_proxy import scrub_text
+from patchward.git_credentials import credential_env, credential_helper_args
+
 
 class GitVersionError(RuntimeError):
     """
@@ -268,41 +271,66 @@ def git_push_branch(
     remote_url: str,
     branch_name: str,
     timeout: int = 60,
+    token: str | None = None,
 ) -> None:
     """
     Push branch_name to remote_url from repo_path.
 
-    Raises subprocess.CalledProcessError on non-zero exit so callers can
-    catch and log pr_status: push_failed without crashing the process.
+    BACKLOG 19: remote_url must be TOKENLESS. When ``token`` is
+    provided, it is supplied to git via the ephemeral in-memory
+    credential helper (git_credentials.py) — it never appears in the
+    URL, the argv, or on disk. When ``token`` is falsy the push runs
+    uncredentialed (and fails auth against private remotes), preserving
+    prior behavior for callers with no credential.
 
-    The remote_url must have credentials embedded by the caller —
-    this function is credential-agnostic and never constructs URLs.
-    The URL is passed directly to git push and is never logged here.
+    Failure and timeout messages are scrubbed (scrub_text) and never
+    embed the subprocess argv: ``str(subprocess.TimeoutExpired)``
+    formats the full command into its message — with a token-bearing
+    URL that was a verbatim credential leak into every generic
+    ``except Exception`` logger downstream (the vector BACKLOG 19's
+    scoping pass found unmitigated on both paths).
 
     Args:
         repo_path:   Root of the git repository (not the worktree).
-        remote_url:  Full HTTPS remote URL, credentials embedded by caller.
+        remote_url:  Tokenless HTTPS remote URL (no userinfo component).
         branch_name: Local branch name; pushed as branch_name:branch_name.
         timeout:     Wall-clock seconds before the push is killed (default 60).
+        token:       Optional credential for the ephemeral helper.
 
     Raises:
-        subprocess.CalledProcessError: git push returned non-zero.
-        subprocess.TimeoutExpired:     push exceeded timeout.
+        RuntimeError: git push returned non-zero, or timed out. The
+            message never contains the argv and is scrubbed of
+            credential values / token-shaped strings.
 
-    # KS-TRACE: AC-P5-02, AC-P5-03, C-P5-02, C-P5-04, ADR-018
+    # KS-TRACE: AC-P5-02, AC-P5-03, C-P5-02, C-P5-03, C-P5-04, ADR-018, BACKLOG 19
     """
-    proc = subprocess.run(
-        ["git", "push", "--force", remote_url, f"{branch_name}:{branch_name}"],
-        cwd=repo_path,
-        check=False,
-        capture_output=True,
-        timeout=timeout,
-        encoding="utf-8",
-        errors="replace",
-    )
+    cmd: list[str] = ["git"]
+    env: dict[str, str] | None = None
+    if token:
+        cmd += credential_helper_args()
+        env = credential_env(token)
+    cmd += ["push", "--force", remote_url, f"{branch_name}:{branch_name}"]
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=repo_path,
+            check=False,
+            capture_output=True,
+            timeout=timeout,
+            encoding="utf-8",
+            errors="replace",
+            env=env,
+        )
+    except subprocess.TimeoutExpired:
+        # Never re-raise or str() the original: its message embeds the
+        # full argv (Python-side formatting, below git's own credential
+        # redaction). `from None` so tracebacks don't carry it either.
+        raise RuntimeError(
+            f"git push timed out after {timeout}s for branch {branch_name!r}"
+        ) from None
     if proc.returncode != 0:
         raise RuntimeError(
             f"git push failed (exit {proc.returncode})\n"
-            f"stdout: {proc.stdout!r}\n"
-            f"stderr: {proc.stderr!r}"
+            f"stdout: {scrub_text(proc.stdout)!r}\n"
+            f"stderr: {scrub_text(proc.stderr)!r}"
         )

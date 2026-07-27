@@ -50,10 +50,18 @@ from patchward.config import (
     PatchwardConfig,
     VerifierConfig,
 )
-from patchward.credential_proxy import CredentialProxy
+from patchward.credential_proxy import (
+    CredentialProxy,
+    register_runtime_credential,
+    scrub_text,
+)
+from patchward.git_credentials import (
+    credential_env,
+    credential_helper_args,
+    tokenless_clone_url,
+)
 from patchward.github_app_auth import (
     GitHubAppAuthError,
-    clone_url_with_token,
     exchange_for_installation_token,
 )
 from patchward.pipeline import run_repo_pipeline
@@ -269,18 +277,39 @@ async def trigger_scan_for_installation(installation_id: int, repo_full_name: st
     except GitHubAppAuthError:
         logger.exception("[webhook] failed to mint installation token for %s", repo_full_name)
         return
+    # BACKLOG 19: register the minted token the moment it exists, so any
+    # log/exception text that somehow captures it is redacted by value.
+    register_runtime_credential(token)
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="patchward-webhook-"))
     try:
-        clone_url = clone_url_with_token(owner, repo, token)
+        # BACKLOG 19: tokenless URL + ephemeral credential helper. The
+        # token reaches git only via the subprocess environment — it is
+        # never in the URL (so `git clone` cannot persist it into the
+        # clone's .git/config, where the scanners and triage/fix-gen
+        # subagents could read it) and never in argv (so exception text
+        # that embeds argv cannot leak it).
+        clone_url = tokenless_clone_url(owner, repo)
         proc = await asyncio.to_thread(
             subprocess.run,
-            ["git", "clone", "--depth", "1", clone_url, str(tmp_dir / repo)],
+            [
+                "git",
+                *credential_helper_args(),
+                "clone", "--depth", "1", clone_url, str(tmp_dir / repo),
+            ],
             capture_output=True,
             text=True,
+            env=credential_env(token),
         )
         if proc.returncode != 0:
-            logger.error("[webhook] clone failed for %s: %s", repo_full_name, proc.stderr)
+            # scrub_text: modern git redacts credentials from its own
+            # stderr, but that is version-dependent and not guaranteed
+            # (e.g. verbose/trace modes) — scrub regardless.
+            logger.error(
+                "[webhook] clone failed for %s: %s",
+                repo_full_name,
+                scrub_text(proc.stderr),
+            )
             return
 
         proxy = CredentialProxy().load()

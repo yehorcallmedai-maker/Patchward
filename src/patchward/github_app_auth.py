@@ -101,9 +101,11 @@ async def exchange_for_installation_token(
         app_id: GitHub App ID. Falls back to GITHUB_APP_ID env var.
 
     Returns:
-        (token, expires_at_iso) tuple. ``token`` is used as
-        ``x-access-token:<token>@github.com`` in a git clone URL, or as
-        a Bearer token against the REST API for that installation only.
+        (token, expires_at_iso) tuple. ``token`` is supplied to git via
+        the ephemeral credential helper in ``git_credentials.py``
+        (BACKLOG 19 — never embedded in a clone/push URL, which git
+        would persist into ``.git/config``), or used as a Bearer token
+        against the REST API for that installation only.
 
     Raises:
         GitHubAppAuthError: on any non-2xx response from GitHub.
@@ -128,15 +130,10 @@ async def exchange_for_installation_token(
     return body["token"], body["expires_at"]
 
 
-def clone_url_with_token(owner: str, repo: str, token: str) -> str:
-    """
-    Build a git-clonable HTTPS URL that authenticates with an
-    Installation Access Token instead of a stored credential.
-
-    The token is embedded in the URL only for the duration of the
-    clone/push subprocess call — it is never written to disk (git
-    does not persist the remote URL's credential portion in
-    .git/config for a one-shot clone using this form) and expires
-    within an hour regardless.
-    """
-    return f"https://x-access-token:{token}@github.com/{owner}/{repo}.git"
+# clone_url_with_token() was REMOVED in BACKLOG 19 (2026-07-27). Its
+# docstring claimed git does not persist the URL's credential portion
+# into .git/config — that claim was false (empirically falsified: a
+# one-shot `git clone` writes the full userinfo-bearing URL verbatim to
+# remote.origin.url, where it sat readable inside the adversarial scan
+# boundary for the whole run). Use git_credentials.tokenless_clone_url()
+# plus credential_helper_args()/credential_env() instead.

@@ -11,7 +11,6 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 from patchward.github_app_auth import (
     GitHubAppAuthError,
-    clone_url_with_token,
     exchange_for_installation_token,
     generate_app_jwt,
 )
@@ -108,6 +107,7 @@ async def test_exchange_for_installation_token_failure_raises(
             await exchange_for_installation_token(999999)
 
 
-def test_clone_url_with_token_embeds_token() -> None:
-    url = clone_url_with_token("acme", "backend", "ghs_abc123")
-    assert url == "https://x-access-token:ghs_abc123@github.com/acme/backend.git"
+# test_clone_url_with_token_embeds_token was removed with
+# clone_url_with_token itself (BACKLOG 19): embedding the token in the
+# clone URL is exactly the behavior that persisted it into .git/config.
+# The replacement mechanism is covered in test_git_credentials.py.
