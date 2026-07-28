@@ -1167,7 +1167,7 @@ embedding the token in the clone URL at all, e.g. via a short-lived
 credential helper), and (b) route git subprocess `stdout`/`stderr` through
 `CredentialProxy.scrub()` (or an equivalent token-aware redaction) before
 any of the four log/echo sites above.
-**Owner:** unassigned — not urgent enough to block tonight's site-copy
+**Owner:** unassigned — **SUPERSEDED, see `STATUS: CLOSED` below ↓** — not urgent enough to block tonight's site-copy
 commit (the sentence is accurate), but real, and on the hosted path, not
 just theoretical. Yehor's call on priority/timing.
 
