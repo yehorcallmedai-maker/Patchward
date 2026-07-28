@@ -46,6 +46,28 @@ Method note, recorded rather than quietly dropped: the probe's `echo "exit=$?"`
 reported the exit status of the trailing `tail`, not of pytest. It was not
 treated as evidence.
 
+### Second addendum — item 27's fix attempt failed
+
+Yehor re-set the Fly secret. The rolling update succeeded, `/healthz` returned
+green, and the new value reached the process (`length: 110`) — but the call
+still returned `401 invalid x-api-key` under a new request id
+(`req_011CdUqmbwJFzk9S97aPP1eP`). Contamination was refuted (raw length ==
+stripped length, no whitespace, quotes or non-ASCII), and a prefix sweep across
+ten credential families returned all False **including `sk-ant-`**. The secret
+holds a well-formed credential from some other system.
+
+Identification was **deliberately stopped** — each further probe leaks more
+shape about a live credential while yielding less, and identifying it belongs
+to Yehor's records. Recorded as a boundary held on purpose, not an unfinished
+check.
+
+Two consequences, kept separate: item 27 stays OPEN and its fix is still a
+Yehor action; and whatever that credential is, it has been exposed on the Gate 3
+inheritance path and should be rotated at its source regardless. New **item 28**
+splits out the code half — `webhook.py:318` validates by falsiness only and has
+now passed two different broken secrets in one evening; a one-line
+`startswith("sk-ant-")` rejects both at startup.
+
 ## Session judgment
 
 **L3 · Artifacts (verified to exist).**
@@ -163,10 +185,16 @@ the running container, not inferred. THREE independent defects sit on the
 hosted PR-publish path, each alone sufficient to prevent a PR. Treat them as
 ONE investigation unit under BACKLOG 21 — fixing any one ships nothing:
 
-  27 (FIRST — it fires earliest, and it is CONFIRMED Tier 0, not suspected):
-     ANTHROPIC_API_KEY in the Fly deployment is NINE CHARACTERS and is rejected
-     by Anthropic's own API — a live models.list() from inside the container
-     returned 401 invalid x-api-key (req_011CdUpKqhwSQoJufxCitjcZ).
+  27 (FIRST — it fires earliest, CONFIRMED Tier 0, and ONE FIX ATTEMPT HAS
+     ALREADY FAILED): the ANTHROPIC_API_KEY secret does not contain an Anthropic
+     key. Two values were rejected on 2026-07-28 — a 9-char stub
+     (req_011CdUpKqhwSQoJufxCitjcZ) and, after Yehor re-set the secret, a
+     110-char well-formed credential from a DIFFERENT service
+     (req_011CdUqmbwJFzk9S97aPP1eP). Delivery is not the problem; the value
+     reached the process both times. A prefix sweep across ten credential
+     families returned all False including sk-ant-. Whatever that second
+     credential is, it also needs ROTATING AT ITS SOURCE — it sat exposed on
+     the Gate 3 inheritance path. See also item 28 (the startup guard).
      webhook.py:318 guards on falsiness only, so the malformed secret passes
      startup and Fix-Gen fails on its FIRST request — before verify, before
      Gate 3. The two defects below have therefore never even been reached in

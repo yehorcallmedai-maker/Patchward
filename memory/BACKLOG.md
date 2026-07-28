@@ -1632,7 +1632,7 @@ execution-host decision, not just a code change.
 
 **Owner:** Directing-Engineer decision (scope + host), then agent-startable.
 
-## 27. Hosted `ANTHROPIC_API_KEY` is 9 characters — cannot be a valid key; Fix-Gen 401s before Gate 3 is ever reached (NEW, surfaced 2026-07-28, Session 026 close, live container read)
+## 27. Hosted `ANTHROPIC_API_KEY` is not an Anthropic key — Fix-Gen 401s before Gate 3 is ever reached (surfaced 2026-07-28, Session 026 close, live container read; TWO values rejected the same evening — a 9-char stub, then a 110-char credential from a different service)
 
 **Status:** OPEN — **CONFIRMED Tier 0**, functional launch blocker, UPSTREAM of
 both of item 21's defects. Belongs to the same investigation unit as 21.
@@ -1666,10 +1666,95 @@ authentication. Fix-Gen never produces a fix → verify is never reached → Gat
 never runs → no PR. It fires BEFORE the pytest defect, which means the hosted
 path has been non-functional at an even earlier stage than item 21 supposed.
 
-**Fix:** re-set the Fly secret with the real key
-(`flyctl secrets set ANTHROPIC_API_KEY=…` — Yehor only, never the agent), then
-re-verify. Consider hardening `webhook.py:318`'s guard to validate shape/length
-rather than mere truthiness, so a malformed secret fails loudly at startup
-instead of silently at first use.
+**FIX ATTEMPT 1 — DELIVERED BUT DID NOT FIX [2026-07-28, same evening]:** Yehor
+ran `flyctl secrets set ANTHROPIC_API_KEY=…`; the rolling update reported
+`Machine 7841600fd5e7e8 [app] update succeeded` and `/healthz` returned
+`{"status":"ok"}` on the restarted machine. The new value DID reach the process
+— an in-process read returned `length: 110`, so delivery is not the problem —
+but `models.list()` still returned `401 invalid x-api-key`, with a NEW request
+id (`req_011CdUqmbwJFzk9S97aPP1eP`, distinct from the original
+`req_011CdUpKqhwSQoJufxCitjcZ`), proving a fresh call rather than a cached
+result.
 
-**Owner:** Yehor for the secret; agent-startable for the guard hardening.
+**Diagnosis — the secret does not contain an Anthropic key at all.** Checks run
+in-process, printing only booleans and lengths, never any part of the value:
+- Contamination RULED OUT: raw length == stripped length (110), no leading or
+  trailing whitespace, no whitespace anywhere, no quote at either end, no
+  non-ASCII. The PowerShell-quoting hypothesis is refuted.
+- Prefix sweep against ten credential families — Anthropic (`sk-ant-`), OpenAI
+  project/legacy, GitHub PAT/classic/app, Langfuse public/secret, Fly, Slack —
+  **all False**, including `sk-ant-`. Every Anthropic key begins `sk-ant-api…`
+  or `sk-ant-admin…`; this does not.
+- Shape: 110 chars, 0 dots (not a JWT), not all-hex, not base64url-only,
+  contains both `-` and `_` plus at least one character outside that alphabet.
+
+**Conclusion:** a well-formed credential belonging to some OTHER system was
+placed in this secret. The 401 is not Anthropic rejecting an Anthropic key; it
+is Anthropic being handed a credential that was never theirs.
+
+**Identification deliberately NOT pursued further.** Each additional probe
+leaks more shape about a live credential while yielding less, and identifying
+it belongs to Yehor's own records, not to character-by-character narrowing from
+a session. Logged as a boundary held on purpose, not an unfinished check.
+
+**SECURITY CONSEQUENCE, independent of the Anthropic fix:** whatever that
+credential is, it has been sitting in a production environment variable and is
+therefore exposed on the Gate 3 inheritance path (items 22 and 25). It should
+be treated as compromised-by-exposure and ROTATED AT ITS SOURCE. This also
+widens item 25's blast radius to include a credential neither party can name —
+worth stating plainly rather than filing as an Anthropic-key problem.
+
+**Fix (still open, Yehor only):** `flyctl secrets set ANTHROPIC_API_KEY=…` with
+a genuine `sk-ant-api03-…` key, then re-run the `models.list()` check. Also
+worth tracing where the mystery value came from — if it was pasted from
+somewhere, the same paste may have reached another secret.
+
+**Owner:** Yehor — secret re-set, plus rotation of the unidentified credential.
+The startup guard is a separate unit: see item 28.
+
+## 28. `webhook.py:318` validates the Anthropic credential by FALSINESS ONLY — two different broken secrets passed startup in one evening (NEW, surfaced 2026-07-28, Session 026 close)
+
+**Status:** OPEN — agent-startable, one-line core fix, and it has **two live
+occurrences** rather than a hypothetical justification. Split from item 27
+deliberately: 27 is a secret to be re-set (Yehor), 28 is code to be changed
+(agent) — same §2 discipline that split 21 from 19.
+
+**The finding:** the guard reads, in substance,
+`if not os.environ.get("ANTHROPIC_API_KEY"): logger.error(...)`. It rejects
+exactly one value — the empty string — which is the one failure mode nobody
+actually hits. Everything else passes startup and fails later, at the first
+API call, inside a pipeline run, where the failure is attributed to Fix-Gen
+rather than to configuration.
+
+**The two occurrences, both observed on the live deployment on 2026-07-28:**
+1. A **9-character** value (item 27's original finding). Truthy → passed.
+2. A **110-character credential from a different service** (item 27's failed
+   fix attempt). Truthy → passed.
+
+Both would have been rejected at startup by a single predicate:
+
+```python
+if not key.startswith("sk-ant-"):
+    raise RuntimeError("ANTHROPIC_API_KEY is not an Anthropic API key")
+```
+
+**Why this matters beyond tidiness:** the hosted webhook has been deployed and
+"healthy" — `/healthz` green throughout — while holding an unusable credential.
+A liveness probe that does not touch the dependency it needs will report green
+over a broken configuration indefinitely. That is precisely how three
+independent defects sat undetected on this service (see item 21).
+
+**Proposed scope (keep it small and separately reviewable):**
+- Prefix/shape validation at startup for `ANTHROPIC_API_KEY`, failing loudly.
+- Consider the same treatment for the other required secrets
+  (`GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY_B64`, `GITHUB_WEBHOOK_SECRET`) —
+  each currently has the same falsiness-only or absent guard.
+- Do NOT log any part of a credential value in the failure message. The
+  message names the variable and the expected shape, never the observed value.
+- Open question for Yehor, not decided here: should `/healthz` also assert
+  credential validity (a startup-time probe result cached, not a per-request
+  API call), so a green health check means "can actually work" rather than
+  "process is running"? That is a design choice with cost, not an obvious yes.
+
+**Owner:** agent-startable for the guard; the `/healthz` semantics question is
+Yehor's.

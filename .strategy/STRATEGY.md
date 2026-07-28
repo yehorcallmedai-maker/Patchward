@@ -1503,6 +1503,41 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
       Windows build context — normalise line endings before comparing, or the
       check produces false alarms.
 
+- [2026-07-28, Session 026 close — item 27's fix attempt FAILED, and what that
+  taught] Yehor re-set the Fly secret; the rolling update succeeded and
+  `/healthz` came back green. The new value reached the process (in-process
+  read: `length: 110`), so delivery worked — but `models.list()` still returned
+  `401 invalid x-api-key` under a NEW request id
+  (`req_011CdUqmbwJFzk9S97aPP1eP` vs the original `req_011CdUpKqhwSQoJufxCitjcZ`),
+  proving a fresh call. Diagnosis, all from booleans and lengths, never any part
+  of the value: contamination REFUTED (raw length == stripped length, no
+  whitespace, no quotes, no non-ASCII — the PowerShell-quoting hypothesis was
+  wrong), and a prefix sweep across ten credential families returned all False
+  INCLUDING `sk-ant-`. The secret holds a well-formed credential belonging to
+  some other system. **Three lessons banked:**
+  (i) A hypothesis stated in advance ("PowerShell contamination") was refuted by
+      the very check designed to confirm it — and the refutation was reported as
+      a refutation, not quietly replaced by the next guess.
+  (ii) **A boundary was held on purpose.** Identification of the mystery
+      credential was STOPPED rather than pursued: each further probe leaks more
+      shape about a live secret while yielding less, and identifying it belongs
+      to Yehor's own records. Logged as a deliberate stop, not an unfinished
+      check — the distinction matters for a future reader deciding whether to
+      resume it.
+  (iii) The security consequence was separated from the functional one: whatever
+      that credential is, it sat in a production env var exposed on the Gate 3
+      inheritance path, so it needs rotating at its source independently of the
+      Anthropic fix. Item 25's blast radius now includes a credential neither
+      party can name.
+  Item 27's TITLE was also corrected — it still read "is 9 characters" after the
+  finding had evolved to "is not an Anthropic key". H13 applied to this
+  project's own freshly-written entry, within hours of promoting it.
+  New item 28 split out: `webhook.py:318` validates by falsiness only, and has
+  now waved through TWO different broken secrets in one evening. Two live
+  occurrences, one-line fix. Also recorded there: a `/healthz` that does not
+  touch the dependency it needs will report green over a broken configuration
+  indefinitely — which is how three defects sat undetected on this service.
+
 ## Calibration record (continued) — Session 026
 
 - [2026-07-28, Session 026] **Score: 8 CONFIRMED / 11 checkable claims = 0.73.**
@@ -1598,4 +1633,3 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   transformation produces it rather than reporting the mismatch itself as the
   finding. The second half is what turned an alarming result into a
   confirmation this session.
-
