@@ -25,6 +25,27 @@
 recollection), none in this session's own output. Zero false claims reached the
 committed tree or the closed memory.
 
+## Addendum — live-container verification (same day, post-close)
+
+Run by Yehor inside `fly ssh console -a patchward-webhook`, machine
+`7841600fd5e7e8`. Read-only; no values printed, nothing installed or mutated.
+
+| Claim | Result | Verdict |
+|---|---|---|
+| §5: pytest absent from the RUNNING container | `ModuleNotFoundError: No module named 'pytest'`; `python -m pytest` against a real `tests/` probe → `/usr/local/bin/python: No module named pytest` — matches none of the three SKIP triggers | **CONFIRMED, Tier 0** — residual closed |
+| jest branch dead on the hosted path | `node` ABSENT, `npx` ABSENT | CONFIRMED |
+| Item 25's four uncovered credentials | `GITHUB_APP_PRIVATE_KEY_B64` (2236), `GITHUB_APP_ID` (7), `GITHUB_WEBHOOK_SECRET` (36), `ANTHROPIC_API_KEY` — all SET in the inherited `os.environ` | **CONFIRMED live** |
+| BACKLOG 19's copy-not-mutate fix holds | `PATCHWARD_GIT_TOKEN` ABSENT from the parent environment | **CONFIRMED live** — first Tier-0 confirmation outside the source |
+| Item 21's root cause | `GITHUB_TOKEN` ABSENT | CONFIRMED |
+| Item 26: no Docker on the host | `command -v docker` → nothing | CONFIRMED live |
+| Running image built from `dee84e1` | 3/4 source hashes matched exactly; `verifier.py` resolved to HEAD's file with CRLF (`git show HEAD:… \| sed 's/$/\r/'` reproduces `e375a6d3…`) | **CONFIRMED** — replaces the UNVERIFIED image-digest row with a stronger byte-level proof |
+| **NEW: `ANTHROPIC_API_KEY` is 9 characters** | `webhook.py:318` guards on falsiness only, so it passes; live `models.list()` from inside the container → `401 invalid x-api-key` (`req_011CdUpKqhwSQoJufxCitjcZ`) | **NEW DEFECT → item 27, CONFIRMED Tier 0**, upstream of both of item 21's |
+| `/healthz` second method | Yehor's `curl.exe` from his own machine → `{"status":"ok"}`, agreeing with the sandbox's `WebFetch`; `fly status` → machine `started`, 1 check passing | **CONFIRMED, two methods** — final weak point retired |
+
+Method note, recorded rather than quietly dropped: the probe's `echo "exit=$?"`
+reported the exit status of the trailing `tail`, not of pytest. It was not
+treated as evidence.
+
 ## Session judgment
 
 **L3 · Artifacts (verified to exist).**
@@ -69,15 +90,23 @@ the map got correct, which is worth more than a fix built on the old map.
 
 ## Weakest points, stated plainly
 
-- **`/healthz` was confirmed by one method, not two.** The browser corroboration
-  (H10-candidate's own discipline) was interrupted before it ran. Recorded as
-  one-method rather than smoothed into a two-method claim.
-- **The running Fly image is UNVERIFIED.** Its digest was not re-checked this
-  session (no flyctl auth in the sandbox). The §5 finding proves the *recipe*,
-  not the *container*. This is the single named gap between "very likely" and
-  "confirmed" on the most consequential finding of the session.
-- **The test suite was not re-run.** Success criterion 3 (green at ≥90% coverage)
-  remains UNVERIFIED for the third consecutive session.
+- ~~`/healthz` confirmed by one method, not two~~ — **RETIRED.** Corroborated by
+  Yehor's own `curl.exe` from a different machine and network, agreeing exactly.
+  Note precisely: this does NOT promote H10-candidate, whose condition is a
+  second `WebFetch` DISAGREEMENT. The two agreed; the candidate stands.
+- ~~The running Fly image is UNVERIFIED~~ — **RETIRED by the addendum above.**
+  Replaced by a stronger check than the digest: byte-level source-hash
+  comparison against `dee84e1`, all four files accounted for.
+- ~~§5 proves the recipe, not the container~~ — **RETIRED by the addendum
+  above.** Confirmed Tier 0 on the running container.
+- **NEW, and worse than what it replaced:** item 27 — the hosted
+  `ANTHROPIC_API_KEY` is invalid. **Both links Tier 0**: 9 characters measured
+  in the process, and a live `401 invalid x-api-key` from the deployment itself.
+  The hosted path fails at Fix-Gen's first API call, upstream of everything
+  item 21 describes.
+- **The only weak point carried forward:** the real test suite has not been run
+  for three sessions, so success criterion 3 (green at ≥90% coverage) stays
+  UNVERIFIED. It needs Yehor's machine, not the container.
 - **A destructive no-op came within one turn of being executed** on a confident
   user-asserted premise. It was caught, but the near-miss is the honest reading,
   and it is why H14 was promoted rather than logged as a one-off.
@@ -115,70 +144,76 @@ before the next local git write.
 
 ```
 Resume Patchward. Open via the session-strategy-synthesis skill, grounding in
-.strategy/STRATEGY.md — re-verify fresh, do not trust as-is (claims can go
-stale between sessions, and per H13/H14 that includes this prompt's own claims,
-the backlog entries' own stated premises, and anything I assert from memory).
+.strategy/STRATEGY.md — re-verify fresh, do not trust as-is. Per H13/H14/H16
+that includes this prompt's own claims, the backlog entries' own stated
+premises, anything I assert from memory, and any hash or diff mismatch you see
+(normalise line endings FIRST — this repo's Windows working tree is mixed).
 
-Session 026 closed clean at main @ 8931702 ("docs(memory): mark item 19's
-origin-trace Owner line as superseded"), verified via cloud git ls-remote +
-fresh clone + a 1-file/+1/-1 diff against 23dc9bd. Two close-out patches were
-delivered unstaged (session026-memory.patch, session026-closeout.patch) —
-CHECK FIRST whether I promoted them; if BACKLOG.md has no items 25/26 and no
-memory/BACKLOG22_gate3_scope_memo_2026-07-28.md exists, they are still pending
-and that is the first thing to settle.
+Session 026 closed at main @ 75d3fe9 plus one addendum commit on top carrying
+the live-container verification. Verify the real HEAD with git ls-remote and a
+fresh clone before doing anything else.
 
-BACKLOG 19 is CLOSED — committed (37b3bfd + dee84e1), deployed to Fly image
-sha256:ac54d18a, /healthz green. Do NOT reopen it: Session 026 lost a turn to a
-confident claim that 19 was "still staged", falsified by git log + ls-remote +
-git status --porcelain. Item 19's preserved origin trace now carries a
-SUPERSEDED marker so that misread cannot recur. The concurrency-scrub fix (#4)
-is review-verified, NOT test-proven — do not re-label it.
+BACKLOG 19 is CLOSED — committed (37b3bfd + dee84e1), deployed, and its fix is
+now Tier-0 confirmed ON THE LIVE HOST (PATCHWARD_GIT_TOKEN absent from the
+webhook's os.environ). Do NOT reopen it. The concurrency-scrub fix (#4) is
+review-verified, NOT test-proven — do not re-label it.
 
-THE BOARD WAS REPRIORITISED at Session 026 close. It is no longer numerical:
+THE HOSTED PATH DOES NOT WORK. This is the headline, and it is now confirmed on
+the running container, not inferred. THREE independent defects sit on the
+hosted PR-publish path, each alone sufficient to prevent a PR. Treat them as
+ONE investigation unit under BACKLOG 21 — fixing any one ships nothing:
 
-BACKLOG 21 FIRST — and it is now ONE investigation covering TWO independent
-defects on the same hosted PR-publish path, either sufficient alone to prevent
-a PR: (a) run_repo_pipeline ignores its github_token param (pipeline.py:68,
-dead), and (b) Gate 3 hard-FAILs on the hosted path because pytest is absent
-from the deployed image — proven at Tier 0 for the BUILD RECIPE (wheel METADATA
-carries no pytest; PEP 735 dependency-groups never reach wheel metadata; no
-transitive route via uv/semgrep/bandit/pip-audit; and Gate 3's exact argv
-executed against a pytest-less venv yields "No module named pytest", which
-matches NONE of the three SKIP triggers at verifier.py:767 → FAIL not SKIP →
-g3_ok false → verify_failed → no PR). This is a FUNCTIONAL LAUNCH BLOCKER and
-it outranks the security work. First step is the one unrun confirmatory
-command: fly ssh console -a patchward-webhook → python -c "import pytest".
-It needs Yehor's deploy access. Expect ModuleNotFoundError.
+  27 (FIRST — it fires earliest, and it is CONFIRMED Tier 0, not suspected):
+     ANTHROPIC_API_KEY in the Fly deployment is NINE CHARACTERS and is rejected
+     by Anthropic's own API — a live models.list() from inside the container
+     returned 401 invalid x-api-key (req_011CdUpKqhwSQoJufxCitjcZ).
+     webhook.py:318 guards on falsiness only, so the malformed secret passes
+     startup and Fix-Gen fails on its FIRST request — before verify, before
+     Gate 3. The two defects below have therefore never even been reached in
+     production. FIRST ACTION NEXT SESSION: ask Yehor whether he has re-set the
+     secret (flyctl secrets set ANTHROPIC_API_KEY=… — HIS action, never the
+     agent's), and re-run the models.list() check to confirm. Only then do the
+     other two defects become observable. The guard hardening (validate
+     shape/length, fail loudly at startup rather than silently at first use) is
+     agent-startable and should ship with 21's fix.
+  21 (the original): run_repo_pipeline ignores its github_token param
+     (pipeline.py:68, dead) and GITHUB_TOKEN is confirmed ABSENT from the
+     deployment, so the PR publisher's credential is empty and the push cannot
+     authenticate.
+  §5 (filed under 21): Gate 3 hard-FAILs because pytest is absent from the
+     image — confirmed live: ModuleNotFoundError, and python -m pytest emits
+     "No module named pytest" which matches NONE of the three SKIP triggers at
+     verifier.py:767 → FAIL not SKIP → g3_ok false → verify_failed. node and
+     npx are also absent, so the jest branch cannot run either.
 
 BACKLOG 25 NEXT, standalone — widen _CREDENTIAL_KEYS (credential_proxy.py:39-45)
 to cover GITHUB_APP_PRIVATE_KEY_B64, GITHUB_APP_PRIVATE_KEY, GITHUB_APP_ID and
-GITHUB_WEBHOOK_SECRET. It gates BOTH Option A and Option B of item 22, so it is
-not blocked by the Gate 3 design decision, and the App key + App ID mint tokens
-for EVERY installation — cross-tenant blast radius, worse than anything 19 or 22
-recorded. Small, unambiguous, agent-startable.
+GITHUB_WEBHOOK_SECRET. All four are LIVE-CONFIRMED present in the webhook's
+os.environ (lengths 2236 / 7 / 36), inherited by Gate 3's adversarial child with
+no race. The App key + App ID mint tokens for EVERY installation — cross-tenant
+blast radius. It gates BOTH Option A and Option B of item 22, so it is not
+blocked by the Gate 3 design decision. Small, unambiguous, agent-startable.
 
-BACKLOG 22 AFTER THAT — scoped and hard-stopped at Session 026; the memo is
+BACKLOG 22 AFTER THAT — scoped and hard-stopped; memo at
 memory/BACKLOG22_gate3_scope_memo_2026-07-28.md. STILL AWAITING YEHOR'S
-DECISION: Option A (Gate 3 inside docker_sandbox), B (explicit scrubbed env=),
-or C (hybrid). Do NOT choose on his behalf and do NOT record a lean — Session
-026 caught a false attribution of exactly that kind. Note the memo's finding
-that Option A is the FIRST production use of DockerSandbox on a host with no
-Docker, not an extension of existing routing. Its urgency is contingent on
-whether the hosted path executes at all, which is what 21 settles.
+DECISION: Option A (docker_sandbox), B (scrubbed env=), or C (hybrid). Do NOT
+choose on his behalf and do NOT record a lean — Session 026 caught a false
+attribution of exactly that kind. Option A is now confirmed to need new
+infrastructure: command -v docker inside the running container returns nothing.
 
 Also open, lower priority: 26 (DockerSandbox never wired into production —
-infrastructure gap, companion to 17), 23 (remaining unscrubbed error sinks),
-24 (unbounded _RUNTIME_CREDENTIALS growth), 18 (marketplace_purchases retention
-gap), 17 (scanner image rebuild — deferred, needs Yehor's explicit trigger).
-BACKLOG 12 (CRA/GDPR) still awaits qualified counsel — 44 days to the
-2026-09-11 reporting-obligation date as of 2026-07-29, and it is the only hard
-external deadline on the board.
+live-confirmed, companion to 17), 23 (unscrubbed error sinks), 24 (unbounded
+_RUNTIME_CREDENTIALS growth), 18 (marketplace_purchases retention gap), 17
+(scanner image rebuild — deferred, needs Yehor's explicit trigger). BACKLOG 12
+(CRA/GDPR) still awaits qualified counsel — 44 days to the 2026-09-11
+reporting-obligation date as of 2026-07-29, the only hard external deadline.
 
-Known-UNVERIFIED and worth closing early if cheap: the running Fly image digest
-(not re-checked since Session 025); /healthz confirmed by ONE method at Session
-026 close, not two; and the real test suite has not been run for three sessions
-(success criterion 3, ≥90% coverage, still unverified).
+Known-UNVERIFIED, now exactly ONE item: the real test suite has not been run for
+three sessions (success criterion 3, >=90% coverage). It needs Yehor's machine.
+Every other weak point named at Session 026 close was retired the same day by
+the live-container pass. Consider closing this one early rather than carrying it
+a fourth session.
 
-Expect a BACKLOG 21 pass to spawn its own successors per H11 — budget for it.
+Expect a BACKLOG 21/27 pass to spawn its own successors per H11 — budget for it.
 Ask Yehor what he wants this session before starting.
 ```

@@ -1375,14 +1375,38 @@ each link checked independently (Tier 0 unless noted):
   false → `pipeline.py:220-227` sets `finding_status = "verify_failed"` → the
   PR-publisher block is never reached.
 
-**Honest residual (the one link NOT closed):** this proves the BUILD RECIPE
-produces a pytest-less image. It does NOT prove the specific running container
-`sha256:ac54d18a…` matches its recipe. The confirmatory check is one command
-— `fly ssh console -a patchward-webhook` → `python -c "import pytest"` — and is
-still pending. Confirmatory, no longer decisive.
+**RESIDUAL CLOSED — CONFIRMED ON THE LIVE CONTAINER [2026-07-28, Session 026
+close]:** `fly ssh console -a patchward-webhook` on machine `7841600fd5e7e8`:
+`python -c "import pytest"` → `ModuleNotFoundError: No module named 'pytest'`,
+and `python -m pytest --tb=short -q` inside a probe directory containing a real
+`tests/test_probe.py` → `/usr/local/bin/python: No module named pytest`. That
+string matches NONE of the three SKIP triggers at `verifier.py:767`, so Gate 3
+returns FAIL. **Tier 0 on the running container, not merely on the build
+recipe.** Also confirmed in the same session: `node` and `npx` are both ABSENT
+(`command -v` → nothing), so the jest branch cannot execute either — every
+detected suite hard-FAILs on the hosted path.
+(Method note: the `echo "exit=$?"` in that probe reported the exit status of the
+`tail` at the end of the pipeline, not of pytest — it is not evidence and was
+not treated as any.)
 
-**Why this changes 21's priority:** two independent defects now sit on the same
-hosted PR-publish path, either one sufficient to prevent a PR. Fixing one
+**PROVENANCE OF THE RUNNING IMAGE — CONFIRMED [2026-07-28]:** sha256 of four
+source files inside the container compared against the same files at `dee84e1`:
+`git_credentials.py`, `credential_proxy.py` and `webhook.py` matched exactly
+(`ea5791a5…`, `e6a2ec86…`, `a6b9099941…`). `verifier.py` initially appeared to
+MISMATCH (`e375a6d3…` vs `a25ac226…`) — resolved: `e375a6d3…` is HEAD's
+`verifier.py` with CRLF line endings (reproduced exactly by
+`git show HEAD:src/patchward/verifier.py | sed 's/$/\r/'`). Content identical,
+line endings differ, Python indifferent. **The image IS built from `dee84e1`'s
+code.** This also independently corroborates the long-standing CRLF story from a
+new angle: the build context carried a MIXED working tree — files recently
+written by tooling during the BACKLOG 19 arc are LF, files untouched since an
+earlier checkout are CRLF — and the deployed image preserves that mix.
+Informational, not a defect; worth knowing that image hashes are not a reliable
+provenance signal from a Windows build context.
+
+**Why this changes 21's priority:** THREE independent defects now sit on the
+same hosted PR-publish path (see also item 27, found in the same live check and
+upstream of both others), any one sufficient to prevent a PR. Fixing one
 without the other ships nothing. 21 should be investigated as ONE unit covering
 both, and it outranks item 22 — 22 is a pre-launch security item on a code path
 that may not currently execute at all.
@@ -1558,6 +1582,16 @@ any legitimate consumer requires them downstream of a filtered env (the App
 auth path reads `os.environ` directly, so most likely not). Note `GITHUB_APP_ID`
 is not secret on its own but is useless to withhold separately.
 
+**LIVE CONFIRMATION [2026-07-28, Session 026 close]:** read from the running
+container's own `os.environ` (names + lengths only, no values printed) —
+`GITHUB_APP_PRIVATE_KEY_B64` SET (len 2236), `GITHUB_APP_ID` SET (len 7),
+`GITHUB_WEBHOOK_SECRET` SET (len 36), `ANTHROPIC_API_KEY` SET. All four are
+present in the parent environment Gate 3's child would inherit. Confirmed
+ABSENT, as predicted: `PATCHWARD_GIT_TOKEN` (BACKLOG 19's copy-not-mutate fix
+holds on the live host — `credential_env()` never mutates `os.environ`),
+`GITHUB_TOKEN` (item 21's root cause), and both Langfuse keys. The enumeration
+in this item is therefore live-confirmed, not merely source-traced.
+
 **Owner:** agent-startable.
 
 ## 26. `DockerSandbox` has never been wired into production on either path (NEW, surfaced 2026-07-28, Session 026, BACKLOG 22 scope pass)
@@ -1584,6 +1618,11 @@ instantiation is in `tests/test_docker_sandbox.py`. **ADR-013's container
 isolation is therefore not in force on either path today** — the mechanism is
 built, unit-tested, digest-pinned, and unused.
 
+**LIVE CONFIRMATION [2026-07-28]:** `command -v docker` inside the running
+webhook container returns nothing — no Docker CLI, and Fly machines expose no
+daemon. Option A of item 22 therefore requires an execution-host decision, not
+a code change. Confirmed on the live host, not inferred from the Dockerfile.
+
 **Compounding constraints:** (a) `BASE_IMAGE` still pins
 `patchward-scanner:0.1.0@sha256:578a8147…` with the legacy
 `repomend-entrypoint` — BACKLOG 17's un-rebuilt image; (b) the Fly host has no
@@ -1592,3 +1631,45 @@ Docker CLI or daemon (`docker/webhook.Dockerfile` installs only `git` and
 execution-host decision, not just a code change.
 
 **Owner:** Directing-Engineer decision (scope + host), then agent-startable.
+
+## 27. Hosted `ANTHROPIC_API_KEY` is 9 characters — cannot be a valid key; Fix-Gen 401s before Gate 3 is ever reached (NEW, surfaced 2026-07-28, Session 026 close, live container read)
+
+**Status:** OPEN — **CONFIRMED Tier 0**, functional launch blocker, UPSTREAM of
+both of item 21's defects. Belongs to the same investigation unit as 21.
+The fix is a Fly secret re-set (Yehor only), not a code change.
+
+**The finding:** a credential-presence read inside the running container
+(`fly ssh console -a patchward-webhook`, machine `7841600fd5e7e8`) reported
+`ANTHROPIC_API_KEY  SET  len=9`. No value was printed or observed. A valid
+Anthropic API key is ~100+ characters and begins `sk-ant-api03-`; nine
+characters cannot be one.
+
+**CONFIRMED BY LIVE API CALL [2026-07-28, same session]:** inside the running
+container, `python -c "import anthropic; anthropic.Anthropic().models.list()"`
+→ `anthropic.AuthenticationError: Error code: 401 - {'type': 'error', 'error':
+{'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id':
+'req_011CdUpKqhwSQoJufxCitjcZ'}`. Both links are now Tier 0: the length
+(measured in the process) and the invalidity (rejected by Anthropic's own API
+from the deployment itself). No inference remains in this item.
+
+**Therefore, established as fact:** the hosted webhook cannot call the Anthropic
+API at all. Fix-Gen fails on its FIRST request, every run, for every repo. This
+is the earliest failure on the hosted path — earlier than the dead
+`github_token` param and earlier than Gate 3's pytest FAIL, both of which sit
+downstream of a Fix-Gen result that never arrives.
+
+**Why it outranks the other two defects on this path:** `webhook.py:318` guards
+only on falsiness (`if not ANTHROPIC_API_KEY: logger.error(...)`), and a 9-char
+string is truthy, so the guard passes. The pipeline then constructs
+`FixGenSubagent(api_key=...)` and the first Anthropic call fails
+authentication. Fix-Gen never produces a fix → verify is never reached → Gate 3
+never runs → no PR. It fires BEFORE the pytest defect, which means the hosted
+path has been non-functional at an even earlier stage than item 21 supposed.
+
+**Fix:** re-set the Fly secret with the real key
+(`flyctl secrets set ANTHROPIC_API_KEY=…` — Yehor only, never the agent), then
+re-verify. Consider hardening `webhook.py:318`'s guard to validate shape/length
+rather than mere truthiness, so a malformed secret fails loudly at startup
+instead of silently at first use.
+
+**Owner:** Yehor for the secret; agent-startable for the guard hardening.

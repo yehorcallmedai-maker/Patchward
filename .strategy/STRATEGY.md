@@ -1460,6 +1460,49 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   writing any file back to the mount, verify the staged copy against a fresh
   clone or a direct `device_bash` hash, never against its own reported mtime.
 
+- [2026-07-28, Session 026 close — the live-container pass, and what it changed]
+  Yehor opened `fly ssh console -a patchward-webhook` (machine `7841600fd5e7e8`)
+  and ran a read-only probe block (names + lengths only, no credential values
+  printed, nothing installed or mutated). Results, all Tier 0 on the RUNNING
+  container:
+  (a) **§5 CONFIRMED, residual closed.** `import pytest` →
+      `ModuleNotFoundError`; `python -m pytest` against a real `tests/` probe →
+      `/usr/local/bin/python: No module named pytest`, matching none of the
+      three SKIP triggers → Gate 3 FAILs. `node`/`npx` both ABSENT, so the jest
+      branch cannot execute either. The hosted path hard-FAILs every detected
+      suite.
+  (b) **Item 25's enumeration live-confirmed.** `GITHUB_APP_PRIVATE_KEY_B64`
+      (2236), `GITHUB_APP_ID` (7), `GITHUB_WEBHOOK_SECRET` (36) all SET in the
+      parent `os.environ` Gate 3's child inherits. `PATCHWARD_GIT_TOKEN` ABSENT
+      — BACKLOG 19's copy-not-mutate fix verified on the live host, the first
+      Tier-0 confirmation of that fix outside the source. `GITHUB_TOKEN` ABSENT
+      — item 21's root cause, live-confirmed.
+  (c) **Item 26 live-confirmed.** `command -v docker` → nothing.
+  (d) **A NEW defect, item 27:** `ANTHROPIC_API_KEY  SET  len=9`. No valid
+      Anthropic key is nine characters. `webhook.py:318` guards only on
+      falsiness, so a 9-char string passes and Fix-Gen 401s at first use —
+      UPSTREAM of both of item 21's defects. The hosted path has been
+      non-functional at an earlier stage than 21 supposed. **Both links closed
+      to Tier 0 in the same session:** the length was measured in the process,
+      and a live `anthropic.Anthropic().models.list()` from inside the container
+      returned `401 invalid x-api-key` (`req_011CdUpKqhwSQoJufxCitjcZ`). The
+      hosted webhook cannot reach the Anthropic API at all — Fix-Gen fails on
+      its first request, every run, so the two downstream defects have never
+      even been reached in production.
+  (e) **An apparent image mismatch that resolved into a confirmation.**
+      `verifier.py` in the container hashed `e375a6d3…` against `a25ac226…` at
+      `dee84e1` — three of four files matched, one did not. Rather than
+      reporting either "match" or "mismatch", the close ran the archaeology:
+      `e375a6d3…` is reproduced exactly by
+      `git show HEAD:src/patchward/verifier.py | sed 's/$/\r/'` — it is HEAD's
+      file with CRLF endings. Content identical. **The image IS built from
+      `dee84e1`.** The build context carried a MIXED working tree (files written
+      by tooling during the BACKLOG 19 arc are LF; files untouched since an
+      earlier checkout are CRLF) and the image preserved that mix. Practical
+      lesson banked: file hashes are not a reliable provenance signal from a
+      Windows build context — normalise line endings before comparing, or the
+      check produces false alarms.
+
 ## Calibration record (continued) — Session 026
 
 - [2026-07-28, Session 026] **Score: 8 CONFIRMED / 11 checkable claims = 0.73.**
@@ -1479,6 +1522,26 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   healthier to see: the drifts were in INHERITED claims, not in this session's
   own output. No memory-hygiene thread triggered (the rule is <0.7 twice
   running); watch it next session.
+  **Post-close addendum:** the live-container pass added 5 further checkable
+  claims, all CONFIRMED (pytest absent; node/npx absent; the four-credential
+  enumeration; `PATCHWARD_GIT_TOKEN`/`GITHUB_TOKEN` absent; docker absent),
+  taking the session to **13/16 = 0.81**. That same pass surfaced one NEW defect
+  (item 27) and one apparent-anomaly-turned-confirmation (the `verifier.py` CRLF
+  hash). A final pass then closed two more claims: item 27's invalidity
+  confirmed by a live `401 invalid x-api-key`, and `/healthz` corroborated by a
+  second independent method (Yehor's own `curl.exe` from his machine agreeing
+  with the sandbox's `WebFetch`). **Final: 15/18 = 0.83, and ALL FOUR weak
+  points named at close were retired the same day — only the unrun test suite
+  carries forward.** That is the strongest argument this project has yet
+  produced for running the cheap confirmatory check rather than deferring it: a
+  five-minute console session retired three weak points, upgraded a Tier-1
+  inference to Tier 0, and found a defect upstream of everything the scope pass
+  had been reasoning about.
+  Recorded precisely, not generously: H10-candidate is NOT promoted by that
+  `/healthz` result. Its promotion condition is a second occasion where
+  `WebFetch` DISAGREES with an independent read; the two agreed, so the
+  discipline held but earned nothing. Applying a candidate heuristic
+  successfully is not evidence for it.
 
 ## Heuristics (earned) — Session 026 additions
 
@@ -1521,3 +1584,18 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   session. `/healthz` was checked by WebFetch only — the browser corroboration
   was interrupted before it ran. Recorded as one-method rather than quietly
   claimed as two.
+
+- H16 [PROMOTED 2026-07-28, evidence: two independent occurrences in one session
+  — the `verifier.py` container hash that looked like an image mismatch and was
+  really CRLF, and the recurring "55 modified files" mount diff that
+  `git diff -w` shows to be empty]: **on this project, never report a hash or
+  diff mismatch until line endings have been eliminated as the cause.** The
+  Windows working tree is MIXED (tooling-written files LF, checkout-written
+  files CRLF), so byte-level comparisons across the mount/image/clone boundary
+  produce false alarms by default. Normalise (`tr -d '\r'`, `git diff -w`, or
+  reproduce the suspect hash with `sed 's/$/\r/'`) BEFORE concluding anything —
+  and when a hash does mismatch, run the archaeology to identify which commit or
+  transformation produces it rather than reporting the mismatch itself as the
+  finding. The second half is what turned an alarming result into a
+  confirmation this session.
+
