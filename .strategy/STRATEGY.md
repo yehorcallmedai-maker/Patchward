@@ -1353,3 +1353,171 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   occurred (it agreed with the browser this time), so no second failure to
   promote on; the discipline of corroborating an exact-content web claim on
   this project held and cost little.
+
+## Session log (continued) — Session 026
+
+- [2026-07-28, Session 026 open] Verified fresh by methods independent of the
+  resume prompt. **DRIFT (benign):** the prompt cited `main @ 9e70f36`; real HEAD
+  was `23dc9bd` (a docs-only child, the Session 025 close-out commit written
+  after the handoff was drafted). Confirmed by cloud `git ls-remote origin main`
+  + a fresh `git clone`, both → `23dc9bd`, matching the mount. Working tree
+  "55 modified" on the mount is the known CRLF artifact — `git diff --stat -w`
+  returns empty, 5798 insertions = 5798 deletions. All 6 memory files
+  CRLF-normalised sha256-identical mount-vs-clone (H8 clean). Fly `/healthz` →
+  `{"status":"ok"}` (WebFetch only — the browser corroboration was interrupted,
+  so this is one method, not two; recorded honestly rather than as a two-method
+  confirmation). 45 days to the 2026-09-11 CRA date (prompt said ~46).
+
+- [2026-07-28, Session 026 — a user-asserted state claim, falsified before it
+  could cause a destructive no-op] Mid-session Yehor stated with confidence:
+  "Physical status confirmed — BACKLOG 19 is NOT committed. It's still staged,
+  and its BACKLOG entry is still the pre-fix Session-024 trace… no CLOSED
+  marker, no commit hash, no deploy//healthz line anywhere for 19," and issued a
+  full commit→deploy→memory-reconcile instruction chain on that premise.
+  Falsified against the tree: `37b3bfd` (10 files, +574/−57) and `dee84e1`
+  (6 files, +228/−20) are real commits; `BACKLOG.md` at HEAD carries
+  `**STATUS: CLOSED 2026-07-27 (Session 025).**` and `**Owner:** CLOSED`;
+  `git status --porcelain` shows ZERO staged entries. **Root cause identified,
+  not just the error:** item 19's deliberately-preserved Session-024 origin
+  trace has `**Not acted on, deliberately**` and `**Owner:** unassigned` sitting
+  SIX LINES ABOVE the CLOSED block, so a top-down reader who stops at the first
+  Owner line reaches exactly that conclusion. Had the chain been run it would
+  have committed nothing but line-ending noise and rewritten an already-CLOSED
+  block from a stale trace that does not exist.
+
+- [2026-07-28, Session 026 — the hygiene fix] One-line marker added to item 19's
+  origin-trace Owner line (`SUPERSEDED, see STATUS: CLOSED below ↓`). Committed
+  and pushed by Yehor as `8931702`; verified independently of his pasted
+  terminal output via cloud `git ls-remote` (`8931702c370bbb…`) + fresh clone,
+  and `git diff --stat 23dc9bd 8931702` → `1 file changed, 1 insertion(+),
+  1 deletion(-)`.
+
+- [2026-07-28, Session 026 — BACKLOG 22 scope pass, hard stop honoured] Ran
+  scope-only per Yehor's explicit §2 instruction: traced, enumerated, laid out
+  options A/B/C with what-breaks / what-it-costs / residual-risk, surfaced the
+  decision, chose nothing, staged nothing, ran no adversarial pass on the memo.
+  Memo: `memory/BACKLOG22_gate3_scope_memo_2026-07-28.md` (448 lines).
+  Three findings beyond the assigned questions:
+  (1) **Item 22's own premise was inverted.** Its text said "scanners DO route
+      through the sandbox via `pipeline.py`→`run_all_scanners`" — false at HEAD.
+      `sandbox` defaults to `None`, all four production call sites omit it, and
+      `DockerSandbox(` is instantiated nowhere in `src/`. Option A is therefore
+      the FIRST production use of the sandbox, on a Fly host with no Docker —
+      new infrastructure, not a wiring change. Logged as item 26.
+  (2) **Four credentials `_CREDENTIAL_KEYS` does not cover** —
+      `GITHUB_APP_PRIVATE_KEY_B64` / `GITHUB_APP_PRIVATE_KEY` / `GITHUB_APP_ID` /
+      `GITHUB_WEBHOOK_SECRET`, all in `os.environ`, all inherited by Gate 3's
+      adversarial child with no race. The App key + App ID mint tokens for EVERY
+      installation — cross-tenant, worse than anything 19 or 22 recorded. Gates
+      both Option A and Option B. Logged as item 25.
+  (3) **The disqualifier came back favourable**, and the sharper implication was
+      taken: Gate 3 installs nothing, uses Patchward's own interpreter, and
+      `verifier.py:764-768` degrades to SKIP on missing deps — so sandboxing
+      breaks almost nothing, but Gate 3 is also delivering less verification
+      value than assumed, independent of the security question.
+  Also corrected precisely in Patchward's favour: `PATCHWARD_GIT_TOKEN` is NOT
+  in the parent `os.environ` (`git_credentials.py:117` — `credential_env()`
+  returns a copy), so it is race-only via `/proc`, not a direct inherit. Item
+  22's text overstated that one.
+
+- [2026-07-28, Session 026 — §5 escalated from Tier 1 to Tier 0 without touching
+  Fly] The scope memo flagged, honestly as Tier 1, that pytest is likely absent
+  from the deployed image. Closed the inference chain empirically instead:
+  built the actual wheel and read its `METADATA` (`pytest` absent entirely;
+  `[dependency-groups].dev` is PEP 735 and never reaches wheel metadata);
+  queried PyPI for every package `webhook.Dockerfile` installs (only
+  `pytest; extra == "test"` on pip-audit, not installed); and EXECUTED Gate 3's
+  exact argv against a real pytest-less venv → `No module named pytest`,
+  returncode 1, ZERO hits against the three literal SKIP triggers at
+  `verifier.py:767` → `FAIL`, not SKIP → `g3_ok` false → `verify_failed` → no PR.
+  **Residual named, not buried:** this proves the build recipe, not that the
+  running `sha256:ac54d18a…` container matches it; `fly ssh console` →
+  `python -c "import pytest"` is now confirmatory, not decisive.
+  **Consequence:** a second independent defect on BACKLOG 21's path. Either one
+  alone prevents a PR. 21 is now a functional launch blocker outranking 22.
+
+- [2026-07-28, Session 026 — a false attribution caught and corrected] A turn
+  attributed to the session a recommendation ("lean toward B now, A later") that
+  the scope memo never made — §7 deliberately offered no A/B/C lean, exactly as
+  instructed. Flagged rather than let stand; Yehor confirmed the lean was his
+  own from a prior turn. Same discipline this project applies to its own output,
+  applied to the user's framing.
+
+- [2026-07-28, Session 026 close — H1 fired again, and on a NEW mechanism]
+  While preparing to write the close-out files directly to the D:\ mount,
+  `device_stage_files` returned a snapshot of `memory/BACKLOG.md` whose content
+  was the PRE-`8931702` version (CRLF-normalised sha `66f8377d…`, the same hash
+  staged at session open ~24h earlier) while reporting a FRESH mtime
+  (`1785254891333`, Jul 28 16:08) consistent with Yehor's actual edit. Caught
+  only because the close compared the staged copy against a fresh clone before
+  overwriting anything: a direct `device_bash` read of the same path returned
+  `311f1292…`, byte-identical to `git show HEAD:memory/BACKLOG.md`. The mount
+  was correct; the STAGING LAYER was stale. Had the staged copy been trusted,
+  the close would have written a file built on pre-marker content and silently
+  reverted `8931702`. **This widens H1** — the stale-mount hazard is not confined
+  to git plumbing reads; `device_stage_files` can serve stale bytes with an
+  accurate mtime, so mtime is NOT a freshness signal. Standing rule: before
+  writing any file back to the mount, verify the staged copy against a fresh
+  clone or a direct `device_bash` hash, never against its own reported mtime.
+
+## Calibration record (continued) — Session 026
+
+- [2026-07-28, Session 026] **Score: 8 CONFIRMED / 11 checkable claims = 0.73.**
+  DRIFTED: (a) resume-prompt HEAD `9e70f36` → real `23dc9bd`; (b) "~46 days" →
+  45; (c) item 22's own stated premise about scanner sandbox routing → false at
+  HEAD. Separately falsified: one high-confidence user-asserted state claim
+  ("BACKLOG 19 is NOT committed") that would have driven a destructive no-op,
+  and one false attribution of a recommendation to the session.
+  **The pattern worth keeping:** every drift this session came from a CLAIM
+  ABOUT STATE written by a confident prior author — a handoff prompt, a backlog
+  entry's own premise, a user's recollection — and every one was caught by the
+  same move: check it against the tree before building on it. Zero false claims
+  reached the committed tree or the closed memory. One honest downgrade recorded
+  rather than smoothed: `/healthz` was confirmed by ONE method this session, not
+  two, because the browser corroboration was interrupted.
+  0.73 is below Session 025's near-1.00 but the composition is different and
+  healthier to see: the drifts were in INHERITED claims, not in this session's
+  own output. No memory-hygiene thread triggered (the rule is <0.7 twice
+  running); watch it next session.
+
+## Heuristics (earned) — Session 026 additions
+
+- H13 [PROMOTED 2026-07-28, evidence: two independent occurrences in two
+  sessions — Session 025 empirically falsified `clone_url_with_token`'s own
+  docstring ("never written to disk"; a real clone persists the token to
+  `.git/config`), and Session 026 falsified BACKLOG item 22's own stated premise
+  ("scanners DO route through the sandbox"; `sandbox` defaults to `None` and
+  `DockerSandbox(` is instantiated nowhere in production)]: **an artifact's
+  self-description is a claim, not a fact — including docstrings, commit
+  messages, and this project's own backlog entries.** When scoping an item,
+  re-verify the item's OWN load-bearing premises against the tree, not only the
+  questions you were asked. Both occurrences inverted the shape of the decision
+  that depended on them; in both cases the false premise made the work look
+  smaller than it was.
+
+- H14 [PROMOTED 2026-07-28, evidence: two independent occurrences in two
+  sessions — Session 025 (Yehor's review described a GIT_ASKPASS conversion that
+  did not exist in the tree, and later asserted "the re-attack came back clean"
+  for a pass that had never been launched) and Session 026 (a confident,
+  detailed "BACKLOG 19 is NOT committed — still staged" with a full instruction
+  chain built on it, refuted by `git log` + `ls-remote` + a fresh clone +
+  `git status --porcelain` showing zero staged entries)]: **a user-asserted
+  state claim is a hypothesis, and instructions built on one inherit its
+  uncertainty.** Verify the premise against the tree BEFORE executing the chain,
+  and when it fails, show the evidence rather than asserting the correction —
+  and look for WHY the misread was reasonable (in 026 it was a preserved origin
+  trace sitting above its own CLOSED block), because the structural cause is
+  usually fixable and will otherwise recur.
+
+- H15-candidate [applied 2026-07-28, needs one more occurrence]: when a claim
+  turns on what a BUILT ARTIFACT contains, build the artifact and read its own
+  metadata rather than reasoning from the source config that feeds it. Session
+  026 resolved the pytest question from the wheel's `METADATA` (excluding any
+  build-config mismatch) plus an executed argv, rather than from `pyproject.toml`
+  — converting a Tier-1 inference to Tier 0 with no deploy access required.
+  Promote if a second session resolves a deployment-state question this way.
+
+- H10-candidate [carried, still a candidate, 2026-07-28]: NOT advanced this
+  session. `/healthz` was checked by WebFetch only — the browser corroboration
+  was interrupted before it ran. Recorded as one-method rather than quietly
+  claimed as two.
