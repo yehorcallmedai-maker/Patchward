@@ -171,9 +171,19 @@ that includes this prompt's own claims, the backlog entries' own stated
 premises, anything I assert from memory, and any hash or diff mismatch you see
 (normalise line endings FIRST — this repo's Windows working tree is mixed).
 
-Session 026 closed at main @ 75d3fe9 plus one addendum commit on top carrying
-the live-container verification. Verify the real HEAD with git ls-remote and a
-fresh clone before doing anything else.
+Session 026 closed clean. Per H2 this prompt deliberately cites NO closing hash:
+the hash written here went stale TWICE while the session was still writing it
+(75d3fe9 -> c1f789b -> 05764d3), which is H2's whole point. Establish the real
+HEAD yourself via git ls-remote + a fresh clone, then confirm the close landed
+BY CONTENT rather than by hash — all four must hold:
+  - memory/BACKLOG.md contains items 24, 25, 26, 27, 28 in that order, and the
+    "SUPERSEDED, see STATUS: CLOSED below" marker on item 19's origin trace;
+  - .strategy/STRATEGY.md contains the "Session log (continued) - Session 026"
+    block and heuristics H13, H14, H16;
+  - memory/BACKLOG22_gate3_scope_memo_2026-07-28.md exists (448 lines);
+  - memory/SESSION_CLOSE_2026-07-28.md is this file.
+If any is missing, the close did not fully land and that is the first thing to
+settle before any other work.
 
 BACKLOG 19 is CLOSED — committed (37b3bfd + dee84e1), deployed, and its fix is
 now Tier-0 confirmed ON THE LIVE HOST (PATCHWARD_GIT_TOKEN absent from the
@@ -213,6 +223,23 @@ ONE investigation unit under BACKLOG 21 — fixing any one ships nothing:
      "No module named pytest" which matches NONE of the three SKIP triggers at
      verifier.py:767 → FAIL not SKIP → g3_ok false → verify_failed. node and
      npx are also absent, so the jest branch cannot run either.
+
+  28 (SHIPS WITH 21's FIX, not separately): webhook.py:318 validates the
+     Anthropic credential by FALSINESS ONLY, and has now passed TWO different
+     broken secrets in one evening — the 9-char stub and the 110-char foreign
+     credential. A one-line startswith("sk-ant-") at startup rejects both. Worth
+     the same treatment for GITHUB_APP_ID / GITHUB_APP_PRIVATE_KEY_B64 /
+     GITHUB_WEBHOOK_SECRET, which have the same guard or none. Never log any
+     part of a credential value in the failure message. OPEN QUESTION FOR YEHOR,
+     deliberately NOT decided: should /healthz also assert credential validity
+     (a cached startup probe, not a per-request API call) so that green means
+     "can actually work" rather than "process is running"? A green /healthz over
+     an unusable credential is exactly how these defects stayed invisible.
+
+ALSO YEHOR'S, and independent of all the above: ROTATE the unidentified 110-char
+credential at its source. It sat in a production env var, exposed on the Gate 3
+inheritance path, and neither party could name what it grants. If it was pasted
+from somewhere, check whether the same paste reached another secret.
 
 BACKLOG 25 NEXT, standalone — widen _CREDENTIAL_KEYS (credential_proxy.py:39-45)
 to cover GITHUB_APP_PRIVATE_KEY_B64, GITHUB_APP_PRIVATE_KEY, GITHUB_APP_ID and

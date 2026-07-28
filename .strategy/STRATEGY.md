@@ -1538,6 +1538,31 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   touch the dependency it needs will report green over a broken configuration
   indefinitely — which is how three defects sat undetected on this service.
 
+- [2026-07-28, Session 026 final audit — H2 caught this session red-handed]
+  The close-out's own next-session prompt cited `main @ 75d3fe9 plus one
+  addendum commit`. By the time the session actually ended the chain was
+  `75d3fe9 -> c1f789b -> 05764d3` — the prompt's hash went stale TWICE while the
+  session was still writing it, and the "one addendum commit" count was wrong.
+  H2 ("never cite the current commit hash inside a committed handoff file —
+  structurally always stale") has been on this file since 2026-07-15 and was
+  violated by the very document meant to embody the close. Caught by a
+  deliberate staleness audit of the prompt at final close, not by luck.
+  **Fixed by removing the hash entirely** and replacing it with a CONTENT
+  checklist the next session can verify against whatever HEAD it finds — which
+  is what H2 should have implied all along and did not say explicitly. H2 is
+  hereby widened: a handoff must be verifiable against content, not against a
+  revision identifier, because the identifier changes while the handoff is being
+  written. A second defect was found in the same audit: item 28 was referenced
+  in passing ("see also item 28") but never listed as open work, so a reader
+  working the priority list would have missed it entirely. Both fixed before the
+  final commit.
+  Method note worth keeping: the first pass of this audit used `grep -c '\b28\b'`
+  and reported "item 28 mentioned 3 times" — two of those were the date
+  `2026-07-28`. The check was re-run with context printed rather than counted,
+  which is what surfaced the real gap. A count without its context is not
+  evidence; this is the second time in one session that a self-authored check
+  had the wrong expected value (see also the SESSION_CLOSE test-suite grep).
+
 ## Calibration record (continued) — Session 026
 
 - [2026-07-28, Session 026] **Score: 8 CONFIRMED / 11 checkable claims = 0.73.**
