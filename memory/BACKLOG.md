@@ -1348,8 +1348,48 @@ exactly this handoff without reintroducing any URL/argv embedding.
 a tokenless URL) so the two changes stay separately reviewable and
 separately revertable.
 
+**SECOND, INDEPENDENT DEFECT ON THE SAME PATH [2026-07-28, Session 026 —
+surfaced by the BACKLOG 22 scope pass, filed here because it belongs to 21's
+path, not to 22's security boundary]:** even if the token handoff above were
+fixed, Gate 3 hard-FAILs on the hosted path for every pytest-detecting repo,
+so `verification_status != "verified"` and no PR is ever published. Chain,
+each link checked independently (Tier 0 unless noted):
+- The `webhook` extra cannot carry pytest. Built the actual wheel from
+  `pyproject.toml` at HEAD and read its `METADATA` (not the source TOML, so a
+  build-config mismatch is excluded): `Provides-Extra: webhook` with exactly
+  four `Requires-Dist` lines (fastapi, httpx, pyjwt[crypto], uvicorn[standard]);
+  the string `pytest` does not occur anywhere in `METADATA`.
+  `[dependency-groups].dev` is PEP 735 and never reaches wheel metadata, so
+  `uv pip install --system --no-cache .[webhook]` cannot install it.
+- No transitive route. `docker/webhook.Dockerfile`'s only other installs are
+  `uv` and `semgrep bandit pip-audit`. PyPI metadata for all four: `uv` 0
+  runtime reqs, `semgrep` 27, `bandit` 17, `pip-audit` 23 — the only pytest
+  mention anywhere is `pytest; extra == "test"` on pip-audit, which a plain
+  `pip install pip-audit` does not install.
+- The output string matches none of the SKIP triggers. Executed Gate 3's exact
+  argv against a real pytest-less venv: returncode 1, output
+  `…/bin/python: No module named pytest`. Checked against the three literal
+  triggers at `verifier.py:767` (`ModuleNotFoundError` / `ImportError` /
+  `no tests ran`) — zero hits → `GateResult(FAIL, ...)`, not SKIP.
+- `verifier.py:110` (`g3_ok = self.gate_3.status in (PASS, SKIP)`) is therefore
+  false → `pipeline.py:220-227` sets `finding_status = "verify_failed"` → the
+  PR-publisher block is never reached.
+
+**Honest residual (the one link NOT closed):** this proves the BUILD RECIPE
+produces a pytest-less image. It does NOT prove the specific running container
+`sha256:ac54d18a…` matches its recipe. The confirmatory check is one command
+— `fly ssh console -a patchward-webhook` → `python -c "import pytest"` — and is
+still pending. Confirmatory, no longer decisive.
+
+**Why this changes 21's priority:** two independent defects now sit on the same
+hosted PR-publish path, either one sufficient to prevent a PR. Fixing one
+without the other ships nothing. 21 should be investigated as ONE unit covering
+both, and it outranks item 22 — 22 is a pre-launch security item on a code path
+that may not currently execute at all.
+
 **Owner:** agent-startable (investigation + fix proposal); the live
-webhook-run verification needs Yehor's test installation.
+webhook-run verification and the `fly ssh console` confirmation need Yehor's
+test installation / deploy access.
 
 ## 22. Gate 3 (verifier test-suite gate) runs the cloned adversarial repo's OWN test suite unsandboxed, with inherited credentials in the environment (NEW, surfaced 2026-07-27, Session 025, BACKLOG 19 adversarial pass)
 
@@ -1364,9 +1404,25 @@ adversarial reviewer):**
 - `Verifier._gate_3_test_suite` (`verifier.py:745,778`) runs the cloned
   repo's own tests via `subprocess.run(["python","-m","pytest",...])` and
   `["npx","jest",...]` with **no `docker_sandbox`** (grep: zero references
-  in `verifier.py`, while scanners DO route through the sandbox via
-  `pipeline.py`→`run_all_scanners`) and **no `env=`** override — so the
-  child inherits the full parent `os.environ`.
+  in `verifier.py`) and **no `env=`** override — so the child inherits the
+  full parent `os.environ`.
+- **PREMISE CORRECTION [2026-07-28, Session 026].** This item originally read
+  "…while scanners DO route through the sandbox via
+  `pipeline.py`→`run_all_scanners`". **That is FALSE at HEAD.**
+  `run_all_scanners`' `sandbox` parameter defaults to `None`
+  (`scanner.py:320-324`), and every production call site omits it:
+  `pipeline.py:126-130`, `cli.py:124-126`, `cli.py:290-292`, `worktree.py:29`.
+  Exhaustive `grep -rn "DockerSandbox(" src/` returns docstrings only — the
+  class is instantiated nowhere in production code (tests only).
+  **Consequence for the decision:** Option A below is NOT "extend the
+  sandboxing the scanners already have to Gate 3" — there is no production
+  sandboxing to extend. Option A means the FIRST production use of
+  `DockerSandbox`, on a Fly host with no Docker CLI or daemon
+  (`docker/webhook.Dockerfile` installs only `git` + `ca-certificates`):
+  new infrastructure, not a wiring change. This raises Option A's honest cost
+  estimate. The wider gap (the sandbox mechanism was never wired in at all)
+  is logged separately as item 26. Full trace:
+  `memory/BACKLOG22_gate3_scope_memo_2026-07-28.md`.
 - The cloned repo is adversarial by design (ADR-013: prompt-injection in
   scope; a `conftest.py` / jest config is arbitrary code execution). So
   adversarial repo code runs as the same uid as the pipeline.
@@ -1464,3 +1520,75 @@ before/after check that scrubbing still covers every path within a run.
   git-lfs is absent from `docker/webhook.Dockerfile`, and clone does not
   transfer/execute repo hooks. Revisit only if any of those change (e.g. lfs
   added to the image, or submodule fetching enabled).
+
+## 25. `_CREDENTIAL_KEYS` omits four credentials that ARE in `os.environ` on the hosted path (NEW, surfaced 2026-07-28, Session 026, BACKLOG 22 scope pass)
+
+**Status:** OPEN — pre-launch security item, agent-startable, and the sequencing
+note matters: it gates BOTH Option A and Option B of item 22, so it should ship
+STANDALONE and FIRST, independent of which way the Gate 3 decision goes.
+
+**The finding (source-verified at `8931702`):** `_CREDENTIAL_KEYS`
+(`credential_proxy.py:39-45`) covers only `ANTHROPIC_API_KEY`,
+`LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `GITHUB_TOKEN`. Four further
+credentials are read from `os.environ` and are covered by nothing:
+
+| Variable | Read at | Set on Fly |
+|---|---|---|
+| `GITHUB_APP_PRIVATE_KEY_B64` | `github_app_auth.py:50` | `fly.toml:14` |
+| `GITHUB_APP_PRIVATE_KEY` (raw PEM alternative) | `github_app_auth.py:47` | alternative to the above |
+| `GITHUB_APP_ID` | `github_app_auth.py:75` | `fly.toml:13` |
+| `GITHUB_WEBHOOK_SECRET` | `webhook.py:238` | `fly.toml:13` |
+
+**Blast radius — worse than anything item 19 or item 22 records.** The App
+private key plus the App ID mints installation access tokens for EVERY
+installation of the GitHub App, not just the repo under scan. That is a
+cross-tenant credential in plain `os.environ`, inherited directly by Gate 3's
+adversarial child (item 22), with no race required. `GITHUB_WEBHOOK_SECRET`
+separately allows an attacker to forge signed webhook deliveries.
+
+**Why it gates both 22 options:** `_build_docker_cmd`'s structural exclusion
+(`docker_sandbox.py:174-178`) and `get_container_env()`
+(`credential_proxy.py:190-197`) both filter on `_CREDENTIAL_KEYS` and nothing
+else. Option A would forward the App private key straight into the container;
+Option B would strip the Anthropic key and leave the App private key behind.
+Neither option closes the exposure until this list is widened.
+
+**Proposed fix:** add the four names to `_CREDENTIAL_KEYS`. Check first whether
+any legitimate consumer requires them downstream of a filtered env (the App
+auth path reads `os.environ` directly, so most likely not). Note `GITHUB_APP_ID`
+is not secret on its own but is useless to withhold separately.
+
+**Owner:** agent-startable.
+
+## 26. `DockerSandbox` has never been wired into production on either path (NEW, surfaced 2026-07-28, Session 026, BACKLOG 22 scope pass)
+
+**Status:** OPEN — infrastructure gap, not a live-leak finding. Natural
+successor to / companion of BACKLOG 17 (scanner image rebuild). Directing-
+Engineer scope, not a same-session side edit.
+
+**The finding (source-verified at `8931702`):** `run_all_scanners`' `sandbox`
+parameter defaults to `None` → host subprocess (`scanner.py:320-328`, and the
+same `sandbox is not None` branch in every individual runner). Every production
+call site omits the argument:
+
+| Call site | Args passed | Effective sandbox |
+|---|---|---|
+| `pipeline.py:126-130` (webhook + batch) | `repo_path, cfg.semgrep_rules` | `None` |
+| `cli.py:124-126` (`patchward scan`) | `scan_path, cfg.semgrep_rules` | `None` |
+| `cli.py:290-292` (`patchward fix`) | `scan_path, cfg.semgrep_rules` | `None` |
+| `worktree.py:29` (docstring example) | `scan_path` | `None` |
+
+`grep -rn "DockerSandbox(" src/` returns only docstring occurrences
+(`docker_sandbox.py:109`, `scanner.py:106`, `scanner.py:328`); every real
+instantiation is in `tests/test_docker_sandbox.py`. **ADR-013's container
+isolation is therefore not in force on either path today** — the mechanism is
+built, unit-tested, digest-pinned, and unused.
+
+**Compounding constraints:** (a) `BASE_IMAGE` still pins
+`patchward-scanner:0.1.0@sha256:578a8147…` with the legacy
+`repomend-entrypoint` — BACKLOG 17's un-rebuilt image; (b) the Fly host has no
+Docker CLI or daemon (`docker/webhook.Dockerfile` installs only `git` and
+`ca-certificates`), so wiring the sandbox in on the hosted path needs an
+execution-host decision, not just a code change.
+
+**Owner:** Directing-Engineer decision (scope + host), then agent-startable.
