@@ -1310,6 +1310,16 @@ See new heuristic candidate in `.strategy/STRATEGY.md`.
 
 ## 21. Suspected hosted-path breakage: `run_repo_pipeline` ignores its `github_token` param — the webhook likely cannot push a PR at all (NEW, surfaced 2026-07-27, Session 025, during BACKLOG 19 trace)
 
+**§5 UPDATE 2026-07-29 (Session 027): CONFIRMED against the LIVE IMAGE** (was
+Tier-0 at build-recipe level only). On running image `deployment-01KYJ325AN...`,
+the verifier's exact call `python -m pytest` → `/usr/local/bin/python: No module
+named pytest`, which matches none of the three SKIP triggers → Gate 3 returns
+FAIL (not SKIP) → `g3_ok` false → no PR. `node`/`npx` also absent → the jest
+branch cannot run either. The last Tier-1→Tier-0 gap on the board is closed.
+Item 21 itself (the dead `github_token` param + absent push credential) remains
+OPEN — this and §5 are the two remaining hosted-path blockers now that 27 is
+fixed. Original entry preserved below. ↓
+
 **Status:** OPEN — logged only, deliberately NOT bundled into BACKLOG 19's
 security diff per the §2 keep-security-diffs-clean rule. Yehor's own
 framing at logging time: "this isn't cosmetic dead code... potentially a
@@ -1547,6 +1557,14 @@ before/after check that scrubbing still covers every path within a run.
 
 ## 25. `_CREDENTIAL_KEYS` omits four credentials that ARE in `os.environ` on the hosted path (NEW, surfaced 2026-07-28, Session 026, BACKLOG 22 scope pass)
 
+**STATUS: CLOSED 2026-07-29 (Session 027)** — shipped as commit `f02ad21`, pushed
+to `origin/main`, verified on the remote by fresh clone. Full suite 519 passed /
+90.62% on Yehor's machine; `credential_proxy.py` at 100%. All four GitHub App
+credentials are now in `_CREDENTIAL_KEYS` (excluded from `get_container_env()`
+and scrubbed). Follow-up flagged, not blocking: `GITHUB_APP_ID` (7-char,
+non-secret) is now also scrubbed — a documented, conservative over-redaction.
+Original entry preserved below. ↓
+
 **Status:** OPEN — pre-launch security item, agent-startable, and the sequencing
 note matters: it gates BOTH Option A and Option B of item 22, so it should ship
 STANDALONE and FIRST, independent of which way the Gate 3 decision goes.
@@ -1634,6 +1652,16 @@ execution-host decision, not just a code change.
 
 ## 27. Hosted `ANTHROPIC_API_KEY` is not an Anthropic key — Fix-Gen 401s before Gate 3 is ever reached (surfaced 2026-07-28, Session 026 close, live container read; TWO values rejected the same evening — a 9-char stub, then a 110-char credential from a different service)
 
+**STATUS: CLOSED 2026-07-29 (Session 027)** — Yehor re-set the secret with a real
+Anthropic key (a 4th value; the prior three all 401'd — a 9-char stub, a 110-char
+foreign credential, and a third rejected on 2026-07-29, `req_011CdWa5on6JfoSxS2MGxP3h`).
+The new key was validated LOCALLY before deploy (`models.list()` → OK), then set
+via `fly secrets set`, rolling-updated on machine `7841600fd5e7e8`, and
+re-confirmed on the RUNNING image: `python -c "...models.list(); print('ANTHROPIC
+KEY OK')"` → `ANTHROPIC KEY OK`. Fix-Gen can now authenticate on the hosted path.
+STILL OPEN AND YEHOR-OWNED (tracked here, does not block 27's closure): rotate the
+unidentified 110-char credential at its source. Original entry preserved below. ↓
+
 **Status:** OPEN — **CONFIRMED Tier 0**, functional launch blocker, UPSTREAM of
 both of item 21's defects. Belongs to the same investigation unit as 21.
 The fix is a Fly secret re-set (Yehor only), not a code change.
@@ -1713,6 +1741,19 @@ somewhere, the same paste may have reached another secret.
 The startup guard is a separate unit: see item 28.
 
 ## 28. `webhook.py:318` validates the Anthropic credential by FALSINESS ONLY — two different broken secrets passed startup in one evening (NEW, surfaced 2026-07-28, Session 026 close)
+
+**STATUS: PATCH PREPARED 2026-07-29 (Session 027), NOT YET LANDED** — implemented
+and tested in a clean clone (full suite 526 passed / 90.75%; +9 tests). Delivered
+as `backlog28_startup_credential_guard.patch` (in repo root). Adds
+`_validate_credential_shapes()` wired via a FastAPI `lifespan`, failing the boot
+loudly on a present-but-malformed secret (validates `sk-ant-` prefix, numeric
+App ID, PEM/base64 key shape; absent → warn only; no value ever logged). Existing
+webhook tests use `TestClient` WITHOUT a context manager, so they never trigger
+the lifespan → zero regressions. NOT committed as of close: working tree +
+`origin` both at `f02ad21`. TWO YEHOR DECISIONS deliberately excluded from the
+patch: (a) should ABSENCE of a required credential also fail the boot (I only
+fail on present-but-malformed); (b) should `/healthz` assert credential validity.
+Original entry preserved below. ↓
 
 **Status:** OPEN — agent-startable, one-line core fix, and it has **two live
 occurrences** rather than a hypothetical justification. Split from item 27

@@ -1658,3 +1658,115 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   transformation produces it rather than reporting the mismatch itself as the
   finding. The second half is what turned an alarming result into a
   confirmation this session.
+
+## Session log (continued) — Session 027
+
+- [2026-07-29, Session 027 open] Opened via session-strategy-synthesis. Verified
+  Session 026's close landed BY CONTENT (not by hash — H2): real HEAD `6650918`
+  established by device `git rev-parse` AND cloud `git ls-remote` + a fresh
+  clone (two independent methods agree). All four content conditions confirmed
+  in the fresh clone: BACKLOG items 24–28 present in order, item 19 SUPERSEDED
+  marker, STRATEGY Session-026 block + H13/H14/H16, memo at 448 lines,
+  SESSION_CLOSE_2026-07-28.md present. The 53 "modified" files are CRLF flap
+  (H16) — content-identical to HEAD once `\r` stripped.
+
+- [2026-07-29, Session 027 — BACKLOG 25 SHIPPED] Widened `_CREDENTIAL_KEYS` to
+  cover the four GitHub App credentials. Implemented + tested in a clean clone,
+  delivered as a patch, applied + committed + pushed by Yehor as `f02ad21`.
+  Verified on `origin` (ls-remote + fresh-clone content). Full suite run on
+  Yehor's machine: **519 passed / 90.62% coverage** — which also RETIRES success
+  criterion 3 (the real suite had not run in three sessions). Scoped commit
+  discipline held: exactly two files staged, `git add -A` avoided (the CRLF
+  flap seen via the device-VM mount does NOT appear on Yehor's real Windows git,
+  which showed only the two intended files — a live confirmation of H16's mount
+  artifact).
+
+- [2026-07-29, Session 027 — §5 CONFIRMED against the LIVE IMAGE] `fly ssh
+  console` onto running image `deployment-01KYJ325AN...`: `python -m pytest` →
+  `No module named pytest` (the verifier's exact call), `node`/`npx` absent.
+  Gate 3 hard-FAILs on the hosted path → no PR. Escalated from Tier-0
+  build-recipe to Tier-0 live. Last open Tier-1→Tier-0 gap on the board closed.
+
+- [2026-07-29, Session 027 — item 27 FIXED live] Yehor re-set `ANTHROPIC_API_KEY`
+  with a real key (the 4th value; three prior 401'd, incl. a third rejection
+  this session, `req_011CdWa5on6JfoSxS2MGxP3h`). The key was validated LOCALLY
+  (`models.list()` → OK) BEFORE deploy — this prevented a 4th failed redeploy
+  cycle — then set, rolling-updated, and re-confirmed on the running image
+  (`ANTHROPIC KEY OK`). One of the three hosted-path defects is down; §5 + item
+  21 remain.
+
+- [2026-07-29, Session 027 — BACKLOG 28 PREPARED, not landed] Startup credential
+  shape-guard (`_validate_credential_shapes()` via FastAPI lifespan). Tested in
+  a clean clone (**526 passed / 90.75%**, +9 tests). Delivered as a patch; NOT
+  committed as of close (tree + origin at `f02ad21`). Two Yehor decisions kept
+  OUT of the patch: absence-fails-boot?, and /healthz asserting validity.
+
+- [2026-07-29, Session 027 — inherited-claim drift, THREE occurrences] Yehor
+  (and a pasted external analysis) asserted repeatedly that "the BACKLOG.md is
+  the Jul-27 version, predates items 25/26" and that "the Gate 3 memo is
+  chat-only, not filed / the Session-025 reconciliation hasn't landed." All
+  falsified against `origin` HEAD each time (items 24–28 present; memo is
+  `memory/BACKLOG22_gate3_scope_memo_2026-07-28.md`, 448 lines, committed).
+  Zero drift in this session's OWN outputs; every drift was an inherited state
+  claim — the exact H13/H14 pattern, now seen a third time. Reinforces H14.
+
+- [2026-07-29, Session 027 — close] BACKLOG 25 CLOSED, item 27 CLOSED (live),
+  §5 CONFIRMED-live, item 28 PATCH-PREPARED. Business context recorded (see
+  below) and a North-Star priority function drafted for the guidance model.
+  Weak point stated plainly: item 28 is tested but unlanded; the 110-char
+  foreign credential still needs rotation at source (Yehor); item 21's code fix
+  and the §5 design fork are the next session's P0, both gated on a Yehor
+  decision.
+
+## Calibration record (continued) — Session 027
+
+Claims checked this session and their verdicts: Session-026 close landed
+(CONFIRMED, 2 methods) · real HEAD `6650918` then `f02ad21` (CONFIRMED, 2
+methods) · four close-conditions (CONFIRMED) · BACKLOG 25 shipped+pushed
+(CONFIRMED on origin) · suite ≥90% (CONFIRMED, 90.62% live) · §5 live
+(CONFIRMED on running image) · item 27 fixed (CONFIRMED on running image) ·
+"BACKLOG.md is stale / lacks 25-26" (FALSIFIED ×3) · "memo is chat-only"
+(FALSIFIED) · implicit "BACKLOG 28 was landed" (FALSIFIED at close — tree at
+`f02ad21`). **Every drift was an INHERITED claim (user assertion or a pasted
+external analysis); zero false claims originated in this session's own output**
+— the same signature as Sessions 025/026. Of this session's own verifiable
+deliverables (25 shipped, §5 confirmed, 27 fixed), 3/3 held. Calibration on
+inherited claims checked: 7 CONFIRMED / 11 = 0.64 — the low ratio is healthy
+here (it means the hard checks are catching inherited drift, not that our own
+records drifted).
+
+## Heuristics (earned) — Session 027 additions
+
+- H14 [REINFORCED 2026-07-29, third independent occurrence]: the "BACKLOG.md is
+  stale / the memo isn't filed" premise recurred twice more this session (once
+  from Yehor, once inside a pasted external analysis), both falsified against
+  `origin` HEAD. The structural cause is that a handoff prompt or an external
+  reasoning pass narrates state from memory rather than reading the tree — so
+  the fix is unchanged (verify the premise against the tree before acting) and
+  now doubly evidenced. When an inherited plan's FIRST step is "reconcile
+  something into memory," check whether it is already there before doing it.
+
+- H17-candidate [applied 2026-07-29, needs one more occurrence]: validate a
+  credential's SHAPE/validity LOCALLY before deploying it remotely. The local
+  `models.list()` "KEY VALID" check gated `fly secrets set`, breaking a cycle
+  that had already burned three bad-secret redeploys. Promote if a second
+  session avoids a remote round-trip by a local pre-check. (This is the same
+  instinct BACKLOG 28 encodes in code: fail on shape at the boundary, not at
+  first use.)
+
+- H16 [REINFORCED 2026-07-29]: applied twice more — `git apply --3way` failed
+  with "does not match index" on a CRLF/index mismatch (resolved via
+  `--ignore-whitespace`), and the device-VM mount showed ~53 modified files
+  while Yehor's real Windows git showed only the two intended. Normalise/verify
+  against the authoritative tree before concluding.
+
+## Business context (Session 027, for prioritization only)
+
+Yehor is weighing a university deferral (VIA Horsens, supply & climate eng.)
+against continuing three products (Patchward, FixProve, Zerkalnya). He asked the
+guidance model to orient sessions toward SECURE, demonstrable income. Translation
+for this project's priority function, NOT its content: the North Star is distance
+to first paying Marketplace install — a falsifiable traction milestone — not
+elegance, coverage, or backlog hygiene (those are means). Business claims get the
+same Tier discipline as technical ones: no inflating progress. Sessions aim at
+customers; parental peace-of-mind follows real traction, not a tidy backlog.
