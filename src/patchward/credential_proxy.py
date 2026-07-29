@@ -41,6 +41,21 @@ _CREDENTIAL_KEYS: frozenset[str] = frozenset({
     "LANGFUSE_PUBLIC_KEY",
     "LANGFUSE_SECRET_KEY",
     "GITHUB_TOKEN",   # KS-TRACE: AC-P5-01, C-P5-03 | Phase 5 push credential
+    # BACKLOG 25 — GitHub App credentials read from os.environ on the hosted
+    # (webhook) path. The App private key + App ID mint installation access
+    # tokens for EVERY installation of the App, not just the repo under scan;
+    # leaving them out of this set forwarded them, unfiltered, into Gate 3's
+    # adversarial child (cross-tenant exposure). All four are read directly
+    # from os.environ by their consumers (github_app_auth.py:47/50/75,
+    # webhook.py:238), so excluding them from the container env and scrubbing
+    # their values breaks no legitimate reader. NOTE: GITHUB_APP_ID is not
+    # itself secret (a short numeric id); it is included for uniform container
+    # exclusion — its only side effect is that scrub() also redacts that
+    # value, an acceptable, conservative over-redaction.
+    "GITHUB_APP_PRIVATE_KEY_B64",
+    "GITHUB_APP_PRIVATE_KEY",
+    "GITHUB_APP_ID",
+    "GITHUB_WEBHOOK_SECRET",
 })
 
 

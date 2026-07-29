@@ -248,3 +248,58 @@ def test_github_token_single_source_of_truth() -> None:
     assert _CREDENTIAL_KEYS is sandbox_keys, (
         "_CREDENTIAL_KEYS must be the same object in credential_proxy and docker_sandbox"
     )
+
+
+# ---------------------------------------------------------------------------
+# BACKLOG 25 — GitHub App credentials must be in _CREDENTIAL_KEYS so they are
+# excluded from the container env forwarded to Gate 3's adversarial child and
+# scrubbed from any output. Cross-tenant blast radius: the App private key +
+# App ID mint installation tokens for EVERY installation of the App.
+# ---------------------------------------------------------------------------
+
+_BACKLOG25_APP_KEYS = (
+    "GITHUB_APP_PRIVATE_KEY_B64",
+    "GITHUB_APP_PRIVATE_KEY",
+    "GITHUB_APP_ID",
+    "GITHUB_WEBHOOK_SECRET",
+)
+
+
+@pytest.mark.parametrize("key", _BACKLOG25_APP_KEYS)
+def test_github_app_credentials_in_credential_keys(key: str) -> None:
+    """BACKLOG 25: every GitHub App credential read from os.environ must be in _CREDENTIAL_KEYS."""
+    assert key in _CREDENTIAL_KEYS, (
+        f"{key} is read from os.environ on the hosted path and must be in "
+        "_CREDENTIAL_KEYS so it is excluded from the container env and scrubbed"
+    )
+
+
+@pytest.mark.parametrize("key", _BACKLOG25_APP_KEYS)
+def test_github_app_credentials_excluded_from_container_env(
+    key: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """BACKLOG 25: App credentials must never appear in the container env dict."""
+    monkeypatch.setenv(key, "app-credential-value")
+    proxy = CredentialProxy().load()
+    env = proxy.get_container_env()
+    assert key not in env, f"{key} must be excluded from get_container_env()"
+
+
+def test_github_app_private_key_scrubbed(monkeypatch: pytest.MonkeyPatch) -> None:
+    """BACKLOG 25: the App private key value must be redacted by scrub()."""
+    fake_key = "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tZmFrZWtleWJhc2U2NA=="
+    monkeypatch.setenv("GITHUB_APP_PRIVATE_KEY_B64", fake_key)
+    proxy = CredentialProxy().load()
+    scrubbed = proxy.scrub(f"error while using key {fake_key} to mint token")
+    assert fake_key not in scrubbed, "App private key value must be redacted"
+    assert "[REDACTED]" in scrubbed
+
+
+def test_github_webhook_secret_scrubbed(monkeypatch: pytest.MonkeyPatch) -> None:
+    """BACKLOG 25: the webhook secret value must be redacted by scrub()."""
+    fake_secret = "whsec_faketestsecret0123456789abcdef"
+    monkeypatch.setenv("GITHUB_WEBHOOK_SECRET", fake_secret)
+    proxy = CredentialProxy().load()
+    scrubbed = proxy.scrub(f"signature check with {fake_secret}")
+    assert fake_secret not in scrubbed, "webhook secret value must be redacted"
+    assert "[REDACTED]" in scrubbed
