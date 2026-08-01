@@ -1781,7 +1781,7 @@ customers; parental peace-of-mind follows real traction, not a tidy backlog.
   "modifications" = CRLF-only noise (0 non-whitespace lines changed, 3707/3707).
   No drift in the record.
 
-- [2026-08-01, Session 028 — H14 FOURTH occurrence, self-corrected by Yehor]
+- [2026-08-01, Session 028 — H14 FOURTH occurrence, caught by the agent's own verification pass]
   The "BACKLOG.md is the Jul-27 cut, predates items 25/27/28" premise recurred a
   fourth time — this time inherited from Yehor's own prior turn — and drove a
   proposed Task 2 = "memory reconciliation." Falsified against `origin`: the
@@ -1821,7 +1821,7 @@ honestly in-memo). Own-output integrity: 1/1 deliverable (the memo) held.
 
 - H14 [REINFORCED 2026-08-01, FOURTH independent occurrence]: same "memory file
   is stale / predates recent items" premise, this time inherited from Yehor's own
-  prior turn and self-corrected. Standing fix holds and is now four-times
+  prior turn and caught by the agent's verification pass, then owned by Yehor. Standing fix holds and is now four-times
   evidenced across four sessions (025/026/027/028): when an inherited plan's FIRST
   step is "reconcile X into memory," verify X isn't already there — against
   `origin`, not the narration — before writing anything. Four-for-four makes this
