@@ -1828,4 +1828,51 @@ honestly in-memo). Own-output integrity: 1/1 deliverable (the memo) held.
   the project's most reliable drift signature; treat it as a standing pre-check at
   every session open.
 
+## Session log (continued) — Session 028 CLOSE
+
+- [2026-08-01, Session 028 — close] Closed via session-close. Reconciled: local
+  = origin = `7e4f4da`; every "modified" tracked file (memory/src/tests/runs) = 0
+  real-content diff (pure CRLF noise), no uncommitted work. Deliverables this
+  session (all verified on origin by fresh clone): §5 scope-and-decide memo filed
+  (`memory/BACKLOG_S5_gate3_meaning_memo_2026-08-01.md`, §0–§7), §7 records the
+  DECISION §5 = C2 with reasoning + implementation scope + 2 design notes; BACKLOG
+  item 21/§5 pointer → DECIDED=C2; H14 4th logged with corrected attribution.
+  Three commits (`a2bb547`, `2d6977c`, `7e4f4da`), memory/docs only. NO code
+  changed — `verifier.py` L769/L790 still FAIL, `pipeline.py:68` still dead —
+  confirmed unchanged on origin. L2 goal (scope §5 fork + get + record the
+  decision) = MET. L1: cleared the DECISION gate in front of the hosted-path
+  obstacle; did NOT move it in code — the metric needle is unmoved, next session
+  implements. Weakest point stated plainly: the hosted path STILL cannot publish
+  a PR; §5+21 decided, not built.
+
+## Calibration record (continued) — Session 028 CLOSE
+
+Documentation-only session; calibration is about record accuracy, not code. This
+session's own outputs: 1 real self-caught defect — the §5 memo was reference-only
+(pointer + log committed while the memo itself stayed untracked) for two commits
+before being filed in `7e4f4da`; caught by a pre-push self-check, fixed, and
+re-verified by fresh clone. Every other own-output claim held on origin
+(decision recorded, attribution corrected, no code touched). Inherited claims:
+"BACKLOG.md predates 25/27/28" FALSIFIED (H14 4th). Signature unchanged across
+025–028: drift is inherited, not self-originated; the one self-defect was caught
+before it reached origin's HEAD as a live inconsistency. Close verdict: safe —
+nothing half-landed, nothing reference-only remaining.
+
+## Heuristics — Session 028 CLOSE additions
+
+- H18-candidate [earned 2026-08-01, needs one more occurrence to promote]: when a
+  commit adds a POINTER/reference to a NEW file, verify the file itself is tracked
+  in the SAME commit (`git status` for `??`, or `git cat-file -e HEAD:<path>`
+  after). Evidence: the §5 memo was referenced by two commits while sitting
+  untracked — a "reference-only artifact" that looks filed but isn't. Retest next
+  time a new file is introduced alongside a pointer to it.
+
+- H16 [REINFORCED 2026-08-01]: CRLF-normalised diffs were again required to
+  separate real change from noise across the whole close (60+ files showed
+  "modified", all 0 real lines). The normalise-before-you-conclude rule paid off
+  a fourth session running; treat the sandbox `git status` as noisy-by-default on
+  this Windows-origin tree.
+
+
+
 
