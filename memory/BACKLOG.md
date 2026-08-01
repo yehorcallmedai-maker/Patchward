@@ -1320,7 +1320,7 @@ Item 21 itself (the dead `github_token` param + absent push credential) remains
 OPEN — this and §5 are the two remaining hosted-path blockers now that 27 is
 fixed. Original entry preserved below. ↓
 
-**§5 FORK MEMO (2026-08-01, Session 028):** the *what-does-Gate-3-mean* fork — install the test runner into the webhook image (Gate 3 executes customer tests) vs. SKIP gracefully when the runner is absent (Gate 3 becomes advisory on hosted) — is scoped in `memory/BACKLOG_S5_gate3_meaning_memo_2026-08-01.md`. Key entanglement (memo §3): the missing runner is currently the only thing keeping item 22 dormant on hosted, so §5-Option-A is the act that arms item 22 — §5-A ⇒ item 22-A ⇒ new infra. Decision OPEN, Yehor-owned.
+**§5 FORK MEMO (2026-08-01, Session 028):** the *what-does-Gate-3-mean* fork — install the test runner into the webhook image (Gate 3 executes customer tests) vs. SKIP gracefully when the runner is absent (Gate 3 becomes advisory on hosted) — is scoped in `memory/BACKLOG_S5_gate3_meaning_memo_2026-08-01.md`. Key entanglement (memo §3): the missing runner is currently the only thing keeping item 22 dormant on hosted, so §5-Option-A is the act that arms item 22 — §5-A ⇒ item 22-A ⇒ new infra. **DECISION 2026-08-01 (Session 028): §5 = C2** (SKIP-and-disclose) — implementation scoped in the memo §7 (verifier SKIP-not-FAIL + PR-body disclosure + item 21 token threading + live site-copy check); item 22 stays deferred/dormant. Not yet implemented.
 
 **Status:** OPEN — logged only, deliberately NOT bundled into BACKLOG 19's
 security diff per the §2 keep-security-diffs-clean rule. Yehor's own
