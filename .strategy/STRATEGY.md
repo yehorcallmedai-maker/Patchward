@@ -1770,3 +1770,62 @@ to first paying Marketplace install — a falsifiable traction milestone — not
 elegance, coverage, or backlog hygiene (those are means). Business claims get the
 same Tier discipline as technical ones: no inflating progress. Sessions aim at
 customers; parental peace-of-mind follows real traction, not a tidy backlog.
+
+## Session log (continued) — Session 028
+
+- [2026-08-01, Session 028 — open] Opened via session-strategy-synthesis.
+  Re-verified the Session-027 close BY CONTENT against `origin` HEAD `02148c6`
+  (ls-remote + fresh clone + local mount all agree): all four BACKLOG banners
+  (25/27 CLOSED, 28 PATCH-PREPARED, 21 §5-CONFIRMED) and all four STRATEGY
+  027 sections present; `SESSION_CLOSE_2026-07-29.md` exists. Working-tree
+  "modifications" = CRLF-only noise (0 non-whitespace lines changed, 3707/3707).
+  No drift in the record.
+
+- [2026-08-01, Session 028 — H14 FOURTH occurrence, self-corrected by Yehor]
+  The "BACKLOG.md is the Jul-27 cut, predates items 25/27/28" premise recurred a
+  fourth time — this time inherited from Yehor's own prior turn — and drove a
+  proposed Task 2 = "memory reconciliation." Falsified against `origin`: the
+  file's last commit is `02148c6` (Session 027 close) and already carries all four
+  reality-changes (item 25 CLOSED 519/90.62% L1560-62, item 27 CLOSED live
+  L1655-61, §5 CONFIRMED L1313, coverage L1236). Task 2 declared a NO-OP; the
+  file was NOT rewritten — reconciling a current file would have manufactured
+  drift. Yehor owned the error plainly and asked it be logged. Signature unchanged:
+  the drift is an inherited state-claim; zero drift in this session's own outputs.
+
+- [2026-08-01, Session 028 — deliverable] §5 scope-and-decide memo produced:
+  `memory/BACKLOG_S5_gate3_meaning_memo_2026-08-01.md`, verified-at HEAD
+  `02148c6`, hard stop, no option chosen. Load-bearing finding (§3): the missing
+  pytest runner is currently the ONLY thing keeping item 22's exposure dormant on
+  the hosted path — `python -m pytest` dies at the interpreter import step before
+  `conftest.py` runs — so §5-Option-A (install runner) is the literal act that
+  arms item 22's cross-tenant exfiltration path. §5-A ⇒ item 22-A ⇒ new infra
+  (Docker, absent on Fly). §5-B keeps item 22 dormant at the cost of Gate 3
+  becoming advisory on hosted (a positioning/site-copy decision). Cross-matrix
+  names the one unsafe bundle: §5-A + item 22-B. Decision OPEN, Yehor-owned.
+
+## Calibration record (continued) — Session 028
+
+Claims checked this session: origin HEAD = Session-027 close (CONFIRMED, 3
+methods) · close landed by content, all 8 banners/sections (CONFIRMED) ·
+working-tree diffs = CRLF-only (CONFIRMED, 0 non-ws) · item 25 fix on origin
+(CONFIRMED) · item 28 patch present-but-unlanded + applies clean (CONFIRMED) ·
+item 21 `github_token` dead in `run_repo_pipeline` (CONFIRMED, read L63-329) ·
+§5 pytest-absent→FAIL mechanism (CONFIRMED from source) · "BACKLOG.md predates
+25/27/28" (FALSIFIED — H14 4th) · "Task 2 reconciliation needed" (FALSIFIED —
+no-op). Every drift again an INHERITED claim; 0 originated in this session's own
+output — same signature as Sessions 025/026/027. The §5 memo's own claims were
+verified against cited line numbers; only image-size deltas left Tier-1 (flagged
+honestly in-memo). Own-output integrity: 1/1 deliverable (the memo) held.
+
+## Heuristics — Session 028 update
+
+- H14 [REINFORCED 2026-08-01, FOURTH independent occurrence]: same "memory file
+  is stale / predates recent items" premise, this time inherited from Yehor's own
+  prior turn and self-corrected. Standing fix holds and is now four-times
+  evidenced across four sessions (025/026/027/028): when an inherited plan's FIRST
+  step is "reconcile X into memory," verify X isn't already there — against
+  `origin`, not the narration — before writing anything. Four-for-four makes this
+  the project's most reliable drift signature; treat it as a standing pre-check at
+  every session open.
+
+
