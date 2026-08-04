@@ -1873,6 +1873,137 @@ nothing half-landed, nothing reference-only remaining.
   a fourth session running; treat the sandbox `git status` as noisy-by-default on
   this Windows-origin tree.
 
+## Session log (continued) — Session 029
 
+- [2026-08-04, Session 029 — open] Opened via session-strategy-synthesis. Real
+  HEAD established independently (`b003a39`) since the prompt cited none per H2;
+  Session 028's close confirmed BY CONTENT via fresh clone, including the H18
+  check that the §5 memo was genuinely tracked and not reference-only.
 
+- [2026-08-04, Session 029 — INHERITED DRIFT, H14 FIFTH occurrence] Yehor stated
+  from memory that the suite baseline was "483 passed on Python 3.14.4".
+  FALSIFIED against the tree: 483/90.46% is the Session ~020-023 figure
+  (STRATEGY L58/163); the live baseline was 519/90.62% (Session 027, L1677).
+  Signature unchanged across 025-029: drift is inherited state-claims, not
+  self-originated. NOTE — the correction did NOT weaken his argument, it
+  strengthened it: he was arguing the sandbox run must not be the gate, and the
+  fact that my sandbox produced 517+2 rather than his 519 proved the counts had
+  never actually matched.
 
+- [2026-08-04, Session 029 — ENVIRONMENT UNLOCK] The suite was made to run inside
+  the agent sandbox for the first time (Linux, Python 3.10, PyPI reachable,
+  pytest-xdist). This removed the constraint that made Session 028
+  documentation-only. It is explicitly an ADVISORY pre-check, never the gate —
+  see H20/Yehor's ruling. `uv python install 3.12` fails in the sandbox (GitHub
+  releases blocked), so an on-spec interpreter is not obtainable here.
+
+- [2026-08-04, Session 029 — §5 C2 SHIPPED, steps 1-2] Commit `d72c0df`, 4 files,
+  +354/-8, fresh-clone verified on origin with all four blobs stored LF.
+  `verifier.py`: 3 distinct SKIP reason constants; runner-absent SKIPs instead of
+  FAILing for pytest and jest; all pre-existing SKIP triggers preserved.
+  `pr_publisher.py`: PR-body disclosure keyed off the gate REASON, never the
+  status. +12 tests. Gate: Yehor's Python 3.14.4 — 531 passed / 3 skipped /
+  91.11% (up from 90.62%).
+
+- [2026-08-04, Session 029 — SPEC WAS EXPLOITABLE; defense added over it] Memo §7
+  said "detect the runner-absent signature". Implemented literally, that is a
+  VERIFICATION BYPASS: a customer repo (adversarial input per ADR-013) that merely
+  PRINTS "...: No module named pytest" would convert a genuinely FAILING suite
+  into a SKIP, publishing a PR for a fix whose tests failed. Verified exploitable
+  by direct test of the regex before relying on it. The shipped form requires a
+  line-anchored match AND an independent `python -c "import pytest"` probe that
+  never reads repo-controlled output, fail-closed on probe ambiguity.
+
+- [2026-08-04, Session 029 — ITEM 21 TRACED, NOT WRITTEN] Size settled: ONE HOP,
+  does not touch App-token minting. `webhook.py:276/282/302` already mint,
+  register and clone with the installation token; `webhook.py:333-338` passes it
+  to `run_repo_pipeline`, which drops it (`pipeline.py:68`); `PRPublisher`
+  independently reads `GITHUB_TOKEN` from the proxy and Fly has no such secret
+  (`credential_proxy.py:68`). Fix is a `push_token` param on `PRPublisher`, NOT a
+  static PAT on Fly. Held for its own arc per Yehor's split ruling.
+
+- [2026-08-04, Session 029 — H18 SECOND OCCURRENCE, promotes]
+  `memory/Patchward_Turning-Point_Industrial-Plan_2026-07-16.md` is referenced by
+  FIVE tracked documents but is itself untracked on origin, not gitignored, and
+  has been so since 2026-07-16. Same reference-only pattern as the §5 memo in
+  Session 028, now independently recurring. Flagged for Yehor; not added by the
+  agent because it is his strategic document.
+
+## Session log (continued) — Session 029 CLOSE
+
+- [2026-08-04, Session 029 — close] Closed via session-close. Reconciled: local =
+  origin = `d72c0df` (the code commit; the memory commit sealing this session
+  moves HEAD after this block is written, per H2). Working tree carried 0 real
+  content changes at close — every "modified" line was CRLF noise for the fifth
+  consecutive session. L2 goal (implement §5 C2 + item 21 as ONE arc) =
+  **PARTIAL, deliberately**: steps 1-2 landed, steps 3-4 (item 21, live
+  site-copy check) held. L1: removed ONE of the two remaining hosted-path
+  blockers. Weakest point stated plainly: the hosted path STILL cannot publish a
+  PR — C2 cleared the verifier blocker, the auth blocker remains.
+
+## Calibration record (continued) — Session 029
+
+Claims checked at close: 10. Confirmed: 10. Drifted: 0 in this session's own
+outputs. **Score 10/10 = 1.00.**
+
+Inherited-claim drift: 1 (the "483 baseline", H14 5th) — falsified before it
+could inform the plan, consistent with 025-028.
+
+Own-output defects caught before landing: 2, and both matter.
+  1. The regex-only implementation of memo §7 was exploitable. Caught by testing
+     the regex directly rather than trusting it, BEFORE it was relied on.
+  2. The first real-repo adversarial run reported SIX bypasses. All false — the
+     harness invoked a pytest-less interpreter, so the suites never ran and SKIP
+     was the correct verdict. Caught by diagnosing before reporting. Had it been
+     reported, it would have been a false security alarm against my own patch.
+
+One process defect NOT self-caught: the negative control shipped mocked-only in
+the first pass. A mocked `subprocess.run` also mocks the probe, so a broken probe
+would still have looked correct. It took Yehor's explicit demand to surface it.
+Recorded honestly — the unmocked controls exist because he pushed.
+
+Trend 025-029: five sessions, zero drift originating in the agent's own committed
+outputs; all drift inherited and falsified at the gate. The new signature this
+session is that the two self-caught defects were both in the agent's *reasoning
+about its own verification*, not in the code — which is the harder class.
+
+## Heuristics — Session 029 update
+
+- **H18 [PROMOTED from candidate, earned 2026-08-01, confirmed 2026-08-04]:** when
+  a commit adds a POINTER/reference to a file, verify the file itself is tracked
+  (`git cat-file -e HEAD:<path>` or fresh-clone `ls-files`). Two independent
+  occurrences: the §5 memo (Session 028, reference-only for two commits) and
+  `Patchward_Turning-Point_Industrial-Plan_2026-07-16.md` (untracked for 19 days
+  while five tracked documents cite it). Generalised form: **run the check on
+  INHERITED references too, not only on files the current commit touches.**
+
+- **H16 [REINFORCED — 5th consecutive session]:** CRLF-normalised diffs were again
+  required to tell real change from noise (57 files "modified", 0 real). Treat
+  sandbox `git status` on this Windows-origin tree as noisy-by-default.
+
+- **H20 [NEW, earned 2026-08-04]:** never `git add`/`commit` from the agent
+  sandbox on this repo. Verified mechanism, not a precaution: sandbox git has
+  `core.autocrlf` unset and there is no `.gitattributes`, so `git hash-object`
+  from the sandbox yields a CRLF blob where HEAD stores LF — a sandbox commit
+  rewrites whole files and pollutes history irreversibly. The agent prepares and
+  verifies; Yehor stages and commits on Windows. Tripwire before every push:
+  `git diff --cached --stat` must show the expected small line counts.
+
+- **H21 [NEW, earned 2026-08-04]:** a failing adversarial result is a claim about
+  the HARNESS until the harness is verified. The first real-repo pass reported six
+  bypasses; the true cause was that `_run_pytest` invokes bare `python`, which in
+  the sandbox has no pytest, so no suite ever ran. Diagnose the environment before
+  reporting a security finding — especially a finding against your own work, where
+  the false alarm is expensive and the temptation to believe it is high.
+
+- **H22 [NEW, earned 2026-08-04]:** mocked tests prove BRANCHING, not BEHAVIOUR.
+  Where a test is the sole evidence for a security guarantee, it must be unmocked,
+  because a mock of the subject also mocks the defense. Pair it with a mutation
+  check — delete the defense and confirm the test goes red — otherwise the test's
+  teeth are assumed rather than demonstrated. Evidence: deleting the import probe
+  turned both negative controls red with the exact bypass assertion.
+
+- **H23 [CANDIDATE, 2026-08-04, needs one more occurrence]:** when a spec says
+  "detect X by string match", test the string against hostile input BEFORE
+  implementing it. Here the spec-conformant implementation was a verification
+  bypass, and one direct regex test surfaced it in seconds.
