@@ -30,8 +30,11 @@ import pytest
 
 from patchward.verifier import (
     FAIL,
+    NO_SUITE_REASON,
     PASS,
+    RUNNER_ABSENT_REASON,
     SKIP,
+    TEST_DEPS_REASON,
     GateResult,
     Verifier,
     VerifierResult,
@@ -513,6 +516,181 @@ class TestGate3TestSuite:
 
         assert result.status == FAIL
         assert "pytest exit 1" in result.reason
+
+
+# ---------------------------------------------------------------------------
+# Gate 3 — runner-absent SKIP (§5 decision C2)
+#
+# The hosted webhook image installs only `.[webhook]`, which excludes pytest
+# and ships no node/npx. Before C2 that made Gate 3 hard-FAIL on any customer
+# repo that HAS a suite, so verification_status was never "verified" and no PR
+# was ever published. C2: SKIP-and-disclose instead.
+#
+# The tests below deliberately pin BOTH directions — that the downgrade happens
+# when the runner is genuinely absent, and that it CANNOT happen otherwise.
+# ---------------------------------------------------------------------------
+
+class TestGate3RunnerAbsent:
+    def test_pytest_runner_absent_skips_with_distinct_reason(self, tmp_path):
+        """Runner absent -> SKIP, with the runner-absent reason (not deps, not no-suite)."""
+        wt = tmp_path / "worktree"
+        wt.mkdir()
+        run_proc = MagicMock(
+            returncode=1,
+            stdout="",
+            stderr="/usr/local/bin/python: No module named pytest\n",
+        )
+        probe_proc = MagicMock(returncode=1, stdout="", stderr="")
+
+        with patch("subprocess.run", side_effect=[run_proc, probe_proc]):
+            result = Verifier()._run_pytest(wt)
+
+        assert result.status == SKIP
+        assert result.reason == RUNNER_ABSENT_REASON
+        # Must be distinguishable from the other two SKIP reasons — the PR-body
+        # disclosure keys off exactly this string.
+        assert result.reason != NO_SUITE_REASON
+        assert not result.reason.startswith(TEST_DEPS_REASON)
+
+    def test_jest_runner_absent_skips_not_fails(self, tmp_path):
+        """npx missing -> SKIP (was FAIL 'npx not found')."""
+        wt = tmp_path / "worktree"
+        wt.mkdir()
+        with patch("subprocess.run", side_effect=FileNotFoundError):
+            result = Verifier()._run_jest(wt)
+
+        assert result.status == SKIP
+        assert result.reason == RUNNER_ABSENT_REASON
+
+    def test_forged_signature_does_not_downgrade_a_real_failure(self, tmp_path):
+        """
+        ADVERSARIAL: a customer test that merely PRINTS the runner-absent
+        string must NOT convert a genuine test failure into a SKIP. The import
+        probe is authoritative; here it reports pytest IS importable.
+        """
+        wt = tmp_path / "worktree"
+        wt.mkdir()
+        run_proc = MagicMock(
+            returncode=1,
+            stdout="E   AssertionError: No module named pytest\n1 failed\n",
+            stderr="",
+        )
+        probe_proc = MagicMock(returncode=0, stdout="", stderr="")  # importable
+
+        with patch("subprocess.run", side_effect=[run_proc, probe_proc]):
+            result = Verifier()._run_pytest(wt)
+
+        assert result.status == FAIL
+        assert "pytest exit 1" in result.reason
+
+    def test_probe_failure_is_fail_closed(self, tmp_path):
+        """An unusable probe must keep the pre-existing FAIL, never invent a SKIP."""
+        wt = tmp_path / "worktree"
+        wt.mkdir()
+        run_proc = MagicMock(
+            returncode=1,
+            stdout="",
+            stderr="/usr/local/bin/python: No module named pytest\n",
+        )
+        for boom in (OSError("boom"), FileNotFoundError):
+            with patch("subprocess.run", side_effect=[run_proc, boom]):
+                result = Verifier()._run_pytest(wt)
+            assert result.status == FAIL, boom
+
+    def test_existing_skip_triggers_are_preserved(self, tmp_path):
+        """Regression guard: the pre-existing test-deps SKIP still fires."""
+        wt = tmp_path / "worktree"
+        wt.mkdir()
+        proc = MagicMock(
+            returncode=1,
+            stdout="ModuleNotFoundError: No module named 'requests'",
+            stderr="",
+        )
+        with patch("subprocess.run", return_value=proc):
+            result = Verifier()._run_pytest(wt)
+
+        assert result.status == SKIP
+        assert result.reason.startswith(TEST_DEPS_REASON)
+
+    def test_ordinary_failure_still_fails(self, tmp_path):
+        """Regression guard: a plain red suite is still a FAIL."""
+        wt = tmp_path / "worktree"
+        wt.mkdir()
+        proc = MagicMock(returncode=1, stdout="FAILED tests/test_x.py", stderr="")
+        with patch("subprocess.run", return_value=proc):
+            result = Verifier()._run_pytest(wt)
+
+        assert result.status == FAIL
+
+    # -- real-repo controls: no mocks, actual pytest, actual subprocesses ----
+    #
+    # The mocked tests above prove the BRANCHING. They cannot prove the
+    # BEHAVIOUR, because a mocked subprocess.run also mocks the probe — so a
+    # broken probe would still look correct. These two run the real thing.
+    #
+    # They self-skip when bare `python` (the interpreter _run_pytest actually
+    # invokes) has no pytest, because in that case the runner genuinely IS
+    # absent and the negative control cannot be expressed.
+
+    @staticmethod
+    def _bare_python_has_pytest() -> bool:
+        try:
+            return subprocess.run(
+                ["python", "-c", "import pytest"],
+                capture_output=True, timeout=30,
+            ).returncode == 0
+        except (OSError, subprocess.SubprocessError):
+            return False
+
+    def test_real_repo_forging_signature_still_fails(self, tmp_path):
+        """
+        NEGATIVE CONTROL (unmocked). A repo whose test output PRINTS the
+        runner-absent signature, while the runner is genuinely present, must
+        still FAIL. This is the single test separating "graceful degradation"
+        from "verification bypass" — if it ever goes green as SKIP, C2 has
+        become a way for a hostile repo to get a failing fix marked verified.
+        """
+        if not self._bare_python_has_pytest():
+            pytest.skip("bare `python` has no pytest — runner genuinely absent here")
+
+        wt = tmp_path / "wt"
+        (wt / "tests").mkdir(parents=True)
+        (wt / "tests" / "test_evil.py").write_text(
+            'def test_evil():\n'
+            '    print("\\n/usr/local/bin/python: No module named pytest")\n'
+            '    assert False, "this test really fails"\n',
+            encoding="utf-8",
+        )
+        result = Verifier()._run_pytest(wt)
+
+        assert result.status == FAIL, (
+            f"VERIFICATION BYPASS: forged signature produced {result.status} "
+            f"({result.reason!r}) — a failing suite must never SKIP"
+        )
+        assert result.reason != RUNNER_ABSENT_REASON
+
+    def test_real_repo_healthy_suite_passes(self, tmp_path):
+        """POSITIVE CONTROL (unmocked): a real green suite still PASSes."""
+        if not self._bare_python_has_pytest():
+            pytest.skip("bare `python` has no pytest — runner genuinely absent here")
+
+        wt = tmp_path / "wt"
+        (wt / "tests").mkdir(parents=True)
+        (wt / "tests" / "test_ok.py").write_text(
+            "def test_ok():\n    assert True\n", encoding="utf-8"
+        )
+        assert Verifier()._run_pytest(wt).status == PASS
+
+    def test_runner_absent_still_yields_verified_overall(self):
+        """
+        The point of C2: Gate 3 SKIP keeps verification_status == "verified",
+        so the hosted path can actually publish a PR.
+        """
+        vr = VerifierResult()
+        vr.gate_1 = GateResult(PASS, "")
+        vr.gate_2 = GateResult(PASS, "")
+        vr.gate_3 = GateResult(SKIP, RUNNER_ABSENT_REASON)
+        assert vr.verification_status == "verified"
 
 
 # ---------------------------------------------------------------------------

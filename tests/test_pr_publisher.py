@@ -109,6 +109,57 @@ class TestPRPublisher:
             publisher.publish(fix, vr, _make_finding())
         mock_push.assert_not_called()
 
+    def test_pr_body_discloses_when_runner_absent(self, tmp_path: Path) -> None:
+        """
+        §5 decision C2: when Gate 3 SKIPped because this environment had no
+        test runner, the PR body must say so in plain words. Keyed off the
+        gate REASON, not the status.
+        """
+        from patchward.verifier import PASS, SKIP, RUNNER_ABSENT_REASON
+
+        cfg = _make_config(tmp_path)
+        publisher = PRPublisher(cfg, _make_proxy(), http_client=MagicMock())
+        vr = _make_verifier_result()
+        vr.gate_3 = GateResult(SKIP, RUNNER_ABSENT_REASON)
+
+        body = publisher._build_pr_body(
+            _make_verified_fix(), vr, _make_finding()
+        )
+        assert "Automated test suite was not executed in the hosted " \
+               "environment; please run your CI." in body
+
+    def test_pr_body_no_disclosure_for_other_skip_reasons(
+        self, tmp_path: Path
+    ) -> None:
+        """
+        ADVERSARIAL: 'skip' alone must NOT trigger the disclosure. A repo with
+        no tests at all is a fact about the CUSTOMER's repo, not about our
+        environment, and claiming we failed to run something would be false.
+        """
+        from patchward.verifier import SKIP, NO_SUITE_REASON, TEST_DEPS_REASON
+
+        cfg = _make_config(tmp_path)
+        publisher = PRPublisher(cfg, _make_proxy(), http_client=MagicMock())
+        for reason in (NO_SUITE_REASON, f"{TEST_DEPS_REASON}: x", ""):
+            vr = _make_verifier_result()
+            vr.gate_3 = GateResult(SKIP, reason)
+            body = publisher._build_pr_body(
+                _make_verified_fix(), vr, _make_finding()
+            )
+            assert "please run your CI" not in body, reason
+            assert "Gate 3 ran the project test suite" in body
+
+    def test_pr_body_no_disclosure_when_tests_actually_ran(
+        self, tmp_path: Path
+    ) -> None:
+        """A genuine PASS must never carry the disclosure."""
+        cfg = _make_config(tmp_path)
+        publisher = PRPublisher(cfg, _make_proxy(), http_client=MagicMock())
+        body = publisher._build_pr_body(
+            _make_verified_fix(), _make_verifier_result(), _make_finding()
+        )
+        assert "please run your CI" not in body
+
     def test_build_pr_body_has_five_sections(self, tmp_path: Path) -> None:
         """_build_pr_body() renders all five ## sections (AC-P5-05, C-P5-06)."""
         cfg = _make_config(tmp_path)

@@ -23,6 +23,12 @@ Gate sequence:
                            still-used `import subprocess` was deleted and every
                            gate passed anyway (BACKLOG 3a).
   Gate 3 — Test suite:     suite detected → must pass; not detected → SKIP (not FAIL).
+                           Also SKIP (not FAIL) when the test RUNNER is absent
+                           from this environment — the hosted webhook image
+                           ships no pytest module and no node/npx (§5 decision
+                           C2). That is a fact about our image, not the
+                           customer's patch, so it is disclosed in the PR body
+                           rather than reported as a failed verification.
 
 "Verified" = Gate 1 PASS + Gate 2 PASS + Gate 3 (PASS or SKIP).
 Any FAIL = verification_status: "failed". Fix branch persists — still the deliverable.
@@ -48,6 +54,7 @@ from __future__ import annotations
 
 import difflib
 import json
+import re
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -57,12 +64,42 @@ __all__ = [
     "GateResult",
     "VerifierResult",
     "Verifier",
+    "NO_SUITE_REASON",
+    "TEST_DEPS_REASON",
+    "RUNNER_ABSENT_REASON",
 ]
 
 # Gate status literals
 PASS = "pass"  # nosec B105 — gate status literal, not a password
 FAIL = "fail"
 SKIP = "skip"
+
+# Gate 3 SKIP reason constants.
+#
+# These are DISTINCT on purpose. Downstream consumers (notably the PR-body
+# disclosure added for §5 decision C2) must be able to tell "this repo has no
+# tests" apart from "this repo has tests we could not run here" — the second
+# is a statement about OUR environment, not about the customer's repo, and is
+# the only one that requires a disclosure in the PR body.
+#
+#   NO_SUITE_REASON      — no suite detected in the repo. Nothing to run.
+#   TEST_DEPS_REASON     — suite ran, but the repo's own test dependencies are
+#                          missing. Pre-existing behaviour, unchanged.
+#   RUNNER_ABSENT_REASON — the test RUNNER itself is absent from this
+#                          environment (hosted image ships no pytest module and
+#                          no node/npx). Gate 3 is advisory here.
+NO_SUITE_REASON = "no test suite detected"
+TEST_DEPS_REASON = "test deps not installed"
+RUNNER_ABSENT_REASON = "test runner not available in this environment"
+
+# Signature emitted by `python -m pytest` when the pytest module is absent:
+#   "/usr/local/bin/python: No module named pytest"
+# Anchored to line start so that a customer repo merely PRINTING this string
+# mid-output cannot trip it. Confirmed by an independent import probe before
+# it is ever acted on — see _pytest_module_absent().
+_PYTEST_ABSENT_RE = re.compile(
+    r"^[^\n]*: No module named pytest\b", re.MULTILINE
+)
 
 
 # ---------------------------------------------------------------------------
@@ -656,9 +693,12 @@ class Verifier:
           - pytest: `tests/` directory exists OR any `test_*.py` in repo root
           - jest:   `package.json` with a `test` script containing "jest"
 
-        If no suite detected: SKIP (not FAIL). Logged as gate_3: "skip".
+        If no suite detected: SKIP (not FAIL), reason NO_SUITE_REASON.
         If detected and all pass: PASS.
         If detected and any fail: FAIL.
+        If detected but the runner is absent here: SKIP, reason
+        RUNNER_ABSENT_REASON (§5 decision C2) — distinct from the two SKIP
+        reasons above so the PR body can disclose it specifically.
 
         Timeout: self.timeout_seconds → FAIL with reason: "timeout".
 
@@ -671,14 +711,14 @@ class Verifier:
         """
         runner = self._detect_test_runner(worktree_path)
         if runner is None:
-            return GateResult(SKIP, "no test suite detected")
+            return GateResult(SKIP, NO_SUITE_REASON)
 
         if runner == "pytest":
             return self._run_pytest(worktree_path)
         if runner == "jest":
             return self._run_jest(worktree_path)
 
-        return GateResult(SKIP, "no test suite detected")
+        return GateResult(SKIP, NO_SUITE_REASON)
 
     @staticmethod
     def _detect_test_runner(worktree_path: Path) -> str | None:
@@ -735,7 +775,9 @@ class Verifier:
 
     def _run_pytest(self, worktree_path: Path) -> GateResult:
         """
-        Run pytest in the worktree. PASS if exit code 0, FAIL otherwise.
+        Run pytest in the worktree. PASS if exit code 0, FAIL otherwise,
+        with two SKIP exceptions: the repo's own test deps are missing
+        (pre-existing), or pytest itself is not importable here (§5 C2).
 
         Uses `python -m pytest` to avoid PATH dependency on the pytest binary.
 
@@ -765,12 +807,67 @@ class Verifier:
         # This happens for external repos whose test deps aren't installed in
         # the current Python environment — not a sign the fix is wrong.
         if "ModuleNotFoundError" in output or "ImportError" in output or "no tests ran" in output:
-            return GateResult(SKIP, f"test deps not installed: {summary[:200]}")
+            return GateResult(SKIP, f"{TEST_DEPS_REASON}: {summary[:200]}")
+        # §5 decision C2 — the test RUNNER itself is absent from this
+        # environment (the hosted webhook image installs only `.[webhook]`,
+        # which excludes pytest). That is a fact about OUR image, not about
+        # the customer's patch, so it must not read as a verification FAIL.
+        #
+        # Two independent conditions are required before downgrading, because
+        # the output string alone is forgeable: any customer test that merely
+        # PRINTS "…: No module named pytest" (an assertion message, a captured
+        # log line) would otherwise convert a genuine test failure into a SKIP.
+        # The import probe is the authoritative check; the regex is only a
+        # cheap pre-filter.
+        if _PYTEST_ABSENT_RE.search(output) and self._pytest_module_absent(
+            worktree_path
+        ):
+            return GateResult(SKIP, RUNNER_ABSENT_REASON)
         return GateResult(FAIL, f"pytest exit {proc.returncode}: {summary}")
+
+    def _pytest_module_absent(self, worktree_path: Path) -> bool:
+        """
+        Authoritatively decide whether the pytest MODULE is importable by the
+        same interpreter, resolved from the same cwd, that _run_pytest uses.
+
+        Returns True only on a clean "not importable" answer. Any ambiguity
+        (probe crashed, timed out, interpreter missing) returns False, so the
+        caller keeps the pre-existing FAIL. Fail-closed: an unclear probe must
+        never manufacture a SKIP.
+
+        COUPLING INVARIANT — read before editing either function:
+        this probe MUST invoke the interpreter exactly the way _run_pytest
+        does (currently bare ``python``, resolved via PATH, cwd=worktree).
+        The probe's authority comes entirely from being the same resolution
+        as the run it is adjudicating. If _run_pytest is ever changed to
+        ``sys.executable`` (a reasonable change on its own merits), this
+        function MUST change in the same commit — otherwise the probe would
+        answer for a different interpreter than the one that failed, and
+        could either mask a real failure or suppress a legitimate SKIP.
+        Verified 2026-08-04 by a real-repo adversarial pass: with the runner
+        present, six repo-controlled attempts to forge the runner-absent
+        signature (stdout, stderr, assertion message, conftest, 50x flood,
+        collection error) all still FAILed.
+        """
+        try:
+            probe = subprocess.run(
+                ["python", "-c", "import pytest"],
+                cwd=str(worktree_path),
+                capture_output=True,
+                text=True,
+                timeout=30,
+                encoding="utf-8",
+                errors="replace",
+            )
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            return False
+        return probe.returncode != 0
 
     def _run_jest(self, worktree_path: Path) -> GateResult:
         """
-        Run jest in the worktree. PASS if exit code 0, FAIL otherwise.
+        Run jest in the worktree. PASS if exit code 0, FAIL otherwise —
+        except that a missing `npx` is SKIP, not FAIL (§5 C2): no node
+        runtime here means Gate 3 could not run, not that the fix is wrong.
 
         # KS-TRACE: AC-P4-06, C-P4-04
         """
@@ -787,7 +884,10 @@ class Verifier:
         except subprocess.TimeoutExpired:
             return GateResult(FAIL, "timeout")
         except FileNotFoundError:
-            return GateResult(FAIL, "npx not found")
+            # §5 decision C2 — npx is genuinely not on PATH (the hosted image
+            # ships no node runtime). Unambiguous: FileNotFoundError here comes
+            # from the exec of `npx` itself, so no confirmation probe is needed.
+            return GateResult(SKIP, RUNNER_ABSENT_REASON)
 
         if proc.returncode == 0:
             return GateResult(PASS)

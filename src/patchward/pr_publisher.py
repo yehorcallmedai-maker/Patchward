@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any
 import httpx
 
 from patchward.credential_proxy import CredentialProxy
+from patchward.verifier import RUNNER_ABSENT_REASON
 from patchward.worktree_common import git_push_branch
 
 if TYPE_CHECKING:
@@ -263,6 +264,16 @@ class PRPublisher:
         gate_2 = vr.gate_2.status
         gate_3 = vr.gate_3.status
         vs = vr.verification_status
+        # §5 decision C2 — disclose, in the PR body, when Gate 3 did not
+        # actually execute because this environment lacks the test runner.
+        #
+        # Keyed off the gate REASON, never the status: "skip" alone is
+        # ambiguous (it also means "this repo has no tests", which needs no
+        # disclosure), and a status check would silently start disclosing on
+        # every future SKIP reason anyone adds.
+        runner_absent = (
+            getattr(vr.gate_3, "reason", "") or ""
+        ).strip() == RUNNER_ABSENT_REASON
         fpc = getattr(vr, "false_positive_candidate", False)
 
         diff_summary = (
@@ -295,7 +306,13 @@ class PRPublisher:
             "_Diff attached via fix branch — review the Files Changed tab._",
             "",
             "## Test Output",
-            "_Gate 3 ran the project test suite. See Verification Evidence above._",
+            (
+                "> **Automated test suite was not executed in the hosted "
+                "environment; please run your CI.**"
+                if runner_absent
+                else "_Gate 3 ran the project test suite. "
+                     "See Verification Evidence above._"
+            ),
             "",
             "---",
             "_Opened automatically by [patchward](https://github.com). "
