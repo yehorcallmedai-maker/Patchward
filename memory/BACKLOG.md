@@ -1804,3 +1804,54 @@ independent defects sat undetected on this service (see item 21).
 
 **Owner:** agent-startable for the guard; the `/healthz` semantics question is
 Yehor's.
+
+## 29. `pipeline.py` records "pr_opened" even when PR creation fails (status != "opened") — NEW, surfaced 2026-08-05, Session 030, second independent adversarial pass on item 21's fix
+
+**STATUS: LOGGED ONLY — deliberately NOT folded into item 21's diff.**
+Pre-existing bug that item 21 makes reachable, not a defect item 21
+introduced. Two independent adversarial passes agreed item 21's own diff
+(credential threading into `_push_token()`/`_github_headers()`) is CLEAN;
+this is a separate concern discovered in the same pass, kept separate per
+the same §2 keep-security-diffs-clean discipline that split 21 from 19 and
+28 from 27.
+
+**The finding:** `pipeline.py:262-263` reads
+
+```python
+finding_pr_url = pr_dict.get("url")
+finding_status = "pr_opened"
+```
+
+unconditionally, ignoring `pr_dict["status"]` — the value
+`PRPublisher.publish()` → `_create_pr()` actually returns. `_create_pr()`
+returns `status: "api_error"` (not an exception) on a 403, an unexpected
+status, or a failed draft-retry. Pre-item-21 this branch was unreachable
+in practice on the hosted path: the push itself failed first (no
+credential), so the pipeline never got far enough to call `_create_pr()`
+and report a false status.
+
+**Why item 21 makes this consequential rather than merely present:** item
+21 fixed the push. If PR creation subsequently fails for ANY reason other
+than the auth bug just closed — most plausibly the GitHub App
+installation lacking `pull_requests: write` permission — the sequence is
+now: push succeeds (force-push, branch lands on the customer's repo) →
+`_create_pr()` returns `api_error` → `pipeline.py` ignores that and
+records `"pr_opened"` with an empty `pr_url`. Nothing surfaces the
+failure anywhere: not the run log, not the returned result dict, not any
+log line. A force-pushed `patchward/fix-*` branch sits on the customer's
+repository indefinitely with no PR and no error trail.
+
+**Severity note (deliberately flagged above what "Medium" alone implies):**
+rank this by consequence, not by code complexity. The failure mode is an
+unexplained artifact appearing on a CUSTOMER's infrastructure that
+neither the customer nor Patchward's own operator has any signal to
+notice — not an internal metric being wrong. Triage accordingly.
+
+**Fix (not written here — scope only):** mirror `cli.py:531-547`'s
+existing status handling in `pipeline.py`'s equivalent branch — that path
+already distinguishes `pr_data["status"]` correctly
+(`"[PR] Failed to open (status=...)"`) and can be copied rather than
+re-derived.
+
+**Owner:** unassigned, agent-startable once triaged. Its own arc — do not
+bundle with item 21 or any other open credential-path item.
