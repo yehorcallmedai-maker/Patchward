@@ -22,3 +22,6 @@ Thumbs.db
 .coverage
 
 webhook-reqs.txt
+
+# Sensitive/legal deliverables — never commit (repo has no tracked PDFs)
+*.pdf

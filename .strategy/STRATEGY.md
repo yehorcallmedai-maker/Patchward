@@ -2007,3 +2007,169 @@ about its own verification*, not in the code — which is the harder class.
   "detect X by string match", test the string against hostile input BEFORE
   implementing it. Here the spec-conformant implementation was a verification
   bypass, and one direct regex test surfaced it in seconds.
+
+## Session log (continued) — Session 030
+
+- [2026-08-05, Session 030 — open] Opened via session-strategy-synthesis.
+  Real HEAD confirmed `894f62b`, matching origin and Session 029's close
+  claims by content, not by trust. Working tree's ~57 "modified" files
+  re-confirmed as CRLF noise (H16, 6th consecutive session) via
+  `core.autocrlf=input` diff = empty.
+- [2026-08-05, Session 030 — untracked-artifact triage] Two untracked
+  working-tree files were investigated before any code work, per the
+  standing discipline of checking unrecognized artifacts in a
+  security-sensitive tree before working around them: (1)
+  `Patchward_Counsel_Briefing_Packet_2026-08-03.pdf` was genuinely NOT
+  gitignored (`git check-ignore` returned nothing) — fixed same session by
+  adding a `*.pdf` rule; (2) `backlog28_startup_credential_guard.patch` was
+  read in full — real, well-reasoned security work (fail-loud startup
+  credential-shape guard), applies cleanly to HEAD, but a claimed
+  "mojibake" defect in its comments was independently DISPROVEN by a
+  byte-level check (zero occurrences of the mojibake sequence, correct
+  UTF-8 em-dash present) — the claim originated from a Windows PowerShell
+  `Get-Content` codepage-decoding artifact, not the file. No file fix
+  needed for that specific claim.
+- [2026-08-05, Session 030 — item 21 v1 authored] Implemented the traced fix:
+  `push_token` param on `PRPublisher.__init__`, threaded from
+  `run_repo_pipeline`'s already-minted token at the `pipeline.py`
+  construction site, CLI path verified unaffected (two call sites found via
+  grep, not one as the trace implied — `cli.py:509` untouched, and the
+  shared `pipeline.py` site's CLI-batch value traced to be byte-identical
+  to the old fallback via an upstream `.strip()` in `CredentialProxy.load()`
+  the author's own report initially didn't cite as the reason). 6 new
+  tests, own adversarial self-scan found no leak path. Real gate (Yehor's
+  3.14.4): 546 passed / 3 skipped / 91.13% — matched the predicted
+  531+6+9 math exactly.
+- [2026-08-05, Session 030 — INDEPENDENT ADVERSARIAL PASS 1, NOT CLEAN] A
+  fresh Opus subagent, no access to the authoring report, found the v1 fix
+  incomplete: `_github_headers()` (shared by `_check_branch_protection()`
+  and `_create_pr()`) still read `CredentialProxy` directly. Simulated the
+  hosted path end to end: push succeeds (real token), PR creation gets an
+  empty `Authorization` header and fails, and the branch-protection guard
+  (aborts only on HTTP 200) goes blind because empty auth returns 404/401
+  instead — a genuinely protected branch would no longer be caught before
+  the force-push. Also found: a docstring invariant ("or stored on self")
+  silently deleted rather than honestly updated; `.strip()` dropped on the
+  override path; no type validation; the fix's own line unpinned by any
+  test (deleting it kept the suite green); the new param not
+  self-registering for redaction. Independently reconfirmed the CLI-path
+  claim and closed the construction-time/concurrency question the author
+  had left explicitly open.
+- [2026-08-05, Session 030 — item 21 v2 fix] Routed `_github_headers()`
+  through the same `_push_token()` the push uses — one credential source
+  for all three of `publish()`'s credentialed operations. Closed all 6
+  findings from pass 1. **Mutation-tested each of the 9 load-bearing lines**
+  individually: reverted, confirmed a specific test broke, restored,
+  reconfirmed green. Advisory sandbox suite (Py 3.10): 554 passed.
+- [2026-08-05, Session 030 — INDEPENDENT ADVERSARIAL PASS 2, CLEAN on the
+  core claim] A second fresh Opus subagent, no access to any report,
+  independently re-derived the "all three operations now agree" claim via
+  a live hosted-path simulation (empty proxy, real injected token) and
+  confirmed it directly rather than trusting pass 1's fix description. Ran
+  its own 9-mutation check, independently, with the same result. Verdict:
+  core fix CONFIRMED CLEAN. Surfaced one new Medium finding not previously
+  known: `pipeline.py` ignores `PRPublisher.publish()`'s returned
+  `pr_dict["status"]` and always records `"pr_opened"`, even on
+  `_create_pr()` failure — moot before item 21 (push always failed first),
+  consequential after (push can now succeed while PR creation still fails
+  for an unrelated reason, leaving an orphaned force-pushed branch with no
+  error trail). Logged as BACKLOG 29, deliberately not folded into item
+  21's diff, per the same split discipline as 21-from-19 and 28-from-27.
+- [2026-08-05, Session 030 — real gate, v2] Yehor's Python 3.14.4:
+  **555 passed / 3 skipped / 91.14%** — matched 546+9 exactly. Coverage
+  "Missing" line ranges cross-checked against source: all pre-existing
+  422/403/exception-handling branches, none in the new code.
+- [2026-08-05, Session 030 — landed] Two commits, staged with explicit file
+  paths (never `-A`), reviewed via `git diff --cached` before each commit,
+  committed with `-F`-equivalent multi-line messages, pushed, verified by
+  `git ls-remote` and a fresh clone: `053c9c9` (item 21, 4 files, +446/−15)
+  then `c0743df` (BACKLOG 29 log, 1 file, +51). Fresh-clone content check
+  confirmed `_github_headers()` on origin genuinely calls `_push_token()` —
+  not just locally.
+
+## Session log (continued) — Session 030 CLOSE
+
+- [2026-08-05, Session 030 — close] Closed via session-close. Reconciled:
+  local = origin = `c0743df`. Real working-tree diff beyond the two landed
+  commits is exactly `.gitignore` (+3, the PDF-exposure fix) and
+  `webhook.py`/`test_webhook.py` (BACKLOG 28's still-applied, still-
+  uncommitted patch) — matches expectations exactly, nothing unaccounted
+  for. L2 goal (item 21: thread, prove CLI unaffected, gate on real 3.14.4,
+  adversarial pass) = **MET**, and specifically MET-because-the-process-
+  worked: the first attempt would have shipped a real gap without the cold
+  adversarial pass. L1: both known hosted-path blockers (§5/C2 from Session
+  029, item 21 from this session) are now closed. Weakest point stated
+  plainly: BACKLOG 28 still has not had its own independent adversarial
+  pass, despite the exact protocol that just worked twice being immediately
+  reusable on it — that is the single largest piece of unfinished business
+  from this session.
+
+## Calibration record (continued) — Session 030
+
+Claims checked at close: 12. Confirmed: 11. Drifted: 1 (the mojibake claim —
+caught and corrected same session, before it could inform any action).
+**Score 11/12 = 0.92.**
+
+Own-output defects caught before landing: 1, and it mattered. The v1
+item-21 fix was incomplete — scoped to exactly what the inherited BACKLOG
+trace named, not re-derived against the full set of credentialed operations
+the class performs. Caught by an independent cold adversarial pass, not by
+self-review; the author's own adversarial self-scan on v1 had found nothing,
+which is itself the data point: a same-author scan under-performs a cold
+one precisely when the blind spot is inherited scope, because re-reading
+your own trace doesn't surface what the trace itself omitted.
+
+One drift NOT self-caught first: the mojibake claim was investigated because
+Yehor's pasted terminal output raised it, not because this session
+independently suspected the patch file. Once raised, it was verified byte-
+level and correctly refuted same-turn — so the catch was fast, but it was
+prompted, not self-initiated.
+
+Trend 025-030: six sessions, and this is the first with a real (not
+inherited) drift in a claim the agent's own output made — the mojibake
+read. It was minor, externally prompted, and closed within the same turn,
+but the streak of "zero self-originated drift" (Session 029's close) is
+broken. Recorded honestly rather than rounding back up.
+
+## Heuristics — Session 030 update
+
+- **H21/H22 [REINFORCED]:** the 9-mutation check on item 21's v2 fix is the
+  cleanest demonstration yet of H22's discipline (mutation check proving
+  teeth) applied exhaustively rather than to a single defense — every
+  load-bearing line, not just the headline one, individually reverted and
+  confirmed to break a specific test.
+
+- **H24 [NEW, earned 2026-08-05]:** a security-fix spec/trace that names ONE
+  seam ("thread the token into `_push_token()`") must be checked against
+  every SIBLING consumer of the same resource class before being trusted as
+  complete — not just the one method the spec named. Item 21's BACKLOG
+  trace correctly identified `_push_token()` as *a* seam but never asked
+  "what else in this class reads a GitHub credential?" The author (this
+  agent) inherited that scope without re-deriving it, and shipped a v1 fix
+  that threaded the push but left `_github_headers()` — used by BOTH the
+  branch-protection check AND PR creation — reading the old, empty
+  `CredentialProxy` path. An independent cold adversarial pass caught it by
+  asking exactly that enumeration question. Generalise: before declaring a
+  credential-threading fix complete, grep every consumer of the
+  credential's OLD source, not just the one call site the spec mentions.
+
+- **H25 [NEW, earned 2026-08-05]:** "CLEAN" from an adversarial pass is only
+  as strong as what it demonstrably broke, not what it re-read. The second
+  item-21 pass earned CLEAN by (a) running a live hosted-path simulation
+  with a real injected token against an empty `CredentialProxy` and
+  confirming all three credentialed calls agreed, and (b) reverting each of
+  9 load-bearing lines individually and confirming each reversion broke a
+  specific test, then restoring and reconfirming green. A "clean" verdict
+  without that kind of demonstration should be held to the same suspicion
+  as an unverified "done."
+
+- **H26 [NEW, earned 2026-08-05]:** a claim about file corruption/encoding
+  seen through a terminal (PowerShell `Get-Content`, a shell `cat`, etc.)
+  must be checked at the byte level before being acted on — terminals apply
+  their own codepage/encoding assumptions that can render clean UTF-8 as
+  mojibake without the underlying bytes being wrong. This session: a
+  reported `вЂ"` mojibake sequence in a patch file's comments was
+  disproven by a direct byte search (zero occurrences, correct UTF-8
+  em-dash present) — the terminal, not the file, was wrong. Cheap check,
+  avoids unnecessary churn on clean files and avoids missing a real defect
+  when the terminal happens to render garbage as looking fine.
