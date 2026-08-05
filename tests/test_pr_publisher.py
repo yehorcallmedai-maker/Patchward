@@ -540,3 +540,271 @@ def test_publish_proceeds_on_unknown_protection(tmp_path) -> None:
     assert mock_push.call_count == 1, (
         "git_push_branch must be called when protection is unknown"
     )
+
+
+# ---------------------------------------------------------------------------
+# BACKLOG 21 — push_token constructor override.
+#
+# The hosted webhook path mints a GitHub App installation access token per
+# run (webhook.py) but the Fly deployment has no GITHUB_TOKEN secret, so the
+# CredentialProxy env-var lookup PRPublisher._push_token() previously always
+# used returns "" on that path — the push has no credential and silently
+# fails auth. push_token= lets the already-minted token be injected directly,
+# taking precedence over the proxy lookup. Default None preserves the
+# CredentialProxy-lookup behavior byte-for-byte for every existing caller.
+# ---------------------------------------------------------------------------
+
+class TestPushTokenOverride:
+
+    def test_push_token_override_takes_precedence_over_proxy(
+        self, tmp_path: Path
+    ) -> None:
+        """When push_token= is set, _push_token() returns it directly —
+        the CredentialProxy lookup is not consulted at all."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy("ghp_proxy_value_should_not_win")
+        publisher = PRPublisher(
+            cfg, proxy, http_client=MagicMock(),
+            push_token="ghs_minted_installation_token",
+        )
+        assert publisher._push_token() == "ghs_minted_installation_token"
+
+    def test_no_push_token_falls_back_to_proxy_unchanged(
+        self, tmp_path: Path
+    ) -> None:
+        """Default push_token=None is byte-identical to pre-BACKLOG-21
+        behavior: _push_token() falls through to the CredentialProxy
+        lookup exactly as before this parameter existed. This is what
+        keeps the CLI path (which never passes push_token) unaffected."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy("ghp_cli_path_token")
+        publisher = PRPublisher(cfg, proxy, http_client=MagicMock())
+        assert publisher._push_token() == "ghp_cli_path_token"
+
+    def test_push_token_empty_string_still_overrides(
+        self, tmp_path: Path
+    ) -> None:
+        """An explicitly empty push_token=('') is a deliberate override
+        (distinguishable from the default None) and must NOT silently
+        fall back to the proxy — falling back on a falsy-but-not-None
+        value would mask a real hosted-path credential failure instead
+        of surfacing it as an empty/failed push."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy("ghp_proxy_value_should_not_win")
+        publisher = PRPublisher(
+            cfg, proxy, http_client=MagicMock(), push_token="",
+        )
+        assert publisher._push_token() == ""
+
+    @patch("patchward.pr_publisher.git_push_branch")
+    def test_push_token_reaches_git_push_branch(
+        self, mock_push: MagicMock, tmp_path: Path
+    ) -> None:
+        """End-to-end: the injected push_token is what actually reaches
+        git_push_branch(token=...), not the proxy's value."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy("ghp_proxy_value_should_not_win")
+        mock_http = MagicMock(spec=httpx.Client)
+        mock_http.post.return_value = _mock_201_response()
+        publisher = PRPublisher(
+            cfg, proxy, http_client=mock_http,
+            push_token="ghs_minted_installation_token",
+        )
+
+        publisher.publish(
+            _make_verified_fix(), _make_verifier_result(), _make_finding()
+        )
+
+        assert mock_push.call_args.kwargs["token"] == (
+            "ghs_minted_installation_token"
+        ), "git_push_branch must receive the injected push_token, not the proxy value"
+
+    @patch("patchward.pr_publisher.git_push_branch")
+    def test_push_token_never_in_exception_string(
+        self, mock_push: MagicMock, tmp_path: Path
+    ) -> None:
+        """Mirrors BACKLOG 28's test_startup_error_never_contains_credential_value:
+        if the push path raises for any reason, the injected token value
+        must never appear in the exception's string representation."""
+        secret = "ghs_should_never_leak_abcdef0123456789"
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy("ghp_proxy_value_should_not_win")
+        mock_http = MagicMock(spec=httpx.Client)
+        mock_http.post.side_effect = RuntimeError("simulated API failure")
+        publisher = PRPublisher(
+            cfg, proxy, http_client=mock_http, push_token=secret,
+        )
+
+        with pytest.raises(RuntimeError) as excinfo:
+            publisher.publish(
+                _make_verified_fix(), _make_verifier_result(), _make_finding()
+            )
+        assert secret not in str(excinfo.value)
+        assert secret not in repr(excinfo.value)
+
+    def test_push_token_never_logged_via_repr(self, tmp_path: Path) -> None:
+        """The token must not be discoverable via repr(publisher) — it is
+        stored on self (required for constructor injection, same pattern
+        as self._proxy already holding live credentials), but PRPublisher
+        defines no custom __repr__/__str__ that would surface it, so the
+        default object repr (memory address only) is what callers get."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy()
+        publisher = PRPublisher(
+            cfg, proxy, http_client=MagicMock(),
+            push_token="ghs_should_not_appear_in_repr",
+        )
+        assert "ghs_should_not_appear_in_repr" not in repr(publisher)
+
+
+# ---------------------------------------------------------------------------
+# BACKLOG 21 adversarial-review fixes (2026-08-05) — Findings 1/2/4/5/6/7.
+#
+# The first pass caught that push_token was threaded into the git push
+# only; _github_headers() (shared by _check_branch_protection() and
+# _create_pr()) still read CredentialProxy independently. On the hosted
+# path (no GITHUB_TOKEN secret on Fly) that meant: push succeeds (real
+# token) -> branch-protection guard goes blind (empty auth gets 404/401,
+# not the 200 its abort check requires) -> PR creation fails (empty
+# auth) -> an orphaned force-pushed branch every run. The fix routes
+# _github_headers() through the same _push_token() used by the push, so
+# there is exactly one GitHub credential source per instance.
+# ---------------------------------------------------------------------------
+
+class TestPushTokenSingleSourceOfTruth:
+
+    def test_github_headers_uses_push_token_override(
+        self, tmp_path: Path
+    ) -> None:
+        """Finding 1/2: _github_headers() must use the injected
+        push_token, not an independent CredentialProxy lookup."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy("ghp_proxy_value_should_not_win")
+        publisher = PRPublisher(
+            cfg, proxy, http_client=MagicMock(),
+            push_token="ghs_minted_installation_token",
+        )
+        headers = publisher._github_headers()
+        assert headers["Authorization"] == (
+            "Bearer ghs_minted_installation_token"
+        )
+
+    @patch("patchward.pr_publisher.git_push_branch")
+    def test_branch_protection_check_uses_push_token_override(
+        self, mock_push: MagicMock, tmp_path: Path
+    ) -> None:
+        """Finding 2, end-to-end: the branch-protection GET (called from
+        publish(), before the push) must carry the injected token, not
+        an empty/proxy Bearer header — otherwise a genuinely protected
+        branch cannot be distinguished from an auth failure."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy("ghp_proxy_value_should_not_win")
+        mock_http = MagicMock(spec=httpx.Client)
+        protection_resp = MagicMock(spec=httpx.Response)
+        protection_resp.status_code = 404  # unprotected
+        mock_http.get.return_value = protection_resp
+        mock_http.post.return_value = _mock_201_response()
+        publisher = PRPublisher(
+            cfg, proxy, http_client=mock_http,
+            push_token="ghs_minted_installation_token",
+        )
+
+        publisher.publish(
+            _make_verified_fix(), _make_verifier_result(), _make_finding()
+        )
+
+        get_headers = mock_http.get.call_args.kwargs["headers"]
+        assert get_headers["Authorization"] == (
+            "Bearer ghs_minted_installation_token"
+        ), "branch-protection check must use the injected push_token"
+
+    @patch("patchward.pr_publisher.git_push_branch")
+    def test_create_pr_uses_push_token_override(
+        self, mock_push: MagicMock, tmp_path: Path
+    ) -> None:
+        """Finding 1, end-to-end: PR creation must carry the injected
+        token — this is the exact call that previously got an empty
+        Bearer header on the hosted path."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy("ghp_proxy_value_should_not_win")
+        mock_http = MagicMock(spec=httpx.Client)
+        mock_http.post.return_value = _mock_201_response()
+        publisher = PRPublisher(
+            cfg, proxy, http_client=mock_http,
+            push_token="ghs_minted_installation_token",
+        )
+
+        publisher.publish(
+            _make_verified_fix(), _make_verifier_result(), _make_finding()
+        )
+
+        post_headers = mock_http.post.call_args.kwargs["headers"]
+        assert post_headers["Authorization"] == (
+            "Bearer ghs_minted_installation_token"
+        ), "_create_pr must use the injected push_token, not an empty header"
+
+    def test_push_token_whitespace_stripped(self, tmp_path: Path) -> None:
+        """Finding 4: the override branch must strip like the fallback
+        branch always did — a whitespace-only override must not
+        masquerade as a present credential."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy()
+        publisher = PRPublisher(
+            cfg, proxy, http_client=MagicMock(),
+            push_token="  ghs_with_surrounding_whitespace  ",
+        )
+        assert publisher._push_token() == "ghs_with_surrounding_whitespace"
+
+    def test_push_token_whitespace_only_becomes_falsy(
+        self, tmp_path: Path
+    ) -> None:
+        """A whitespace-only override strips to '' — falsy — so
+        git_push_branch takes its designed loud no-credential branch
+        instead of silently installing a whitespace password."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy()
+        publisher = PRPublisher(
+            cfg, proxy, http_client=MagicMock(), push_token="   \n\t ",
+        )
+        assert publisher._push_token() == ""
+
+    def test_push_token_rejects_non_str_type(self, tmp_path: Path) -> None:
+        """Finding 5: a falsy-but-wrong-type value (0, False, [], bytes)
+        must be rejected at the boundary with a clear TypeError, not
+        silently accepted and fail confusingly deep in git/HTTP layers."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy()
+        for bad_value in (0, False, [], b"ghs_bytes_token", 123):
+            with pytest.raises(TypeError, match="push_token"):
+                PRPublisher(
+                    cfg, proxy, http_client=MagicMock(), push_token=bad_value,
+                )
+
+    def test_push_token_none_does_not_raise(self, tmp_path: Path) -> None:
+        """The default (None) must remain valid — only non-None,
+        non-str values are rejected."""
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy()
+        PRPublisher(cfg, proxy, http_client=MagicMock(), push_token=None)
+        PRPublisher(cfg, proxy, http_client=MagicMock())  # default
+
+    def test_push_token_registered_for_redaction(
+        self, tmp_path: Path
+    ) -> None:
+        """Finding 7: an injected push_token must be covered by
+        scrub_text()'s value-based redaction the moment the instance
+        exists, not only because upstream callers happen to also
+        register it."""
+        from patchward.credential_proxy import scrub_text
+        secret = "ghs_unique_backlog21_finding7_zzZZ9988"
+        cfg = _make_config(tmp_path)
+        proxy = _make_proxy()
+        PRPublisher(cfg, proxy, http_client=MagicMock(), push_token=secret)
+
+        out = scrub_text(f"some log line containing {secret} by accident")
+        assert secret not in out
+        # Layer 1 (exact-value, register_runtime_credential) fires before
+        # Layer 2 (pattern-based) ever sees the text, so a registered
+        # value is replaced with "[REDACTED]" regardless of whether it
+        # also happens to be GitHub-token-shaped.
+        assert "[REDACTED]" in out

@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Any
 
 import httpx
 
-from patchward.credential_proxy import CredentialProxy
+from patchward.credential_proxy import CredentialProxy, register_runtime_credential
 from patchward.verifier import RUNNER_ABSENT_REASON
 from patchward.worktree_common import git_push_branch
 
@@ -55,10 +55,50 @@ class PRPublisher:
         config: "PatchwardConfig",
         credential_proxy: CredentialProxy,
         http_client: httpx.Client | None = None,
+        push_token: str | None = None,
     ) -> None:
         self._cfg = config
         self._proxy = credential_proxy
         self._http = http_client or httpx.Client(timeout=30.0)
+        # BACKLOG 21: an already-minted GitHub credential (e.g. a GitHub
+        # App installation access token from the hosted webhook path)
+        # takes precedence over the CredentialProxy env-var lookup used
+        # by _push_token() below. Default None preserves the CLI path's
+        # existing behavior byte-for-byte — it always falls through to
+        # CredentialProxy, exactly as before this parameter existed.
+        #
+        # This is the ONE credential source for every GitHub-authenticated
+        # operation this instance performs — git push (_push_token(),
+        # called directly), the branch-protection check, and PR creation
+        # (_github_headers(), which calls _push_token() too). Adversarial
+        # review (2026-08-05) caught an earlier version of this diff that
+        # threaded the override into the push only and left the API calls
+        # reading CredentialProxy directly — on the hosted path (which has
+        # no GITHUB_TOKEN secret) that meant the push started succeeding
+        # while PR creation still failed with empty auth, AND the
+        # branch-protection guard (C-P6-08, which only aborts on HTTP 200)
+        # went blind: empty auth gets 404/401 from GitHub, not 200, so a
+        # genuinely protected branch would no longer be caught before the
+        # force-push. Routing every credentialed call through this single
+        # method is what closes that gap — do not reintroduce a second,
+        # independent CredentialProxy read anywhere in this class.
+        #
+        # Type-checked rather than silently accepted: a falsy-but-wrong
+        # type (0, False, []) would pass an `is not None` check and reach
+        # git/HTTP layers as a confusing failure far from the real cause.
+        if push_token is not None and not isinstance(push_token, str):
+            raise TypeError(
+                f"push_token must be str or None, got {type(push_token).__name__}"
+            )
+        self._push_token_override = push_token
+        # BACKLOG 19 follow-up (BACKLOG 21 adversarial finding #7): an
+        # override supplied here may not have been registered for
+        # value-based redaction by every possible future caller — both
+        # current callers (webhook.py, cli.py) already do, but this makes
+        # the guarantee self-contained rather than caller-dependent.
+        # register_runtime_credential() itself ignores empty/whitespace
+        # values, so this is safe to call unconditionally.
+        register_runtime_credential(push_token or "")
 
     # ------------------------------------------------------------------
     # Public API
@@ -149,14 +189,31 @@ class PRPublisher:
 
     def _push_token(self) -> str:
         """
-        Fetch the push credential fresh from CredentialProxy.
+        Return the ONE GitHub credential this instance uses for every
+        authenticated operation: git push (called directly, below), and
+        the GitHub API (via _github_headers(), used by
+        _check_branch_protection() and _create_pr()).
 
-        Returned value must NEVER be logged or stored on self; it goes
-        only into git_push_branch(token=...), which supplies it to git
-        via the ephemeral helper.
+        BACKLOG 21: if an already-minted token was injected at
+        construction (``push_token=``) — e.g. a GitHub App installation
+        access token from the hosted webhook path — it takes precedence
+        and no CredentialProxy lookup happens. Otherwise this falls back
+        to fetching fresh from CredentialProxy, which is the CLI path's
+        original, unchanged behavior. Both branches are stripped, so a
+        whitespace-only override cannot masquerade as a present
+        credential and silently skip git_credentials.py's designed
+        loud-failure (no-credential) branch.
 
-        # KS-TRACE: C-P5-03, BACKLOG 19
+        Returned value must NEVER be logged. It is stored on self only
+        as the override captured at construction (required so every
+        method on this instance can reach it) — see __init__ for the
+        register_runtime_credential() call that keeps that stored value
+        covered by scrub_text()'s redaction regardless.
+
+        # KS-TRACE: C-P5-03, C-P6-07, BACKLOG 19, BACKLOG 21
         """
+        if self._push_token_override is not None:
+            return self._push_token_override.strip()
         creds = self._proxy._creds  # noqa: SLF001 — intentional internal access
         return creds.get("GITHUB_TOKEN", "").strip()
 
@@ -164,14 +221,21 @@ class PRPublisher:
         """
         Build GitHub API request headers with Bearer token.
 
-        Shared by _create_pr() and _check_branch_protection().
-        Token is read fresh from CredentialProxy on each call.
+        Shared by _create_pr() and _check_branch_protection(). Calls
+        _push_token() — the same single credential source the push
+        itself uses (BACKLOG 21) — rather than reading CredentialProxy
+        independently. Adversarial review (2026-08-05) caught the
+        earlier, split-brain version of this method: on the hosted path
+        it built an empty Bearer header even after the push started
+        succeeding, so PR creation failed and the branch-protection
+        guard's 200-only abort check could never fire against the
+        404/401 an empty-auth request actually receives — a genuinely
+        protected branch would not have been caught. Do not reintroduce
+        a second, independent CredentialProxy read here.
 
-        # KS-TRACE: C-P5-03, C-P6-07
+        # KS-TRACE: C-P5-03, C-P6-07, BACKLOG 21
         """
-        token = self._proxy._creds.get(  # noqa: SLF001
-            "GITHUB_TOKEN", ""
-        )
+        token = self._push_token()
         return {
             "Accept": "application/vnd.github+json",
             "Authorization": f"Bearer {token}",

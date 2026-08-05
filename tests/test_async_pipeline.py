@@ -598,6 +598,92 @@ async def test_run_repo_pipeline_rate_limit(
     assert sem._value == 1  # noqa: SLF001 — released
 
 
+# ---------------------------------------------------------------------------
+# BACKLOG 21 adversarial-review Finding 6: nothing previously pinned that
+# run_repo_pipeline's PRPublisher construction site actually passes
+# push_token=github_token — the pre-existing, unrelated
+# test_run_repo_pipeline_pr_opened is a truncated no-op (ends mid-statement
+# at "mock_pub_cls.return_value.publish.return_", never calls
+# run_repo_pipeline, asserts nothing; left as-is here, flagged separately,
+# out of this diff's scope to repair). This test calls the REAL
+# run_repo_pipeline and only mocks the PRPublisher class itself, so
+# deleting pipeline.py's push_token=github_token line makes it fail.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_run_repo_pipeline_threads_push_token_to_publisher(
+    tmp_path: Path,
+) -> None:
+    """PRPublisher must be constructed with push_token=<the github_token
+    run_repo_pipeline received> — this is BACKLOG 21's actual fix line
+    (pipeline.py, PRPublisher(...) construction site). Only PRPublisher
+    is mocked; everything up to and including its construction runs for
+    real, so this fails if that line is ever deleted or its value
+    changes."""
+    from unittest.mock import MagicMock
+    from patchward.fix_gen import FixResult
+
+    cfg = _make_cfg(tmp_path, n_repos=1)
+    sem = asyncio.Semaphore(1)
+    sarif_run = _make_sarif_run([_fake_finding()])
+    good_fix = FixResult(
+        model="claude-sonnet-4-6",
+        finding_id="test",
+        success=True,
+        description="fixed shell=True",
+        branch_name="patchward/fix-test",
+    )
+    good_verify = MagicMock()
+    good_verify.verification_status = "verified"
+    good_verify.gate_2.reason = ""
+    minted_token = "ghs_backlog21_finding6_minted_token_abc123"
+
+    with (
+        patch(
+            "patchward.pipeline.run_all_scanners",
+            return_value=[sarif_run],
+        ),
+        patch(
+            "patchward.pipeline.fix_worktree_context"
+        ) as mock_ctx,
+        patch(
+            "patchward.pipeline.FixGenSubagent"
+        ) as mock_agent_cls,
+        patch(
+            "patchward.pipeline.Verifier"
+        ) as mock_verifier_cls,
+        patch(
+            "patchward.pipeline.CredentialProxy"
+        ) as mock_proxy_cls,
+        patch(
+            "patchward.pipeline.PRPublisher"
+        ) as mock_pub_cls,
+    ):
+        handle = mock_ctx.return_value.__enter__.return_value
+        handle.worktree_path = tmp_path / "wt"
+        handle.branch = "patchward/fix-test"
+        mock_agent_cls.return_value.apply_fix = AsyncMock(
+            return_value=good_fix
+        )
+        mock_verifier_cls.return_value.verify.return_value = good_verify
+        mock_proxy_cls.return_value.load.return_value = MagicMock()
+        mock_pub_cls.return_value.publish.return_value = {
+            "url": "https://github.com/acme/repo-0/pull/1",
+            "number": 1,
+            "status": "opened",
+        }
+
+        result = await run_repo_pipeline(
+            cfg.repos[0], cfg, sem, "key", minted_token,
+        )
+
+    assert result["status"] == "pr_opened"
+    assert mock_pub_cls.call_args.kwargs["push_token"] == minted_token, (
+        "run_repo_pipeline must construct PRPublisher with "
+        "push_token=<the github_token it received> (BACKLOG 21)"
+    )
+
+
 @pytest.mark.asyncio
 async def test_run_repo_pipeline_pr_opened(
     tmp_path: Path,

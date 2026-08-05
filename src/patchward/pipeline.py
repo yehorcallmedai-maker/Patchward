@@ -231,10 +231,23 @@ async def run_repo_pipeline(
 
                                 # Step 4: PR Publisher
                                 proxy = CredentialProxy().load()
+                                # BACKLOG 21: thread the already-minted
+                                # token (App installation token on the
+                                # webhook path; the CLI's long-lived PAT
+                                # on the CLI path) straight to the
+                                # publisher instead of letting it fall
+                                # through to a CredentialProxy lookup
+                                # that the hosted deployment has no
+                                # secret for. PRPublisher uses this ONE
+                                # token for the push AND both GitHub API
+                                # calls (branch-protection check, PR
+                                # creation) — see pr_publisher.py's
+                                # _push_token()/_github_headers().
                                 publisher = PRPublisher(
                                     config=cfg,
                                     credential_proxy=proxy,
                                     http_client=None,
+                                    push_token=github_token,
                                 )
                                 pr_dict = await asyncio.to_thread(
                                     publisher.publish,
