@@ -259,13 +259,74 @@ async def run_repo_pipeline(
                                         handle.worktree_path
                                     ),
                                 )
-                                finding_pr_url = pr_dict.get("url")
-                                finding_status = "pr_opened"
-                                logger.info(
-                                    "[pipeline] %s → PR: %s",
-                                    repo_label,
-                                    finding_pr_url,
-                                )
+                                # KS-TRACE: BACKLOG 29 — honour the
+                                # publisher's status instead of assuming
+                                # success.
+                                #
+                                # PRPublisher.publish() returns
+                                # status ∈ {"opened", "already_open",
+                                # "api_error"} (pr_publisher._create_pr;
+                                # "api_error" covers 403/422/unexpected
+                                # and carries a BLANK url). This block
+                                # previously set "pr_opened"
+                                # unconditionally, so a PR-creation
+                                # failure was recorded — and reported to
+                                # the caller — as success. On the hosted
+                                # path that is materially worse than a
+                                # bad status string: the fix branch has
+                                # ALREADY been force-pushed to the
+                                # customer's repository by the time
+                                # _create_pr runs, so the customer is
+                                # left with an unexplained branch, no
+                                # PR, and a tool reporting success.
+                                #
+                                # Mirrors the CLI's existing three-way
+                                # branch (cli.py, BACKLOG 3c) — same
+                                # outcomes, same fail-closed default:
+                                # any unrecognised or missing status is
+                                # treated as a failure, never success.
+                                pr_status = pr_dict.get("status", "")
+                                if pr_status == "opened":
+                                    finding_pr_url = pr_dict.get("url")
+                                    finding_status = "pr_opened"
+                                    logger.info(
+                                        "[pipeline] %s → PR: %s",
+                                        repo_label,
+                                        finding_pr_url,
+                                    )
+                                elif pr_status == "already_open":
+                                    finding_pr_url = pr_dict.get("url")
+                                    finding_status = "pr_already_open"
+                                    logger.info(
+                                        "[pipeline] %s → PR already "
+                                        "open: %s",
+                                        repo_label,
+                                        finding_pr_url,
+                                    )
+                                else:
+                                    # finding_pr_url stays None — on
+                                    # api_error publish() returns a
+                                    # blank url, and recording "" would
+                                    # read as "a PR exists somewhere".
+                                    finding_status = "pr_failed"
+                                    # pr_status is a controlled literal
+                                    # produced by _create_pr, never a
+                                    # credential or a verbatim API body,
+                                    # so it needs no scrub_text() (cf.
+                                    # BACKLOG 19 on the except paths).
+                                    result["error"] = (
+                                        "pr_creation_failed: "
+                                        f"status={pr_status!r}"
+                                    )
+                                    logger.error(
+                                        "[pipeline] %s → PR creation "
+                                        "FAILED (status=%r); branch %s "
+                                        "was already pushed but no PR "
+                                        "was opened",
+                                        repo_label,
+                                        pr_status,
+                                        fix_result.branch_name,
+                                    )
 
                 except anthropic.RateLimitError as exc:
                     finding_status = "rate_limited"

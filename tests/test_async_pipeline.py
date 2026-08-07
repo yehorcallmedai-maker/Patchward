@@ -705,7 +705,15 @@ async def test_run_repo_pipeline_pr_opened(
     good_verify = MagicMock()
     good_verify.verification_status = "verified"
     good_verify.gate_2.reason = ""
-    pr_result = {"url": "https://github.com/acme/repo-0/pull/1"}
+    # BACKLOG 29: this dict previously carried NO "status" key and the
+    # test body was truncated mid-statement, so nothing ever pinned the
+    # success branch. Publisher's real success shape includes
+    # status="opened" (pr_publisher._create_pr).
+    pr_result = {
+        "url": "https://github.com/acme/repo-0/pull/1",
+        "number": 1,
+        "status": "opened",
+    }
 
     with (
         patch(
@@ -736,7 +744,165 @@ async def test_run_repo_pipeline_pr_opened(
         )
         mock_verifier_cls.return_value.verify.return_value = good_verify
         mock_proxy_cls.return_value.load.return_value = MagicMock()
-        mock_pub_cls.return_value.publish.return_
+        mock_pub_cls.return_value.publish.return_value = pr_result
+
+        result = await run_repo_pipeline(
+            cfg.repos[0], cfg, sem, "key", "ghs_token",
+        )
+
+    assert result["status"] == "pr_opened"
+    assert result["pr_url"] == "https://github.com/acme/repo-0/pull/1"
+    assert result.get("error") in (None, "")
+
+
+# ---------------------------------------------------------------------------
+# BACKLOG 29 — run_repo_pipeline must honour PRPublisher.publish()'s status
+# instead of reporting "pr_opened" unconditionally.
+#
+# Severity is about consequence, not code size: publish() pushes the fix
+# branch BEFORE it calls the PR-creation endpoint, so when PR creation fails
+# (e.g. the App installation lacks pull_requests:write) the branch is already
+# on the CUSTOMER's repository. Reporting success there leaves an unexplained
+# branch on someone else's infrastructure with no PR and no error trail.
+# The hosted path runs through this exact function
+# (webhook.py -> run_repo_pipeline), so this is the customer-facing path.
+#
+# These tests mock ONLY PRPublisher; the status-handling block under test
+# runs for real, so reverting it makes them fail.
+# ---------------------------------------------------------------------------
+
+def _pipeline_success_mocks(tmp_path: Path):
+    """Shared arrange-block for the BACKLOG 29 branch tests: a run that
+    reaches the PR-publish step with a verified fix, so the ONLY variable
+    is what publish() returns."""
+    from unittest.mock import MagicMock
+    from patchward.fix_gen import FixResult
+
+    cfg = _make_cfg(tmp_path, n_repos=1)
+    sem = asyncio.Semaphore(1)
+    sarif_run = _make_sarif_run([_fake_finding()])
+    good_fix = FixResult(
+        model="claude-sonnet-4-6",
+        finding_id="test",
+        success=True,
+        description="fixed shell=True",
+        branch_name="patchward/fix-test",
+    )
+    good_verify = MagicMock()
+    good_verify.verification_status = "verified"
+    good_verify.gate_2.reason = ""
+    return cfg, sem, sarif_run, good_fix, good_verify
+
+
+async def _run_with_publish_result(tmp_path: Path, publish_result: dict):
+    """Drive the real run_repo_pipeline to the publish step and hand it
+    ``publish_result`` as PRPublisher.publish()'s return value."""
+    from unittest.mock import MagicMock
+
+    cfg, sem, sarif_run, good_fix, good_verify = _pipeline_success_mocks(
+        tmp_path
+    )
+
+    with (
+        patch(
+            "patchward.pipeline.run_all_scanners",
+            return_value=[sarif_run],
+        ),
+        patch(
+            "patchward.pipeline.fix_worktree_context"
+        ) as mock_ctx,
+        patch(
+            "patchward.pipeline.FixGenSubagent"
+        ) as mock_agent_cls,
+        patch(
+            "patchward.pipeline.Verifier"
+        ) as mock_verifier_cls,
+        patch(
+            "patchward.pipeline.CredentialProxy"
+        ) as mock_proxy_cls,
+        patch(
+            "patchward.pipeline.PRPublisher"
+        ) as mock_pub_cls,
+    ):
+        handle = mock_ctx.return_value.__enter__.return_value
+        handle.worktree_path = tmp_path / "wt"
+        handle.branch = "patchward/fix-test"
+        mock_agent_cls.return_value.apply_fix = AsyncMock(
+            return_value=good_fix
+        )
+        mock_verifier_cls.return_value.verify.return_value = good_verify
+        mock_proxy_cls.return_value.load.return_value = MagicMock()
+        mock_pub_cls.return_value.publish.return_value = publish_result
+
+        return await run_repo_pipeline(
+            cfg.repos[0], cfg, sem, "key", "ghs_token",
+        )
+
+
+@pytest.mark.asyncio
+async def test_pipeline_pr_already_open_is_not_reported_as_opened(
+    tmp_path: Path,
+) -> None:
+    """status="already_open" (idempotent re-run) is a distinct outcome,
+    exactly as cli.py treats it — not collapsed into "pr_opened"."""
+    result = await _run_with_publish_result(
+        tmp_path,
+        {
+            "url": "https://github.com/acme/repo-0/pull/7",
+            "number": 7,
+            "status": "already_open",
+        },
+    )
+
+    assert result["status"] == "pr_already_open"
+    assert result["pr_url"] == "https://github.com/acme/repo-0/pull/7"
+
+
+@pytest.mark.asyncio
+async def test_pipeline_pr_api_error_is_not_reported_as_opened(
+    tmp_path: Path,
+) -> None:
+    """THE BACKLOG 29 REGRESSION TEST. publish() returning "api_error"
+    (403/422/unexpected — blank url) must NOT be recorded as success.
+
+    Before the fix this asserted-on value was "pr_opened" with pr_url="",
+    which is what would have reached a Marketplace customer as a silent
+    failure after their repo had already received the pushed branch."""
+    result = await _run_with_publish_result(
+        tmp_path,
+        {"url": "", "number": "", "status": "api_error"},
+    )
+
+    assert result["status"] != "pr_opened", (
+        "BACKLOG 29: a failed PR creation must never be reported as "
+        "success — the branch is already on the customer's repo"
+    )
+    assert result["status"] == "pr_failed"
+    # The reason must survive to the caller; the webhook logs
+    # result verbatim, so this is the only error trail that exists.
+    assert "api_error" in result["error"]
+    # No blank URL masquerading as a real PR.
+    assert not result["pr_url"]
+
+
+@pytest.mark.asyncio
+async def test_pipeline_pr_missing_status_fails_closed(
+    tmp_path: Path,
+) -> None:
+    """Fail-closed default: a publish() result with no "status" key at all
+    must be treated as failure, never silently as success. Mirrors
+    cli.py's ``pr_dict.get("status", "")`` + else-branch."""
+    result = await _run_with_publish_result(
+        tmp_path,
+        {"url": "https://github.com/acme/repo-0/pull/9"},
+    )
+
+    assert result["status"] == "pr_failed"
+    assert result["status"] != "pr_opened"
+    # A URL was present in the publish result, but the publish did not
+    # demonstrably succeed — recording it would imply a PR exists.
+    assert not result["pr_url"]
+
 
 # ── KS-P6-05: scanner uses config.models.scanner_model ───────────────────
 

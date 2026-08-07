@@ -1062,8 +1062,18 @@ class TestRunLogThreaded:
             mock_vfy_cls.return_value.verify.return_value = (
                 verify_ok
             )
+            # BACKLOG 29: this mock previously omitted "status", a shape
+            # the real PRPublisher.publish() cannot produce — it always
+            # sets status (pr_publisher.py, `pr_data.get("status",
+            # "opened")`). The omission was invisible while pipeline.py
+            # ignored status altogether; now that a missing status fails
+            # closed, the fixture is corrected to the realistic success
+            # shape. The assertion below is unchanged, and this test's
+            # actual subject (run_log=None must not raise) is untouched.
             mock_pr_cls.return_value.publish.return_value = {
-                "url": "https://github.com/o/r/pull/1"
+                "url": "https://github.com/o/r/pull/1",
+                "number": 1,
+                "status": "opened",
             }
             sem = asyncio.Semaphore(1)
             result = await run_repo_pipeline(
