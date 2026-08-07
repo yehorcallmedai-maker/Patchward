@@ -1664,8 +1664,19 @@ The new key was validated LOCALLY before deploy (`models.list()` → OK), then s
 via `fly secrets set`, rolling-updated on machine `7841600fd5e7e8`, and
 re-confirmed on the RUNNING image: `python -c "...models.list(); print('ANTHROPIC
 KEY OK')"` → `ANTHROPIC KEY OK`. Fix-Gen can now authenticate on the hosted path.
-STILL OPEN AND YEHOR-OWNED (tracked here, does not block 27's closure): rotate the
-unidentified 110-char credential at its source. Original entry preserved below. ↓
+**STILL TRACKED BUT RESOLVED 2026-08-07 (Session 031):** the unidentified
+110-char credential was exhaustively searched for (git history, local
+`.env`, both PowerShell history profiles, all sibling project folders,
+`.fly`/`.config`, Windows Credential Manager target names, and a live
+`fly ssh` read of all 4 production secrets) and found nowhere. It never
+reached git, is not in the current `.env` or any of Fly's 4 secrets
+(confirmed by length: 108 / 7 / 2236 / 36 chars, none 110), and does not
+appear duplicated anywhere else reachable from this machine. Most likely
+origin: a clipboard or password-manager-only paste, never written to
+disk. No further agent-startable action remains -- see
+`credential_identification_2026-08-07.md`. Rotate at source only if the
+service is ever recognized by inspection. Original entry preserved
+below. ↓
 
 **Status:** OPEN — **CONFIRMED Tier 0**, functional launch blocker, UPSTREAM of
 both of item 21's defects. Belongs to the same investigation unit as 21.
@@ -1807,7 +1818,20 @@ Yehor's.
 
 ## 29. `pipeline.py` records "pr_opened" even when PR creation fails (status != "opened") — NEW, surfaced 2026-08-05, Session 030, second independent adversarial pass on item 21's fix
 
-**STATUS: LOGGED ONLY — deliberately NOT folded into item 21's diff.**
+**STATUS: FIXED AND DEPLOYED 2026-08-07 (Session 031)** -- landed as commit
+`66680c0` (`src/patchward/pipeline.py`, mirrors `cli.py`'s existing
+three-way status handling exactly: `pr_opened` / `pr_already_open` /
+`pr_failed`, fail-closed on any unrecognised or missing status). 3 new
+tests added; 8/8 mutations caught on a scratch copy (zero silent
+survivors). Gated on Yehor's real Python 3.14.4: 558 passed / 3 skipped /
+91.20%, coverage floor enforced. Pushed to origin, independently
+reconfirmed via a fresh clone. Deployed
+(`deployment-01KZECVHTM3QQ62Q32YBBXRA8F`) and live-verified by a direct
+`fly ssh` grep against the running container's own source -- matches the
+committed diff exactly, line for line. Full diff and mutation log:
+`backlog29_implementation_2026-08-07.md`.
+
+Original finding preserved below for record. ↓
 Pre-existing bug that item 21 makes reachable, not a defect item 21
 introduced. Two independent adversarial passes agreed item 21's own diff
 (credential threading into `_push_token()`/`_github_headers()`) is CLEAN;

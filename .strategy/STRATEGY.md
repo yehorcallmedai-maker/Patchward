@@ -2173,3 +2173,181 @@ broken. Recorded honestly rather than rounding back up.
   em-dash present) — the terminal, not the file, was wrong. Cheap check,
   avoids unnecessary churn on clean files and avoids missing a real defect
   when the terminal happens to render garbage as looking fine.
+## Session log (continued) — Session 031
+
+- [2026-08-07, Session 031 -- open] Opened via session-strategy-synthesis.
+  Fresh clone + git ls-remote established real origin HEAD = b731fe2,
+  matching local. Every claim in the opening prompt re-verified CONFIRMED
+  by content (Session 030 close landed, item 21 fix present, .gitignore
+  *.pdf rule live, BACKLOG 28 patch wired not inert, H18 citation count
+  risen to 7 exactly as predicted, test baseline reconciled: 546 committed
+  + 9 (BACKLOG 28, uncommitted) = 555). Zero drift at open -- first fully
+  clean open in the sessions this ledger covers.
+
+- [2026-08-07, Session 031 -- real gate #1, Windows discovery] Yehor's
+  first `python -m pytest` attempt ran from the wrong directory then the
+  wrong (global 3.14) interpreter -- 23 collection errors, all
+  environmental. The project's own `.venv` (3.14.4, every dev dep
+  installed) was sitting one directory over the whole time; the agent's
+  own earlier `ls .venv/bin/python` probe (Linux path) had returned "not
+  found" and the agent concluded no venv existed without checking the
+  Windows-native `.venv/Scripts/python.exe`. Real gate once pointed at the
+  right interpreter: 555 passed / 3 skipped / 91.14%, coverage floor
+  enforced -- reconciles exactly with the pre-session arithmetic. Also
+  surfaced ~20 stale `RepoMend`-path `.pyc` files under
+  `tests/__pycache__` (gitignored, nothing tracked, purged, harmless but
+  confusing tracebacks).
+
+- [2026-08-07, Session 031 -- priority disagreement, resolved] Yehor's
+  synthesis review argued BACKLOG 29 (hosted path silently reports
+  "pr_opened" on PR-creation failure) is the strict P0 by the board's own
+  definition, not BACKLOG 28 (startup credential guard) -- confirmed by
+  code: webhook.py:412 -> pipeline.py, and publish() pushes the branch
+  BEFORE calling _create_pr(), so a permissions failure leaves a
+  force-pushed branch on the CUSTOMER's repo with no PR and no error
+  trail. Agreed and re-prioritized; BACKLOG 28's cold pass deferred to
+  next session.
+
+- [2026-08-07, Session 031 -- BACKLOG 29 authored] pipeline.py now
+  branches on pr_dict["status"] in {opened, already_open, else} exactly
+  as cli.py already did (mirrored, no invented vocabulary): pr_opened /
+  pr_already_open / pr_failed (fail-closed default, reason preserved in
+  result["error"]). Repaired a phantom test
+  (test_run_repo_pipeline_pr_opened was truncated mid-statement, called
+  run_repo_pipeline zero times, asserted nothing, counted as passing) and
+  corrected a sibling fixture (test_run_log_none_does_not_crash's mock
+  publish() result had no "status" key -- a shape the real publish()
+  cannot produce). 3 new tests added for the branches. 8/8 mutations
+  caught on a scratch copy (full revert, fail-open default, dropped error
+  reason, collapsed already_open, leaked url on failure, dropped url on
+  success, typo'd literal) -- zero silent survivors, restored
+  byte-identical after.
+
+- [2026-08-07, Session 031 -- real gate #2] Yehor's 3.14.4, coverage floor
+  enforced: 558 passed / 3 skipped / 91.20% -- reconciles exactly against
+  prediction (+3 tests, +9 statements in pipeline.py, zero new uncovered
+  lines). Committed `66680c0` (3 files, tripwire stat matched: pipeline.py
+  +68/-7, test_async_pipeline.py +168/-2, test_orchestrator.py +11/-1 --
+  agent's own +171 restaging-note prediction was off by 3, corrected same
+  turn). Pushed; landed on origin verified by `git ls-remote` AND an
+  independent fresh clone (content grep for the fix, zero CRLF in the
+  committed blobs, clean-clone suite 545 passed / 4 skipped -- the new
+  committed-only baseline, distinct from the 558 gate figure that still
+  includes BACKLOG 28's uncommitted patch).
+
+- [2026-08-07, Session 031 -- credential item, resolved not carried]
+  Traced the "110-char foreign credential, N sessions running" line
+  through every SESSION_CLOSE file back to its origin (BACKLOG.md item 27,
+  2026-07-28, overwritten 2026-07-29) and confirmed the carry-forward
+  pattern was real: 07-29 -> 08-01 -> 08-04 ("five") -> 08-05 ("six") ->
+  would have been a 7th uncorrected mention today. Ran a full
+  identification sweep (git history all 810 objects, local .env, both
+  PowerShell history profiles, all sibling D:\Dev\Projects folders,
+  .fly/.config, Windows Credential Manager target names) -- found
+  nowhere, with two real bugs in the sweep script caught and fixed
+  mid-investigation before trusting the negative (nested `$_` shadowing
+  produced a false 415-hit signal with a blank Source field; traced to
+  three compiled flyctl binaries' embedded string tables, not user data,
+  once the bug was fixed). Independently reconfirmed via a live `fly ssh`
+  into the running container: all 4 Fly secrets read by length+prefix,
+  none 110 chars. COULD NOT FIND IT is the honest, exhaustively-checked
+  conclusion -- origin most likely a clipboard/password-manager-only
+  paste, outside programmatic reach. Board language corrected (see
+  BACKLOG.md item 27).
+
+- [2026-08-07, Session 031 -- deploy + live verification, Tier 0] Yehor
+  built and deployed a fresh image from `66680c0`
+  (`deployment-01KZECVHTM3QQ62Q32YBBXRA8F`, machine `7841600fd5e7e8`
+  version 6). Confirmed by direct `fly ssh console` grep against the
+  RUNNING container's own `/app/src/patchward/pipeline.py`: lines
+  252/288/290/298 match the committed source exactly (`pr_status =
+  pr_dict.get("status", "")` at line 288, identical to the git-blob
+  check). Full chain independently verified end to end: authored -> tested
+  -> committed -> pushed -> deployed -> live-and-correct, each link
+  checked separately rather than assumed from the one before it. Also
+  observed: the machine scales to zero when idle (first `ssh console`
+  attempt failed with "no started VMs"); a real HTTP request to /healthz
+  woke it automatically -- expected Fly behavior, not a defect, worth
+  knowing so a future stopped-machine reading isn't misdiagnosed. Also
+  noted for precision: the local `.env`'s ANTHROPIC_API_KEY
+  (`sk-ant-api03-o...`) and Fly's deployed ANTHROPIC_API_KEY
+  (`sk-ant-api03-m...`) are two DIFFERENT valid keys, both separately
+  confirmed clean -- not the same value duplicated.
+
+## Session log (continued) — Session 031 CLOSE
+
+- [2026-08-07, Session 031 -- close] Closed via session-close. Reconciled:
+  origin HEAD `66680c0` == local HEAD, working tree carries exactly one
+  real (CRLF-normalised) content change -- `webhook.py`/`test_webhook.py`,
+  the still-uncommitted BACKLOG 28 patch, unchanged this session -- plus
+  five untracked root artifacts (one more than the six-session-running
+  count implied: this session added
+  `credential_identification_2026-08-07.md`). No `.git/index.lock`,
+  nothing staged at close. `memo section 7 step 4` (live site-copy check)
+  untouched again -- fourth session running at close, not fifth; the
+  actual count was re-traced from source this session rather than trusted
+  forward.
+
+## Calibration record (continued) — Session 031
+
+Claims checked at close: 15. Confirmed: 14. Drifted: 1 (the agent's own
+`test_async_pipeline.py` +171 line-count prediction in the staging
+instructions; actual was +168 -- caught and corrected the same turn,
+before Yehor staged anything on the wrong expectation). **Score 14/15 =
+0.93.**
+
+This session had two verification chains running simultaneously -- the
+code chain (BACKLOG 29) and the memory-hygiene chain (the credential
+item) -- and both closed clean, with the memory-hygiene chain notably
+NOT trusting its own first negative result: a 415-"hit" false alarm was
+investigated rather than reported, found to be a real scripting bug
+(nested `$_` shadowing), fixed, and only then was the true zero-result
+trusted. That is the session's best evidence that "verify, don't report"
+is holding as a working discipline rather than a slogan repeated at
+opens.
+
+One inherited-claim correction, caught before it could compound: the
+"110-char credential, N sessions running" framing itself, which the
+opening synthesis's own reading-focus surfaced and this session then
+independently traced and confirmed via 9 distinct sources rather than
+either accepting the correction or the original framing on say-so alone.
+
+Trend 026-031: this is the first session in the ledger where the deploy
+and live-production claims were backed by an ACTUAL pasted transcript at
+close rather than resting on Yehor's narration alone -- noted explicitly
+because the agent flagged the gap mid-session (properly) before the
+transcript arrived, rather than either accepting or rejecting the claim
+without evidence.
+
+## Heuristics — Session 031 update
+
+- **H27 [NEW, earned 2026-08-07]:** a script with nested pipelines --
+  `Get-ChildItem | ForEach-Object { ... Select-String ... | ForEach-Object
+  { ... } }` -- silently shadows the outer block's `$_` inside the inner
+  block. Any field populated from the outer `$_` (e.g. `$_.FullName`)
+  inside the inner block will be empty/wrong with NO error raised. This
+  session: a credential-sweep script's `Source` field was blank for all
+  415 "hits"; the blank field was initially misread as a display
+  artifact rather than a data bug, and only traced correctly after a
+  `Group-Object` on the (blank) field failed to explain the count.
+  Generalise: capture any value needed from an outer loop into an
+  explicitly named variable BEFORE entering a nested pipeline stage, and
+  treat an unexpectedly uniform or empty grouping key as a script-bug
+  hypothesis to rule out before trusting either a "concentrated in one
+  source" or a "clean negative" reading.
+
+- **H14 [REINFORCED]:** this session's opening synthesis independently
+  traced the "110-char credential, N sessions running" line through five
+  SESSION_CLOSE files back to its 2026-07-29 origin before accepting or
+  rejecting the recalibration offered mid-session -- and separately, the
+  session declined to record a "deployed and live" claim as Tier 0 until
+  an actual transcript arrived (it initially had only narration). Both
+  are H14 held correctly under pressure to just accept a plausible,
+  confidently-stated claim.
+
+- **[CANDIDATE, 2026-08-07, single occurrence, not yet promotable]:** when
+  a tool-access probe for a platform-specific path (e.g. `.venv/bin/
+  python`) returns "not found," check the platform-native variant (e.g.
+  `.venv/Scripts/python.exe` on Windows) before concluding the resource
+  doesn't exist. The agent made exactly this mistake this session on its
+  own Linux-path assumption against a Windows project.
