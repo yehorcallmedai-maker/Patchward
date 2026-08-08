@@ -1758,7 +1758,18 @@ The startup guard is a separate unit: see item 28.
 
 ## 28. `webhook.py:318` validates the Anthropic credential by FALSINESS ONLY — two different broken secrets passed startup in one evening (NEW, surfaced 2026-07-28, Session 026 close)
 
-**STATUS: PATCH PREPARED 2026-07-29 (Session 027), NOT YET LANDED** — implemented
+**STATUS: CLOSED 2026-08-08 (Session 032)** — commit `f653e77`, three
+adversarial review rounds, verified on origin by content, real gate
+565/3/91.20%. See `SESSION_CLOSE_2026-08-08.md` for full history.
+(Known follow-up, not a reopen: `f653e77` shipped `webhook.py` with a
+UTF-8 BOM + 29 mojibake em-dashes — cosmetic, comments-only, gate
+unaffected — logged as a P0-adjacent encoding fix in the Session 032
+close. The two deferred design questions below — absence-fails-boot and
+`/healthz` depth — were also never decided.)
+
+Original prepared-patch history preserved below. ↓
+
+**PATCH PREPARED 2026-07-29 (Session 027)** — implemented
 and tested in a clean clone (full suite 526 passed / 90.75%; +9 tests). Delivered
 as `backlog28_startup_credential_guard.patch` (in repo root). Adds
 `_validate_credential_shapes()` wired via a FastAPI `lifespan`, failing the boot

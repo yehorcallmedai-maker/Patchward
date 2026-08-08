@@ -2351,3 +2351,133 @@ without evidence.
   `.venv/Scripts/python.exe` on Windows) before concluding the resource
   doesn't exist. The agent made exactly this mistake this session on its
   own Linux-path assumption against a Windows project.
+
+## Session log (continued) — Session 032
+
+- [2026-08-08, Session 032 — open] Opened at HEAD `cd532c0` ("close
+  Session 031"). Zero drift at open — the opening prompt's claims
+  re-verified by content before any work.
+- [2026-08-08, Session 032 — `.gitattributes` landed `132f47a`] First
+  `.gitattributes` in the repo: `* text=auto eol=lf` + CRLF pins for
+  `*.ps1/*.bat/*.cmd`, binary pins for `*.png/*.jpg/*.pdf`, `*.patch
+  -text`. Byte-verified BOM-free (`git show 132f47a:.gitattributes` opens
+  `2a 20 74 65`, no `EF BB BF`).
+- [2026-08-08, Session 032 — self-corrected path error] One real
+  mid-session error: an interpreter/path assumption was stated wrong and
+  self-caught before it cost anything. The gate interpreter is
+  `D:\Dev\Projects\Patchward\.venv\Scripts\python.exe` (see H20 path
+  correction below) — reached only after three wrong guesses, hence the
+  H26 promotion.
+- [2026-08-08, Session 032 — BACKLOG 28 closed `f653e77`] Startup
+  credential-shape guard. Three adversarial rounds: v1 (substring-only) →
+  v2 (F1–F5: real PEM parse both branches, consumer-exact B64 decode,
+  ANTHROPIC min-length, ASCII-digit App-ID, +3 tests + F1 exploit repro) →
+  v3 (F-A RSA-specificity in both branches, F-B consumer raw-first
+  precedence, F-C discriminating B64 junk-PEM test, M1 cosmetic).
+  **Third independent adversarial pass CLEAN.** Verified on origin by
+  content: `isinstance(..., rsa.RSAPrivateKey)` in both branches
+  (≈159/195), `if raw_key: ... elif b64_key:` precedence (≈140/164),
+  value-free RSA failure messages (≈161/197). Real gate (Yehor's Windows
+  3.14.4 `.venv`): **565 passed / 3 skipped / 15 deselected / 91.20%** —
+  reconciles with the Linux 3.10.12 advisory (566/2/15/91.33%) by the
+  exact +3 test delta; ±1 baseline and coverage delta are the known
+  interpreter difference.
+- [2026-08-08, Session 032 — REAL byte-level regression found at close,
+  NOT caught by the three rounds] The close pass byte-checked
+  `f653e77:webhook.py` and found it committed with a leading UTF-8 BOM
+  (`EF BB BF`) and 29 mojibake em-dashes (`D0 B2 D0 82 E2 80 9D` = a
+  UTF-8 em-dash misdecoded through CP1251). Attribution unambiguous:
+  parent `132f47a` had no BOM / 0 mojibake / 21 clean em-dashes
+  (`E2 80 94`); `f653e77` has BOM / 0 clean / 29 mojibake — a whole-file
+  re-encode that corrupted 21 pre-existing em-dashes on lines the diff
+  never touched, plus ~8 new. The delivered patch is clean; corruption
+  entered on the Windows save/commit. Cosmetic (comments + preamble; gate
+  unaffected) but a genuine content regression on origin/main that
+  defeats the same session's `.gitattributes` intent. **This is the H20
+  whole-file-rewrite hazard realized on origin, and — unlike Session
+  030's false alarm — a real H26 hit.** Carried forward as a P0-adjacent
+  fix (strip BOM, restore em-dashes, one-line commit).
+
+## Session log (continued) — Session 032 CLOSE
+
+- [2026-08-08, Session 032 — close] Closed via session-close. Reconciled:
+  local HEAD `f653e77` == `origin/main` by `git ls-remote`. Two commits
+  landed (`132f47a`, `f653e77`); nothing staged/committed by the agent
+  (H20). One stale `.git/index.lock` present in the mount, un-unlinkable
+  (`Operation not permitted`) — a mount-permission artifact, not a live
+  git op; status reads clean through it. L2 goal (close BACKLOG 28 with a
+  verified three-round fix) = **MET on the security logic**, with the
+  honest asterisk that a byte-level encoding regression escaped all three
+  logic-focused rounds and reached origin — caught only at close. L1: the
+  startup-credential-guard class from item 27/28 is now closed in code,
+  though not yet exercised on Fly.
+
+## Calibration record (continued) — Session 032
+
+Claims checked at close: 8. Confirmed: 7. Failed: 1 — and the failure is
+material, not a rounding artifact: "BACKLOG 28 landed clean on `f653e77`"
+is FALSE at the byte level (BOM + 29 mojibake em-dashes), even though the
+security logic it landed is correct and gate-verified. **Score 7/8 =
+0.88.**
+
+Honest reasoning, not rounded up: the security work itself is the
+session's strongest — a genuine three-round adversarial fix where each
+round closed the prior round's residue (substring bypass → parseable-≠-RSA
+→ consumer-precedence), CLEAN on an independent third pass, reconciled to
+the real gate. Opened with zero drift; the one mid-session path error was
+self-corrected before cost. But the encoding regression is the counter-
+weight: three consecutive adversarial reviews all scoped themselves to
+logic and none looked at the file's bytes, so a real content regression
+rode a security commit onto main and would have been recorded as "landed
+clean" had the close not byte-checked it. The calibration system worked
+(the close caught it); the session's own review discipline had a
+blind spot (encoding was never in scope). Scored to reflect both: high
+competence on the intended work, one real escaped defect.
+
+Trend 030-032: the close-time byte check is now earning its keep in the
+affirmative direction — Session 030 it prevented churn on a clean file
+(false alarm), Session 032 it caught a real regression. Same discipline,
+opposite outcome, both correct.
+
+## Heuristics — Session 032 update
+
+- **H20 [PATH CORRECTION, 2026-08-08]:** the standing "Yehor stages and
+  commits on Windows" rule now carries the verified gate-interpreter path.
+  It is **`D:\Dev\Projects\Patchward\.venv\Scripts\python.exe` (Python
+  3.14.4, nested inside the repo, gitignored — NOT a sibling folder).
+  Verified 2026-08-08 by direct filesystem check (three prior wrong
+  guesses before this was checked — see H26).** Use this exact path in
+  every handoff; never restate the venv as a sibling folder
+  (`...\Patchward.venv`) or as "one directory over." The whole-file
+  rewrite hazard H20 warns of was realized on origin this session (BOM +
+  mojibake on `f653e77:webhook.py`) — the rule earned a live example.
+
+- **H26 [PROMOTED — 3rd occurrence, standing]:** check terminal-rendered
+  corruption/encoding at the byte level before acting on it. 3rd
+  occurrence is the affirmative case: the close-out byte-checked
+  `f653e77:webhook.py` and found REAL BOM + 29 mojibake em-dashes
+  (`D0 B2 D0 82 E2 80 9D`), where Session 030's identical symptom was a
+  terminal false alarm. The check cuts both ways — avoids churn on clean
+  files AND catches genuine corruption a glance would rationalize away.
+  Promote to standing: byte-verify any encoding claim, positive or
+  negative, before recording it.
+
+- **H29 [PROMOTED — earned 2026-08-08, 2 occurrences within one patch]:**
+  a boot/shape guard must mirror the CONSUMER's exact contract, not a
+  looser proxy — the specific key TYPE the consumer needs (RSA for RS256,
+  not merely "parseable") AND the consumer's precedence/order (raw key
+  first, B64 only if raw absent — not both fields independently). Two
+  occurrences in the single v3 patch: F-A (accepted any parseable key →
+  false-pass of an unusable EC/Ed25519 key) and F-B (validated B64
+  unconditionally → false-boot of a valid raw + stale-B64 config).
+  Sibling of H24: re-derive the consumer's real requirement from its
+  source, don't infer it from the field's surface shape.
+
+- **H28 [CANDIDATE — 2026-08-08, 2 occurrences, needs one more]:** a
+  validation that matches a credential by structural resemblance (a
+  substring like `"PRIVATE KEY"`, a prefix, "looks like a PEM") rather
+  than by performing the consumer's real operation (parse / decode /
+  type-check) is a bypass waiting for input that resembles-but-isn't. Two
+  occurrences: v1's substring check accepted junk in the raw branch (F1)
+  and the same proxy in the B64 branch accepted the same junk after
+  decode (F1/F-C). Reinforces H23 with dual-site evidence.
