@@ -1,4 +1,4 @@
-# KS-TRACE: P1-WEBHOOK-03 | assumption: GITHUB_WEBHOOK_SECRET is set as
+﻿# KS-TRACE: P1-WEBHOOK-03 | assumption: GITHUB_WEBHOOK_SECRET is set as
 # a platform secret and matches the value configured on the GitHub App's
 # webhook settings page | test: test_webhook.py
 """
@@ -19,13 +19,14 @@ Deliberately NOT in this version (see ADR-030):
     volume or run-time makes in-process background tasks unreliable.
   - Postgres. installations_db.py is SQLite; swapping the backing store
     is isolated to that one file.
-  - Any payment-processing code. GitHub is merchant of record — this
+  - Any payment-processing code. GitHub is merchant of record вЂ” this
     file only ever reacts to marketplace_purchase webhook events to
     keep is_entitled() current; it never calls a payments API directly.
 """
 from __future__ import annotations
 
 import asyncio
+import base64
 import collections
 import hashlib
 import hmac
@@ -36,8 +37,12 @@ import shutil
 import subprocess
 import tempfile
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
 
 from patchward import installations_db as idb
@@ -69,13 +74,156 @@ from patchward.run_log import RunLog
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Patchward Webhook Receiver")
+
+class StartupCredentialError(RuntimeError):
+    """Raised at process startup when a configured credential is present but
+    malformed. Deliberately fails the webhook's boot rather than letting a
+    broken secret pass silently and surface as a 401/500 on the first real
+    request (BACKLOG 28)."""
+
+
+# KS-TRACE: BACKLOG 28 вЂ” fail-loud-at-startup credential shape guard.
+# The prior guard (`get_client_credentials()` + `if not anthropic_key`) rejected
+# only FALSY values, so a present-but-wrong secret passed startup and failed on
+# the FIRST pipeline request вЂ” after verify, deep inside a background task.
+# Three different broken ANTHROPIC_API_KEY values passed that check across two
+# days (a 9-char stub, a 110-char foreign credential, and a third rejected on
+# 2026-07-29). This validates the SHAPE of each credential that is set and
+# raises before the server accepts traffic.
+#
+# Policy (deliberately conservative, to avoid false boot failures):
+#   * A credential that is SET but malformed  -> raise (fail the boot).
+#   * A credential that is ABSENT             -> warn only; presence is still
+#     enforced at point of use (signature check / pipeline guard).
+# Whether ABSENCE should also fail the boot, and whether /healthz should assert
+# validity, are open product decisions (see BACKLOG 28) and are NOT decided here.
+#
+# No credential VALUE (or any substring of one) is ever logged or raised.
+def _validate_credential_shapes() -> None:
+    errors: list[str] = []
+
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if anthropic_key:
+        if not anthropic_key.startswith("sk-ant-"):
+            errors.append(
+                "ANTHROPIC_API_KEY is set but does not begin with the expected "
+                "'sk-ant-' prefix"
+            )
+        elif len(anthropic_key) < 20:
+            # F3 (BACKLOG 28 v2): a value with the right prefix but far too
+            # short to be a real key (e.g. a truncated paste or an "sk-ant-ok"
+            # stub). Floor kept deliberately low вЂ” real keys are ~100+ chars,
+            # so this never rejects a genuine credential.
+            errors.append(
+                "ANTHROPIC_API_KEY is set but is too short to be a valid key"
+            )
+    else:
+        logger.warning("[webhook] ANTHROPIC_API_KEY is not set at startup")
+
+    app_id = os.environ.get("GITHUB_APP_ID", "").strip()
+    if app_id and not (app_id.isascii() and app_id.isdigit()):
+        # F4 (BACKLOG 28 v2): str.isdigit() returns True for non-ASCII digit
+        # characters (e.g. superscripts or digits from other scripts) that are
+        # NOT usable as a GitHub App ID. Require ASCII decimal digits only.
+        errors.append("GITHUB_APP_ID is set but is not a numeric App ID")
+
+    # F-B (BACKLOG 28 v3): mirror the consumer's ACTUAL precedence
+    # (github_app_auth.py:_load_private_key, lines 47-52): RAW is read
+    # first and, when present, returned outright вЂ” B64 is NEVER consulted.
+    # Only when RAW is absent does the consumer fall back to B64. The prior
+    # (v2) guard validated BOTH variables independently, so a valid RAW key
+    # paired with a stale/garbage B64 value produced a spurious B64 error and
+    # a false boot failure over a value that would never be read. Validate
+    # exactly the variable the consumer would use, in the same order.
+    raw_key = os.environ.get("GITHUB_APP_PRIVATE_KEY", "").strip()
+    b64_key = os.environ.get("GITHUB_APP_PRIVATE_KEY_B64", "").strip()
+    if raw_key:
+        # F1 (BACKLOG 28 v2): actually attempt to parse the PEM. The prior
+        # `"PRIVATE KEY" in raw_key` substring check accepted a valid-looking
+        # header wrapped around a garbage body (the adversarial junk-PEM repro).
+        try:
+            key = load_pem_private_key(
+                raw_key.encode("utf-8"),
+                password=None,
+                backend=default_backend(),
+            )
+        except Exception:
+            errors.append(
+                "GITHUB_APP_PRIVATE_KEY is set but is not a valid PEM private key"
+            )
+        else:
+            # F-A (BACKLOG 28 v3): parseability is not enough. GitHub Apps
+            # sign with RS256, which REQUIRES an RSA key; a well-formed EC or
+            # Ed25519 key parses cleanly but cannot sign a valid App JWT, so
+            # the boot must reject it here rather than fail at first use.
+            if not isinstance(key, rsa.RSAPrivateKey):
+                errors.append(
+                    "GITHUB_APP_PRIVATE_KEY is set but is not an RSA private "
+                    "key (GitHub Apps require RSA for RS256 signing)"
+                )
+    elif b64_key:
+        # F2 (BACKLOG 28 v2): mirror the real consumer's decode EXACTLY
+        # (github_app_auth.py:50-52) вЂ” same .strip(), same base64.b64decode()
+        # with the default validate flag (validate=False), same .decode("utf-8"),
+        # in the same order вЂ” so the guard accepts/rejects precisely what the
+        # consumer can/cannot use. A stricter decode here (e.g. validate=True)
+        # would reject values the consumer accepts and cause false boot failures.
+        try:
+            decoded_pem = base64.b64decode(b64_key).decode("utf-8")
+        except Exception:
+            errors.append(
+                "GITHUB_APP_PRIVATE_KEY_B64 is set but could not be base64-decoded "
+                "to UTF-8 text (does not match the consumer's decode)"
+            )
+        else:
+            # F1 (BACKLOG 28 v2): actually parse the PEM instead of a substring
+            # check, so a well-formed header wrapped around garbage is rejected.
+            try:
+                key = load_pem_private_key(
+                    decoded_pem.encode("utf-8"),
+                    password=None,
+                    backend=default_backend(),
+                )
+            except Exception:
+                errors.append(
+                    "GITHUB_APP_PRIVATE_KEY_B64 is set but is not a valid PEM "
+                    "private key"
+                )
+            else:
+                # F-A (BACKLOG 28 v3): enforce RSA specifically, consistently
+                # with the raw branch вЂ” a parseable non-RSA key cannot sign RS256.
+                if not isinstance(key, rsa.RSAPrivateKey):
+                    errors.append(
+                        "GITHUB_APP_PRIVATE_KEY_B64 is set but is not an RSA "
+                        "private key (GitHub Apps require RSA for RS256 signing)"
+                    )
+
+    if not os.environ.get("GITHUB_WEBHOOK_SECRET", "").strip():
+        logger.warning("[webhook] GITHUB_WEBHOOK_SECRET is not set at startup")
+
+    if errors:
+        # Names + failure kinds only вЂ” never a value or any part of one.
+        joined = "; ".join(errors)
+        logger.error("[webhook] startup credential validation failed: %s", joined)
+        raise StartupCredentialError(joined)
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    # BACKLOG 28: validate credential SHAPES before the server accepts traffic.
+    # Raising here aborts startup loudly (uvicorn logs + failed health check)
+    # instead of the process appearing healthy over an unusable secret.
+    _validate_credential_shapes()
+    yield
+
+
+app = FastAPI(title="Patchward Webhook Receiver", lifespan=_lifespan)
 
 _DB_PATH = Path(os.environ.get("PATCHWARD_WEBHOOK_DB", "runs/webhook_state.db"))
 
-# BACKLOG 5 (Phase 9 Exposure Gate) — request body size limit.
+# BACKLOG 5 (Phase 9 Exposure Gate) вЂ” request body size limit.
 # GitHub's own hard cap on webhook payloads is 25 MB (a larger event
-# simply never gets delivered — see
+# simply never gets delivered вЂ” see
 # https://docs.github.com/en/webhooks/webhook-events-and-payloads),
 # so a limit at that same ceiling never rejects a legitimate delivery
 # and still bounds worst-case memory use per request. Read as a
@@ -104,7 +252,7 @@ def _max_body_bytes() -> int:
     if value is None or value < 1:
         logger.warning(
             "[webhook] invalid PATCHWARD_WEBHOOK_MAX_BODY_BYTES=%r "
-            "(must be an integer >= 1) — using default %d",
+            "(must be an integer >= 1) вЂ” using default %d",
             raw,
             _DEFAULT_MAX_BODY_BYTES,
         )
@@ -116,7 +264,7 @@ def _check_body_size(content_length_header: str | None) -> None:
     """
     Reject oversized deliveries by Content-Length before the body is read,
     when the client sends that header (GitHub always does). This is a
-    fast-path check only — a client omitting or lying about
+    fast-path check only вЂ” a client omitting or lying about
     Content-Length (e.g. chunked transfer-encoding) is still caught by
     the second, post-read check in github_webhook, at the cost of that
     request's bytes already having been buffered into memory by
@@ -134,11 +282,11 @@ def _check_body_size(content_length_header: str | None) -> None:
         raise HTTPException(status_code=413, detail="Payload too large")
 
 
-# BACKLOG 5 — rate limiting on /webhooks/github. The limiter is called
+# BACKLOG 5 вЂ” rate limiting on /webhooks/github. The limiter is called
 # AFTER _verify_signature in the handler (Phase 9 security-boundary
 # change), so it counts only HMAC-valid, genuinely-from-GitHub requests.
 # An unauthenticated flood is rejected at 401 before it ever reaches the
-# limiter and therefore cannot consume the budget — that closes the
+# limiter and therefore cannot consume the budget вЂ” that closes the
 # starvation vector where anonymous traffic filling a shared window would
 # push GitHub's real deliveries into 429s and, via GitHub's
 # consecutive-non-2xx auto-disable, risk the webhook being turned off.
@@ -146,7 +294,7 @@ def _check_body_size(content_length_header: str | None) -> None:
 # request) is bounded by the body-size cap above and consciously accepted
 # at v0 scope, not re-solved with a second pre-auth limiter (ADR-030).
 # Single Fly machine, scale-to-zero (fly.toml), no shared store between
-# instances by design (ADR-030) — an in-memory sliding-window counter is
+# instances by design (ADR-030) вЂ” an in-memory sliding-window counter is
 # consistent with that same v0 scope, not a compromise pending a "real"
 # implementation. This bounds a runaway/replay flood of otherwise-valid
 # GitHub deliveries; it is not a per-installation fairness mechanism.
@@ -159,7 +307,7 @@ _rate_limit_timestamps: collections.deque[float] = collections.deque()
 def _rate_limit_max_requests() -> int:
     # Same guard shape as _max_body_bytes. A max < 1 (zero or negative)
     # would make _check_rate_limit reject on the very first request and
-    # never accept again — a permanent-429 outage — so it falls back to
+    # never accept again вЂ” a permanent-429 outage вЂ” so it falls back to
     # the default just like an unparseable value.
     raw = os.environ.get("PATCHWARD_WEBHOOK_RATE_LIMIT_MAX")
     if raw is None:
@@ -171,7 +319,7 @@ def _rate_limit_max_requests() -> int:
     if value is None or value < 1:
         logger.warning(
             "[webhook] invalid PATCHWARD_WEBHOOK_RATE_LIMIT_MAX=%r "
-            "(must be an integer >= 1) — using default %d",
+            "(must be an integer >= 1) вЂ” using default %d",
             raw,
             _RATE_LIMIT_MAX_REQUESTS_DEFAULT,
         )
@@ -196,7 +344,7 @@ def _rate_limit_window_seconds() -> float:
     if value is None or not math.isfinite(value) or value <= 0:
         logger.warning(
             "[webhook] invalid PATCHWARD_WEBHOOK_RATE_LIMIT_WINDOW_SECONDS=%r "
-            "(must be a finite number > 0) — using default %s",
+            "(must be a finite number > 0) вЂ” using default %s",
             raw,
             _RATE_LIMIT_WINDOW_SECONDS_DEFAULT,
         )
@@ -209,7 +357,7 @@ def _check_rate_limit() -> None:
     Sliding-window limiter: raises HTTPException(429) once more than
     `_rate_limit_max_requests()` requests have hit this endpoint within
     the last `_rate_limit_window_seconds()` seconds. Not thread-safe by
-    design — this process serves the endpoint from a single asyncio
+    design вЂ” this process serves the endpoint from a single asyncio
     event loop (uvicorn's default worker model here), so a plain
     deque is sufficient; do not reuse this helper if the deployment
     model ever moves to multiple worker processes/threads.
@@ -232,7 +380,7 @@ def _verify_signature(raw_body: bytes, signature_header: str | None) -> None:
     Verify X-Hub-Signature-256 using GITHUB_WEBHOOK_SECRET.
 
     Raises HTTPException(401) on any mismatch or missing header/secret.
-    This check happens BEFORE the payload is parsed at all — an
+    This check happens BEFORE the payload is parsed at all вЂ” an
     unverified request never reaches event-dispatch logic.
     """
     secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
@@ -252,7 +400,7 @@ async def trigger_scan_for_installation(installation_id: int, repo_full_name: st
     Clone one repo using a fresh Installation Access Token and run the
     existing scan -> fix-gen -> verify -> PR pipeline against it.
 
-    Runs as a FastAPI background task — must not raise past its own
+    Runs as a FastAPI background task вЂ” must not raise past its own
     boundary (errors are logged, not propagated, since there is no HTTP
     response left to attach them to by the time this runs).
     """
@@ -265,7 +413,7 @@ async def trigger_scan_for_installation(installation_id: int, repo_full_name: st
         account_login = row["account_login"] if row else owner
         if not idb.is_entitled(conn, account_login):
             logger.info(
-                "[webhook] skipping scan for %s — no active Marketplace purchase on file",
+                "[webhook] skipping scan for %s вЂ” no active Marketplace purchase on file",
                 repo_full_name,
             )
             return
@@ -284,7 +432,7 @@ async def trigger_scan_for_installation(installation_id: int, repo_full_name: st
     tmp_dir = Path(tempfile.mkdtemp(prefix="patchward-webhook-"))
     try:
         # BACKLOG 19: tokenless URL + ephemeral credential helper. The
-        # token reaches git only via the subprocess environment — it is
+        # token reaches git only via the subprocess environment вЂ” it is
         # never in the URL (so `git clone` cannot persist it into the
         # clone's .git/config, where the scanners and triage/fix-gen
         # subagents could read it) and never in argv (so exception text
@@ -304,7 +452,7 @@ async def trigger_scan_for_installation(installation_id: int, repo_full_name: st
         if proc.returncode != 0:
             # scrub_text: modern git redacts credentials from its own
             # stderr, but that is version-dependent and not guaranteed
-            # (e.g. verbose/trace modes) — scrub regardless.
+            # (e.g. verbose/trace modes) вЂ” scrub regardless.
             logger.error(
                 "[webhook] clone failed for %s: %s",
                 repo_full_name,
@@ -315,7 +463,7 @@ async def trigger_scan_for_installation(installation_id: int, repo_full_name: st
         proxy = CredentialProxy().load()
         anthropic_key = proxy.get_client_credentials().get("ANTHROPIC_API_KEY", "")
         if not anthropic_key:
-            logger.error("[webhook] ANTHROPIC_API_KEY not set — cannot run pipeline")
+            logger.error("[webhook] ANTHROPIC_API_KEY not set вЂ” cannot run pipeline")
             return
 
         cfg = PatchwardConfig(
@@ -357,7 +505,7 @@ async def github_webhook(
     raw_body = await request.body()
     if len(raw_body) > _max_body_bytes():
         # Defense in depth for a missing/lying Content-Length header
-        # (e.g. chunked transfer-encoding) — see _check_body_size's
+        # (e.g. chunked transfer-encoding) вЂ” see _check_body_size's
         # docstring for the residual-risk note on this path.
         raise HTTPException(status_code=413, detail="Payload too large")
     _verify_signature(raw_body, x_hub_signature_256)
@@ -437,7 +585,7 @@ async def github_webhook(
             )
         return {"status": "scan_queued"}
 
-    # Unrecognized event types are acknowledged, not rejected — GitHub
+    # Unrecognized event types are acknowledged, not rejected вЂ” GitHub
     # disables a webhook after enough consecutive non-2xx responses,
     # and new event types may arrive that this v0 simply doesn't act on.
     return {"status": "ignored", "event": event}

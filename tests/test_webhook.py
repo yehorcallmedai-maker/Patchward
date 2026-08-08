@@ -1,12 +1,15 @@
 # KS-TRACE: P1-WEBHOOK-03 | test: signature verification, event dispatch
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import json
 from pathlib import Path
 
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 
 from patchward import webhook
@@ -600,3 +603,284 @@ def test_infinite_window_env_still_expires_limiter_recovers(
     third = client.post("/webhooks/github", content=body, headers=headers)
     assert third.status_code == 200
     assert third.json() == {"status": "pong"}
+
+
+# ---------------------------------------------------------------------------
+# BACKLOG 28 — fail-loud-at-startup credential shape guard.
+# Validates SHAPE of credentials that are set; absence is a warning, not a
+# failure. Existing tests above use TestClient WITHOUT the `with` context
+# manager, so they never trigger the lifespan and are unaffected by this guard.
+# ---------------------------------------------------------------------------
+
+# A realistic, > 20-char valid-shaped Anthropic key for the "accepts" path and
+# as filler where the Anthropic value is not the subject under test. BACKLOG 28
+# v2 (F3) adds a minimum-length check, so short stubs like "sk-ant-ok" no longer
+# pass the guard and cannot be used as innocuous filler.
+_VALID_ANTHROPIC_KEY = "sk-ant-api03-" + "a" * 24
+
+
+def _real_private_key_pem() -> bytes:
+    """A genuine, parseable RSA private key PEM (generated fresh — never a real
+    secret). BACKLOG 28 v2 (F1) replaces the guard's substring check with an
+    actual load_pem_private_key() parse, so the "accepts" tests must use a key
+    that really parses, not a header wrapped around filler bytes."""
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    return key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+
+
+# Generated once per module run — RSA keygen is comparatively expensive.
+_VALID_PRIVATE_KEY_PEM = _real_private_key_pem()
+
+
+def _clear_app_creds(monkeypatch: pytest.MonkeyPatch) -> None:
+    for k in (
+        "GITHUB_APP_ID",
+        "GITHUB_APP_PRIVATE_KEY_B64",
+        "GITHUB_APP_PRIVATE_KEY",
+    ):
+        monkeypatch.delenv(k, raising=False)
+
+
+def test_startup_rejects_non_anthropic_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "a-110-char-credential-from-a-different-service")
+    _clear_app_creds(monkeypatch)
+    with pytest.raises(webhook.StartupCredentialError):
+        webhook._validate_credential_shapes()
+
+
+def test_startup_rejects_short_stub_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "req_011Cd")  # 9-char stub shape
+    _clear_app_creds(monkeypatch)
+    with pytest.raises(webhook.StartupCredentialError):
+        webhook._validate_credential_shapes()
+
+
+def test_startup_accepts_valid_anthropic_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", _VALID_ANTHROPIC_KEY)
+    _clear_app_creds(monkeypatch)
+    webhook._validate_credential_shapes()  # must not raise
+
+
+def test_startup_allows_absent_anthropic_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    _clear_app_creds(monkeypatch)
+    webhook._validate_credential_shapes()  # absence warns, does not raise
+
+
+def test_startup_rejects_non_numeric_app_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", _VALID_ANTHROPIC_KEY)
+    _clear_app_creds(monkeypatch)
+    monkeypatch.setenv("GITHUB_APP_ID", "not-numeric")
+    with pytest.raises(webhook.StartupCredentialError):
+        webhook._validate_credential_shapes()
+
+
+def test_startup_rejects_bad_b64_private_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", _VALID_ANTHROPIC_KEY)
+    _clear_app_creds(monkeypatch)
+    # valid base64, but does not decode to a PEM private key
+    monkeypatch.setenv(
+        "GITHUB_APP_PRIVATE_KEY_B64", base64.b64encode(b"not a pem").decode()
+    )
+    with pytest.raises(webhook.StartupCredentialError):
+        webhook._validate_credential_shapes()
+
+
+def test_startup_accepts_valid_b64_private_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", _VALID_ANTHROPIC_KEY)
+    _clear_app_creds(monkeypatch)
+    # A genuine, parseable PEM — the guard now really parses it (BACKLOG 28 v2).
+    monkeypatch.setenv(
+        "GITHUB_APP_PRIVATE_KEY_B64",
+        base64.b64encode(_VALID_PRIVATE_KEY_PEM).decode(),
+    )
+    monkeypatch.setenv("GITHUB_APP_ID", "123456")
+    webhook._validate_credential_shapes()  # must not raise
+
+
+def test_startup_error_never_contains_credential_value(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    secret_value = "wrongkey-abcdef0123456789-should-never-appear"
+    monkeypatch.setenv("ANTHROPIC_API_KEY", secret_value)
+    _clear_app_creds(monkeypatch)
+    with pytest.raises(webhook.StartupCredentialError) as excinfo:
+        webhook._validate_credential_shapes()
+    assert secret_value not in str(excinfo.value)
+
+
+def test_lifespan_aborts_startup_on_malformed_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Entering the app through its lifespan raises on a malformed key —
+    the production fail-loud path (the `with` context triggers startup)."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "not-an-anthropic-key")
+    _clear_app_creds(monkeypatch)
+    with pytest.raises(webhook.StartupCredentialError):
+        with TestClient(webhook.app):
+            pass
+
+
+# ---------------------------------------------------------------------------
+# BACKLOG 28 v2 — regression tests for the adversarial-review findings.
+# F1: substring check accepted a valid header wrapped around garbage.
+# F2: the guard's base64 decode diverged from the real consumer's decode.
+# These would have FAILED against v1 and must PASS against v2.
+# ---------------------------------------------------------------------------
+
+def test_startup_rejects_bad_raw_private_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A raw GITHUB_APP_PRIVATE_KEY that CONTAINS the 'PRIVATE KEY' substring
+    but is not a parseable PEM must now be rejected (v1 accepted it)."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", _VALID_ANTHROPIC_KEY)
+    _clear_app_creds(monkeypatch)
+    monkeypatch.setenv(
+        "GITHUB_APP_PRIVATE_KEY",
+        "-----BEGIN RSA PRIVATE KEY-----\n"
+        "this is not real base64 key material\n"
+        "-----END RSA PRIVATE KEY-----\n",
+    )
+    with pytest.raises(webhook.StartupCredentialError):
+        webhook._validate_credential_shapes()
+
+
+def test_startup_rejects_invalid_b64_private_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Input that is not valid base64 at all must be rejected with a clear
+    message (the guard's decode now mirrors the consumer's b64decode)."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", _VALID_ANTHROPIC_KEY)
+    _clear_app_creds(monkeypatch)
+    monkeypatch.setenv("GITHUB_APP_PRIVATE_KEY_B64", "not valid base64 %%%")
+    with pytest.raises(webhook.StartupCredentialError) as excinfo:
+        webhook._validate_credential_shapes()
+    assert "GITHUB_APP_PRIVATE_KEY_B64" in str(excinfo.value)
+
+
+def test_startup_rejects_unparseable_b64_pem(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Valid base64 that decodes to UTF-8 text which is NOT a parseable PEM
+    must be rejected — the F1 substring check is gone from the B64 branch too."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", _VALID_ANTHROPIC_KEY)
+    _clear_app_creds(monkeypatch)
+    payload = b"this is valid utf-8 text but is definitely not a PEM key"
+    monkeypatch.setenv(
+        "GITHUB_APP_PRIVATE_KEY_B64", base64.b64encode(payload).decode()
+    )
+    with pytest.raises(webhook.StartupCredentialError) as excinfo:
+        webhook._validate_credential_shapes()
+    assert "GITHUB_APP_PRIVATE_KEY_B64" in str(excinfo.value)
+
+
+def test_junk_pem_that_matches_substring_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The exact junk PEM from the adversarial review — a well-formed header
+    and footer wrapped around 'GARBAGE'. It satisfies the old
+    `"PRIVATE KEY" in raw_key` substring check (so v1 ACCEPTED it) but is not
+    a parseable private key. This test is the proof F1 is actually closed."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", _VALID_ANTHROPIC_KEY)
+    _clear_app_creds(monkeypatch)
+    junk_pem = "-----BEGIN PRIVATE KEY-----\nGARBAGE\n-----END PRIVATE KEY-----"
+    assert "PRIVATE KEY" in junk_pem  # confirms it would pass the v1 substring gate
+    monkeypatch.setenv("GITHUB_APP_PRIVATE_KEY", junk_pem)
+    with pytest.raises(webhook.StartupCredentialError):
+        webhook._validate_credential_shapes()
+
+
+# ---------------------------------------------------------------------------
+# BACKLOG 28 v3 — regression tests for the second adversarial-review findings.
+# F-A: the guard accepted ANY parseable private key, not RSA specifically;
+#      an EC/Ed25519 key parses but cannot sign the RS256 App JWT.
+# F-B: the guard validated BOTH raw and B64 independently, so a valid raw
+#      key + stale/garbage B64 caused a false boot failure — the consumer
+#      reads raw first and never looks at B64.
+# F-C: a discriminating B64-branch junk-PEM test (payload that would have
+#      passed the v1 substring check) was missing.
+# These would have FAILED against v2 and must PASS against v3.
+# ---------------------------------------------------------------------------
+
+
+def _real_ec_private_key_pem() -> bytes:
+    """A genuine, parseable EC (non-RSA) private key PEM (generated fresh —
+    never a real secret). It loads cleanly via load_pem_private_key() but is
+    NOT an rsa.RSAPrivateKey, so the v3 guard must reject it (F-A)."""
+    from cryptography.hazmat.primitives.asymmetric import ec
+
+    key = ec.generate_private_key(ec.SECP256R1())
+    return key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+
+
+def test_startup_rejects_valid_but_non_rsa_private_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """F-A: a real EC private key parses cleanly but cannot sign RS256, so the
+    guard must REJECT it. v2 (isinstance check absent) ACCEPTED it — this is the
+    regression proof. Asserted for BOTH the raw and the B64 branch."""
+    ec_pem = _real_ec_private_key_pem()
+
+    # Raw branch.
+    monkeypatch.setenv("ANTHROPIC_API_KEY", _VALID_ANTHROPIC_KEY)
+    _clear_app_creds(monkeypatch)
+    monkeypatch.setenv("GITHUB_APP_PRIVATE_KEY", ec_pem.decode("utf-8"))
+    with pytest.raises(webhook.StartupCredentialError) as excinfo_raw:
+        webhook._validate_credential_shapes()
+    assert "RSA" in str(excinfo_raw.value)
+
+    # B64 branch (raw cleared so the consumer — and the guard — fall back to it).
+    _clear_app_creds(monkeypatch)
+    monkeypatch.setenv(
+        "GITHUB_APP_PRIVATE_KEY_B64", base64.b64encode(ec_pem).decode()
+    )
+    with pytest.raises(webhook.StartupCredentialError) as excinfo_b64:
+        webhook._validate_credential_shapes()
+    assert "RSA" in str(excinfo_b64.value)
+
+
+def test_startup_ignores_stale_b64_when_raw_key_valid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """F-B: the consumer (github_app_auth._load_private_key) reads RAW first and
+    returns it outright — B64 is never consulted when RAW is present. So a valid
+    RAW key paired with a deliberately garbage B64 value must still BOOT (guard
+    ACCEPTS). v2 validated B64 independently and raised a spurious error here —
+    a false boot failure. This is the regression proof for F-B."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", _VALID_ANTHROPIC_KEY)
+    _clear_app_creds(monkeypatch)
+    monkeypatch.setenv("GITHUB_APP_ID", "123456")
+    monkeypatch.setenv(
+        "GITHUB_APP_PRIVATE_KEY", _VALID_PRIVATE_KEY_PEM.decode("utf-8")
+    )
+    # Stale/garbage B64 the consumer will never read.
+    monkeypatch.setenv("GITHUB_APP_PRIVATE_KEY_B64", "not valid base64 %%%")
+    webhook._validate_credential_shapes()  # must not raise
+
+
+def test_junk_pem_with_substring_via_b64_is_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """F-C: the exact junk PEM ('-----BEGIN PRIVATE KEY-----\\nGARBAGE\\n-----END
+    PRIVATE KEY-----') base64-encoded into the B64 variable. Its decoded form
+    satisfies the old v1 `"PRIVATE KEY" in ...` substring check (v1 ACCEPTED it)
+    but is not a parseable private key, so v3 must REJECT it. This is the
+    discriminating B64-branch test that was missing."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", _VALID_ANTHROPIC_KEY)
+    _clear_app_creds(monkeypatch)
+    junk_pem = "-----BEGIN PRIVATE KEY-----\nGARBAGE\n-----END PRIVATE KEY-----"
+    assert "PRIVATE KEY" in junk_pem  # confirms it would pass the v1 substring gate
+    monkeypatch.setenv(
+        "GITHUB_APP_PRIVATE_KEY_B64", base64.b64encode(junk_pem.encode()).decode()
+    )
+    with pytest.raises(webhook.StartupCredentialError) as excinfo:
+        webhook._validate_credential_shapes()
+    assert "GITHUB_APP_PRIVATE_KEY_B64" in str(excinfo.value)
