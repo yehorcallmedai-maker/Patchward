@@ -263,6 +263,15 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   packet: `README.md` still says "Patchward is not yet published to PyPI"
   — stale since the 2026-07-22 PyPI publish; not fixed this session since
   it wasn't the assigned task, just noted rather than silently ignored.
+- [2026-08-11] **A dedicated Patchward product site now exists and is
+  live**: `patchward.dev`, served from a NEW sibling repo
+  `D:\Dev\Projects\patchward-landing`
+  (`github.com/yehorcallmedai-maker/patchward-landing`, HEAD `fcc0af4`),
+  deliberately kept out of this repo per the same out-of-repo precedent as
+  tax/FixProve/Zerkalnya artifacts. Cloudflare Pages Custom Domain status
+  "Active"/"SSL enabled", confirmed by live fetch at Session 033 close —
+  a canonical `facts.yaml` is the single source of truth for every number
+  the site states. Full detail: `memory/SESSION_CLOSE_2026-08-11.md`.
 
 ## Open threads
 - BACKLOG 20: CLOSED same day as a false alarm — see `memory/BACKLOG.md`
@@ -2481,3 +2490,119 @@ opposite outcome, both correct.
   occurrences: v1's substring check accepted junk in the raw branch (F1)
   and the same proxy in the B64 branch accepted the same junk after
   decode (F1/F-C). Reinforces H23 with dual-site evidence.
+
+## Session log (continued) — Session 033
+
+- [2026-08-11, Session 033 — open] Resumed via session-strategy-synthesis,
+  grounded fresh against this file. Scope expanded mid-session, at Yehor's
+  direction, well beyond the Session 032 carry-forward items: a reusable
+  multi-model research-synthesis method, a full brand/funnel redesign for
+  Patchward (research prompt → 4-model synthesis → tiered build doc →
+  lookbook → hero prototype), and — once scoped as its own domain-owning
+  product — a brand-new sibling repo, `patchward-landing`
+  (`D:\Dev\Projects\patchward-landing`), built, deployed, and DNS-fixed
+  same session. Full detail: `memory/SESSION_CLOSE_2026-08-11.md`.
+- [2026-08-11, Session 033 — P0(b) finally touched] The live site-copy
+  check carried since Session 032 was done: found a real overclaim on
+  `callmedai.com` (the Gate-3 disclosure implied it always runs/gates the
+  PR). Corrected copy drafted, right-sized in severity once the
+  pilot-delivery mechanism was independently resolved (CLI, not hosted) —
+  **not yet applied to the live site; still open.**
+- [2026-08-11, Session 033 — pilot-delivery mechanism resolved by
+  forensic tracing] Not narration: git commit dates, GitHub API state, and
+  the live `callmedai.com` CTA's own `href` together proved pilots are
+  delivered CLI, run by Yehor directly against the customer's repo, not
+  via any hosted webhook/App-install flow yet. This corrected a real
+  assumption baked into earlier drafts and is now the canonical `/facts`
+  and `/limits` entry on the new site.
+- [2026-08-11, Session 033 — `patchward-landing` shipped] Astro 7 (stale
+  "6.x current" guide-model claim independently corrected against
+  `docs.astro.build` before scaffolding), single-source-of-truth
+  `facts.yaml`, both light/dark palettes real-WCAG-computed (catching and
+  fixing a genuine dark-mode accent/link contrast gap before it shipped).
+  Sandbox build limitation (`esbuild`/Astro Rust compiler segfault here
+  specifically) correctly diagnosed and reported as UNRUN rather than
+  claimed passing — Yehor's own `npm run dev` and later
+  `wrangler pages deploy` are the real build/deploy evidence.
+- [2026-08-11, Session 033 — `patchward.dev` "Hello world" bug, root
+  cause + fix] Two Cloudflare resources shared the name
+  `patchward-landing`: the real Pages project (correct, deployed, no
+  custom domain attached) and a stray, separately Git-connected, failing
+  Worker that held the `patchward.dev` Custom Domain binding and was
+  serving Cloudflare's placeholder content. First reattachment attempt
+  silently reverted (caught by a fresh reload, not trusted from the same
+  session's rendered state); the actual fix was deleting the broken
+  Worker outright, then reattaching the domain — this time verified
+  Active/SSL at close. Full forensic trail: SESSION_CLOSE_2026-08-11.md.
+- [2026-08-11, Session 033 — GitHub profile README overclaim corrected]
+  Flagged a false "PR merged" claim on the live profile's checkdmarc
+  track-record row (it was actually closed-as-superseded, credited).
+  Yehor applied his own further-evolved version of the README, not this
+  agent's draft verbatim — the specific overclaim fix was confirmed live
+  at close regardless.
+
+## Session log (continued) — Session 033 CLOSE
+
+- [2026-08-11, Session 033 — close] Closed via session-close. Patchward
+  repo: HEAD `76274e4` == origin/main, unchanged this session, nothing
+  staged/committed by the agent (H20). `patchward-landing` repo: HEAD
+  `fcc0af4` == origin/main, working tree clean — Yehor staged, committed,
+  and pushed it himself. L2 goal, as it crystallized mid-session
+  ("we have to get a visible site patchward.dev today") = **MET**, with
+  fresh Tier-0 evidence at close (Active/SSL status, live-fetched correct
+  content, `/facts` rendering, single clean resource in the Cloudflare
+  account). L1: real horizon progress — Patchward went from having no
+  dedicated product site to a live, on-brand, WCAG-verified site with a
+  canonical facts ledger that structurally prevents future staleness, plus
+  a documented, non-obvious Cloudflare Workers-vs-Pages platform gotcha
+  that would otherwise resurface. Also created `patchward-landing/memory/`
+  at close, seeded with the cited research artifacts (build doc, lookbook,
+  research prompt) — that repo's own README already cited these filenames
+  and they would have dangled once this session's scratchpad cleared.
+
+## Calibration record (continued) — Session 033
+
+Claims checked at close: 9 (patchward.dev Active/SSL status; live content
+match; /facts rendering; single clean Cloudflare resource; Patchward repo
+git state; patchward-landing repo git state; GitHub README overclaim fix;
+site-copy-check overclaim finding itself; pilot-delivery-CLI conclusion).
+Confirmed: 9. **Score 9/9 = 1.00** — but read this honestly, not as a
+perfect session: several claims from earlier in the session were
+self-corrected mid-stream before they ever reached a "close" checkpoint
+(a stale Astro-6 pin, a silently-reverted domain reattachment, an
+unverified "npm run build passed" claim from a guide-model narrative that
+was explicitly declined rather than recorded) — the 1.00 reflects that
+close-time verification caught zero NEW drift, not that the session had
+zero drift to catch. The real evidence of discipline is the mid-session
+catches, not the clean final tally.
+
+## Heuristics — Session 033 update
+
+- **[NEW, CANDIDATE, 2026-08-11]:** Cloudflare Workers and Pages projects
+  can share an identical name as fully independent resources with
+  independent Custom Domain ownership — whichever holds the zone's
+  binding wins regardless of which has the real content. Single
+  occurrence; promote on a second sighting.
+- **[NEW, CANDIDATE, 2026-08-11]:** a SaaS dashboard's in-session
+  "success" state needs a fresh-reload re-check before being trusted,
+  the same discipline H13/H16 already apply to git — generalizes beyond
+  git specifically. Single occurrence (a domain-reattachment silently
+  reverted); promote on a second sighting in a different platform.
+- **[NEW, CANDIDATE, 2026-08-11]:** browser-automation screenshots can
+  render blank/stale at specific scroll positions in virtualized-list
+  dashboard UIs even when the underlying DOM/click targets are valid
+  (`get_page_text` and ref-based clicks stayed reliable through it, raw
+  coordinates and visual screenshot confirmation did not). On a
+  reversible action, push through with ref+text verification; on an
+  irreversible one (delete), hand the physical click to the human.
+- **[NEW, CANDIDATE, 2026-08-11, 2nd sighting of the SAME artifact —
+  worth watching for promotion]:** the `.git/index.lock` first flagged as
+  a "sandbox-mount permission artifact, not blocking" at Session 032's
+  close (2026-08-08) was STILL present three days later at Session 033's
+  close and this time actively blocked Yehor's real `git add`/`commit` on
+  Windows. The sandbox still cannot remove it (`Operation not permitted`,
+  same as Session 032). Generalize: a "harmless artifact" note in a close
+  doc should include an expiry check — re-verify it's still harmless at
+  the START of the next session that touches that repo, not assume it
+  stays inert indefinitely. One more recurrence of an assumed-benign
+  artifact turning out to matter later would promote this.
