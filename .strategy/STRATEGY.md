@@ -2758,3 +2758,32 @@ Heuristics below rather than left as narrative color.
   surface. Generalizes Session 033's Cloudflare-Workers-vs-Pages
   same-name finding beyond that one platform. Promote on a second
   sighting in a different context.
+
+## Session log (continued) — Session 034 POST-CLOSE ADDENDUM
+
+- [2026-08-14, after the Session 034 close already committed at `c2de0b3`]
+  Real, substantive work continued: a multi-model research prompt on
+  *this project's own memory architecture* (grounded against actual
+  measured state — `STRATEGY.md` was 181,415 bytes / 2,609 lines at the
+  time, the compression rule mandated by `memory-format.md` confirmed
+  unenforced), run across 5 independent models, synthesized with explicit
+  per-section tiering (HIGH/MEDIUM/OPTION/CONFLICT), and 4 real open
+  decisions resolved — by Claude, with Yehor explicitly delegating the
+  call and taking responsibility for it rather than adjudicating each one
+  himself. Decisions: fold any future retrospective mechanism into the
+  existing `session-strategy-synthesis`/`session-close` pair rather than
+  create a third skill (R4's own self-identified failure mode — "gets
+  forgotten, an extra skill to invoke" — was the deciding evidence,
+  argued from within the research itself, not asserted); retrospective
+  output goes in a separate file, not a section inside `STRATEGY.md`
+  (the exact failure this research was triggered by happened via
+  everything living in one file); hot-file ceiling set at 16,000 bytes,
+  deliberately biased toward the conservative end of the models'
+  8,000–40,000-byte spread since the demonstrated failure is runaway
+  growth, not information loss. Full detail, all 5 models' full answers,
+  and the tiering reasoning: `memory/session_retro_research_prompt_v1_2026-08-14.md`
+  (the pinned prompt) and `memory/session_retro_synthesis_v1_2026-08-14.md`
+  (v1.1, decision log populated). **Not yet implemented** — this session
+  produced the design and the decisions, not new skill files. Next
+  session's L2 candidate, if wanted: apply OD1–OD4's decisions to the
+  actual `session-strategy-synthesis`/`session-close` skill definitions.
