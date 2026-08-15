@@ -355,6 +355,31 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in scope — not a queued session goal unless Yehor wants it to be.
 - Detailed engineering memory lives in memory/ (STATE.md, BACKLOG.md,
   project_session_log.md) — this file is the calibration layer, not a fork of it
+- [2026-08-15] **Retrospective DUE — OD1–OD4's new session-close Phase 5
+  item 6 check, hand-exercised against the real file this session,
+  flagged this file as over-ceiling.** `.strategy/STRATEGY.md` measured
+  **183,346 bytes** (fresh `wc -c`, not reused from any prior session's
+  figure) against the **16,000-byte hot-file ceiling** — 167,346 bytes
+  over, ~11.5x the limit. Second trigger also fired independently: the
+  top-level Session log section counts **78** dated entries against the
+  ~15-entry compression threshold `references/memory-format.md` already
+  specified (that 78 is itself an undercount — see the refinement note
+  below). Per the check's own rule, this is a **flag only, not an
+  auto-compression** — no file was mutated by this check or by logging
+  it here. Compression stays a separate, explicitly user-approved pass
+  whenever it's next scheduled, same standing precedent as every prior
+  session's handling of this file.
+- [2026-08-15] **Known refinement candidate, not a blocker:** Phase 5
+  item 6's entry-count trigger undercounts. The 78 figure above excludes
+  the fragmented "Session log (continued)" / "Session log (close)" /
+  "POST-CLOSE ADDENDUM" sub-section headers this file has accumulated
+  (see the existing Session-024-flagged memory-hygiene item elsewhere in
+  this Open threads list) — the true entry count is higher than what
+  triggered the flag. The byte-ceiling trigger is unaffected and remains
+  accurate on its own. Low priority: both triggers already correctly
+  flagged DUE regardless of the undercount, so the imperfection doesn't
+  change today's verdict — worth fixing whenever the entry-count logic
+  itself is next revisited, not urgent.
 
 ## Heuristics (earned)
 - H1 [active, promoted 2026-07-15, evidence: Session 018 close + Session
