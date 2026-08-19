@@ -15,6 +15,16 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-08-19, Session 036 close] Both repos' verified current HEADs, so
+  a future session doesn't have to dig through session-log entries to
+  find them: **Patchward** `cbb83aa0a1056bb2c5c00420a0558b4a15b61f2a`;
+  **patchward-landing** `6f98bc46546e16ed7afe9e0181ff13dd40bd4cde`, clean.
+  Both confirmed via `ls-remote` + sha256 content match against origin
+  (twice each). `STRATEGY.md` itself is now **52,359 bytes** (was
+  192,908 at Session 035 close — see Open threads for the compression
+  record); `.strategy/RETROSPECTIVE.md` exists as its cold-storage
+  companion, 154,004 bytes, byte-verified against the archived original.
+
 - [2026-07-21] main @ `3d1ec086972445373ac6a1eb7ac8abed238559a5`
   ("harden(webhook): range-validate rate-limit/body-size env parsers
   (Phase 9)"). Confirmed via THREE independent methods, none relying on
@@ -283,7 +293,6 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   2026-08-08) — matches exactly. This was never a Current-state bullet
   in its own right before; it should have been.
 
-
 ## Open threads
 - BACKLOG 20: CLOSED same day as a false alarm — see `memory/BACKLOG.md`
   item 20. The site is genuinely correct and live at the plain URLs,
@@ -447,6 +456,22 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   compliance) remains undone, a separate future decision, not today's.
   Not yet committed to git — pending Yehor's own `git add`/commit/push
   per H20.
+
+- [2026-08-19, Session 036, addendum to the compression entry above]
+  Committed and pushed: `Patchward` commit `cbb83aa0a1056bb2c5c00420a0558b4a15b61f2a`.
+  Verified landed on origin via independent `fetch`+`ls-remote`+sha256
+  content comparison of both changed files, run twice (once immediately
+  after push, once again at this session's formal close) — not trusted
+  from the push command's own output. The "not yet committed" language
+  in the entry above is now stale; left as-written per this file's own
+  never-launder-history rule, corrected here instead.
+- [2026-08-19, Session 036] The `.git/index.lock` sandbox-vs-real-client
+  correlation flagged as "disclosed but unresolved" at Session 035's
+  close is now RESOLVED: two independent occurrences this session
+  (patchward-landing at session open, Patchward at commit time) both
+  diagnosed identically as stale orphan locks (0 bytes, mtime
+  immediately after the last real index write, 4 days old, no live
+  `git` process), never genuine contention. See Heuristics, H30.
 
 ## Heuristics (earned)
 - H1 [active, promoted 2026-07-15, evidence: Session 018 close + Session
@@ -794,3 +819,96 @@ discipline held the same way regardless of source, per H3's spirit.
   not by the claim's tone, formatting, or confidence. Promote this
   refined version, superseding the Session 034 candidate's narrower
   framing (which only had benign-outcome evidence to work from).
+
+## Session log (continued) — Session 036
+
+- [2026-08-19, open] Opened via session-strategy-synthesis, grounded
+  against Session 035's close. 6/6 checkable claims re-verified fresh
+  and CONFIRMED (both repos' HEADs, callmedai.com's two pages, patchward
+  dev's tagline/test-count/DNS, OD1-OD4's propagation, lookbook pages
+  still unstarted). One benign investigated non-drift:
+  `tests/fixture_repo` gitlink dirty flag traced to untracked
+  `__pycache__` noise, recorded commit unchanged.
+- [2026-08-19] P0: committed and pushed `patchward-landing`'s two
+  ROLLBACK skill-backup files (`6f98bc4`) — previously the only durable
+  copy of pre-OD1-OD4 skill content, disk-only. Blocked twice by a stale
+  `.git/index.lock` (see Heuristics, H30), resolved both times by
+  Yehor's own terminal per H20.
+- [2026-08-19] STRATEGY.md compression (Option A, archive-only), Yehor's
+  explicit choice among three offered options. Two loss-check rounds:
+  round 1 (content-preservation) restored two narrative-buried facts as
+  proper bullets; round 2 (operational-preservation), triggered by
+  Yehor's own review rather than self-caught, found the canonical
+  Heuristics section had only ever held H1-H8 — even pre-compression —
+  and restored all 22 actually-earned heuristics plus 6 candidates to
+  live status. That review also embedded one fabricated detail (a
+  nonexistent "H19, retired") alongside its valid core finding —
+  disproven by direct grep before being acted on. Final: 192,908 →
+  52,359 bytes (3.7×), committed as `cbb83aa`, verified on origin twice
+  independently. Full detail: `memory/SESSION_CLOSE_2026-08-19.md`.
+
+## Calibration record (continued) — Session 036
+
+Claims checked this session: 16 (6 at open, 10 during/at close — full
+table in `memory/SESSION_CLOSE_2026-08-19.md`'s Gate status). **14
+CONFIRMED, 2 DRIFTED** — both drifted claims were embedded in pasted
+"guide model" text relayed by Yehor, not this agent's own prior
+statements: one asserted a fabricated heuristic-history detail (H19),
+the other asserted a `git fetch` had already run when no such output
+existed anywhere in the transcript, later proven false by Yehor's own
+subsequent terminal output. **0.875 on checkable claims (14/16).**
+Consistent with this project's established pattern that a close's
+verified claims increasingly include claims from outside sources (user,
+or content relayed by the user) rather than only this agent's own
+memory or prior statements — the two-pass discipline held the same way
+regardless of source, per H14's spirit, for the second session running.
+
+## Heuristics — Session 036 update
+
+- **H30 [NEW, earned 2026-08-19, 2 independent occurrences in one
+  session, two different repos]:** a git `.git/index.lock: File exists`
+  error on this project's Windows-origin repos is very likely stale, not
+  live contention — diagnose before assuming a blocking process. Check
+  the lock file's byte size (0 bytes = created but never completed) and
+  mtime against `.git/index`'s own mtime (a lock that predates or barely
+  postdates the last real index write, and is more than a few minutes
+  old, is orphaned); confirm via `Get-Process git` returning nothing.
+  Resolves the `.git/index.lock` correlation Session 035 logged as
+  "disclosed but unresolved" — it was never genuine sandbox-vs-real-
+  client contention. Removal must still happen from Yehor's own
+  terminal, never the sandbox (H20) — sandbox-side `rm` on a
+  Windows-mounted lock file can silently fail (`Operation not
+  permitted`) without actually clearing the real lock, observed twice
+  this session on a different lock (`objects/maintenance.lock`).
+  **Third occurrence, caught live during this session's own close:**
+  a plain, read-only sandbox `git status` (no write intended) itself
+  created a fresh `.git/index.lock` while refreshing the index's stat
+  cache, then hit the same "Operation not permitted" unlinking it — a
+  read-only sandbox command can leave a genuinely NEW stale lock behind
+  for Yehor's next command, not just fail to clear a pre-existing one.
+  Treat every sandbox `git status`/`diff` on this repo as a possible
+  lock-leaving operation, not only sandbox `add`/`commit` attempts.
+- **H31-candidate [1 occurrence, 2026-08-19, costly]:** a compression or
+  archival loss-check must test operational-preservation (does X stay
+  in the file every session actually reads) separately from
+  content-preservation (does X still exist anywhere, even in cold
+  storage) — the two are different tests. This session's first
+  compression pass verified content-preservation rigorously and still
+  missed that 14 earned heuristics, including a hard rule (H20), had
+  silently dropped out of the routinely-read file. Caught by Yehor's
+  review, not self-caught. Promote on a second occurrence, ideally
+  self-caught next time.
+- **[Session 035's unnumbered "report-shaped content" heuristic,
+  REINFORCED, refined further]:** two more occurrences this session
+  (both "guide model" messages), with a nuance the prior four hadn't
+  tested: **a report can be substantially correct — well-reasoned,
+  independently-styled, with a genuinely valuable core finding — and
+  still contain one fabricated specific supporting detail.** The
+  correct response is not "trust it because most of it checks out" or
+  "distrust it because one detail is wrong" — every discrete factual
+  claim inside a report needs its own independent check, regardless of
+  how correct the report's overall verdict turns out to be. Neither
+  fabrication this session was catchable by tone, formatting, or
+  plausibility; both were caught only by direct verification (a literal
+  `grep` for `H19`; checking whether any terminal output for the claimed
+  `fetch` existed anywhere in the transcript).
