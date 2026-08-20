@@ -15,6 +15,18 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-08-20, Session 037 close] Both repos' verified current HEADs,
+  superseding the Session 036 entry below: **Patchward** `a246fc6446
+  87d0e277a9f1002efced1c32a31070`; **patchward-landing** `7b6cf22339
+  b3dcb34116312a6339d855c487918f`, clean. Both confirmed via
+  `ls-remote` + a fresh clone (not the mount) + sha256 of every
+  changed file, matched against the mount. `STRATEGY.md` itself is
+  now **64,254 bytes** (was 59,837 at Session 036 close — see Open
+  threads for the H30/H31 relocation). The four patchward-landing
+  lookbook pages (`/how-it-works`, `/verification`, `/data-boundary`,
+  `/examples`) are built, ledger-sourced (zero hand-typed figures,
+  verified by extraction), and shipped in the commit above — the
+  Open-threads entry below marking them unstarted is now CLOSED.
 - [2026-08-19, Session 036 close] Both repos' verified current HEADs, so
   a future session doesn't have to dig through session-log entries to
   find them: **Patchward** `cbb83aa0a1056bb2c5c00420a0558b4a15b61f2a`;
@@ -294,6 +306,42 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-08-20, Session 037] **The four patchward-landing lookbook pages
+  (`/how-it-works`, `/verification`, `/data-boundary`, `/examples`) —
+  CLOSED.** Built from `memory/patchward_lookbook_v1_2026-08-11.md`,
+  every stated figure sourced from `src/data/facts.yaml` (three new
+  ledger entries added: `branch-convention`, `example-prs-patchward`,
+  `example-pr-checkdmarc`), zero hand-typed values, `astro build` clean,
+  shipped in commit `7b6cf22`, sha256-verified on origin against a
+  fresh clone. Supersedes the "unstarted" entry lower in this list,
+  which is left as-written per this file's never-launder-history rule.
+  Next session's own value: confirm the pages render correctly on the
+  live deploy, not just in source — this session verified shipped
+  content, not the live site.
+- [2026-08-20, Session 037] **Retrospective still DUE, number refreshed:
+  STRATEGY.md is now 64,254 bytes — 4.02x the 16,000-byte ceiling**, up
+  from 3.7x/3.2x at Session 036's close (that session's own self-report
+  had drifted to the lower figure by the time it was written; this is
+  a fresh `wc -c`, not a reused estimate). Part B (rewriting Current
+  state/Open threads for genuine compliance) remains the standing,
+  explicitly-deferred fix — not attempted this session, same reasoning
+  as before: a dedicated, approved pass, backup-first, dual loss-check
+  (content AND operational preservation) from the start per
+  H31-candidate.
+- [2026-08-20, Session 037] **Sandbox-write-to-real-mount propagation
+  lag, first occurrence, not yet a heuristic.** A completion report
+  claimed real-repository working-tree changes existed; Yehor's own
+  `git status`, run within minutes, showed nothing. Root-caused via
+  mtime evidence (the build-verification copy was stamped after, and
+  derived from, the real edits) and resolved cleanly on re-check ~10
+  minutes later — genuine sync lag, not lost work, not a location bug.
+  Recorded here per Yehor's explicit instruction as the session's own
+  worked example of this project's verification discipline holding: the
+  report was accepted only after its evidence gap was named and then
+  closed with real proof (mtimes, a fresh clone, sha256, reflog), not
+  smoothed over. Watch for a second occurrence before promoting to a
+  heuristic; if it recurs, the fix is likely "wait and re-check before
+  treating a mismatch as data loss," not a process change.
 - BACKLOG 20: CLOSED same day as a false alarm — see `memory/BACKLOG.md`
   item 20. The site is genuinely correct and live at the plain URLs,
   confirmed via a real browser read. Retained here only as a pointer, not
@@ -916,6 +964,66 @@ verified claims increasingly include claims from outside sources (user,
 or content relayed by the user) rather than only this agent's own
 memory or prior statements — the two-pass discipline held the same way
 regardless of source, per H14's spirit, for the second session running.
+
+## Session log (continued) — Session 037
+
+- [2026-08-20, open] Opened via session-strategy-synthesis, grounded
+  against Session 036's close. 11 checkable claims re-verified fresh:
+  both repos' HEADs, callmedai.com's two pages, patchward.dev's
+  tagline/test-count/`/facts`, STRATEGY.md/RETROSPECTIVE.md byte
+  counts, all 22 earned heuristics content-present, BACKLOG.md's size,
+  lookbook pages still unstarted. One new finding: H30 (and
+  H31-candidate) were content-present but living in a per-session
+  appendix, not the canonical §Heuristics section Grounding actually
+  reads — the exact failure class H31-candidate itself describes,
+  self-caught this time via section-bounded grep. AAAA record recorded
+  UNVERIFIED by design (no DNS resolver in this sandbox).
+- [2026-08-20] H30 relocated to the canonical earned list (4 confirmed
+  occurrences — corrected down from "5" in the executor's own carried-
+  forward instruction, caught before being written into the permanent
+  record); H31-candidate relocated to the candidates subsection, with a
+  near-second-occurrence noted (the relocation itself was self-caught,
+  not user-caught). `--no-optional-locks` adopted as this project's
+  default sandbox git-read invocation, logged as an unproven mitigation
+  (1 clean session). Committed as `a246fc6`, sha256-verified against a
+  fresh clone of origin.
+- [2026-08-20] Four patchward-landing lookbook pages built from the
+  tracked spec, all figures ledger-sourced, zero hand-typed values
+  (verified by HTML-strip digit extraction, cross-checked against
+  `facts.yaml`). `astro build` clean. Committed as `7b6cf22`,
+  sha256-verified file-by-file against a fresh clone of origin.
+- [2026-08-20] **Evidence-gap exchange, worth its own entry rather than
+  folding into the two above.** A completion report claimed real-repo
+  working-tree changes existed; Yehor's own terminal showed otherwise
+  and he declined to accept the report on trust. Investigated via mtime
+  ordering and a clean re-check ~10 minutes later — genuine sync lag,
+  not lost work. Yehor then ran a second, more rigorous verification
+  pass (full chain-of-custody: origin of the edits, confirmation no
+  sandbox process issued a git write, sha256 of all six changed files
+  against a fresh clone, direct grep of every cited figure) before
+  accepting the close as genuine. This is this session's own worked
+  example of the discipline this project runs on functioning as
+  intended — a claim was not accepted until its gap was named,
+  investigated, and closed with real proof, not smoothed over. See
+  Open threads for the not-yet-a-heuristic candidate this produced, and
+  `memory/SESSION_CLOSE_2026-08-20.md` for the full gate table.
+
+## Calibration record (continued) — Session 037
+
+Claims checked this session: 22 (11 at open, 11 during/at close — full
+table in `memory/SESSION_CLOSE_2026-08-20.md`'s Gate status). **18
+CONFIRMED, 3 DRIFTED, 1 UNVERIFIED.** The three drifted claims: H30's
+canonical-section placement (present but displaced — the near-second
+H31-candidate occurrence), the carried-forward "5 occurrences" figure
+for H30 (corrected to 4 same-turn), and the Block 2 working-tree report
+addressed above (resolved as sync lag, not loss). The one unverifiable
+claim (AAAA records) is a structural sandbox limitation, not a method
+gap. **0.857 on checkable claims (18/21, excluding the structurally-
+unverifiable claim)** — consistent with Session 036's 0.875, holding
+in the same range even as this session's claims skewed more toward
+claims about the agent's own prior output (the working-tree report)
+rather than only claims from external "guide model" text, and the
+two-pass discipline caught the drift regardless of source.
 
 ## Heuristics — Session 036 update
 
