@@ -637,6 +637,41 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   not a looser proxy — re-derive the requirement from the consumer's
   source, don't infer it from the field's surface shape. (Sibling of
   H24.)
+- H30 [PROMOTED — earned 2026-08-19, relocated here 2026-08-20 from the
+  Session 036 per-session appendix where it was first written; 4
+  confirmed occurrences across both repos, plus a 5th observation of a
+  different kind, below]: a `.git/index.lock: File exists` error on this
+  project's Windows-origin repos is very likely a STALE ORPHAN, not live
+  contention — diagnose before assuming a blocking process. Check the
+  lock's byte size (0 bytes = created, never completed) and its mtime
+  against `.git/index`'s own mtime (a lock predating or barely
+  postdating the last real index write, more than a few minutes old, is
+  orphaned); confirm with `Get-Process git` returning nothing.
+  **Cause:** the sandbox's own read-only git commands (`status`, `show`,
+  `diff`, `fetch`) create these locks while refreshing the index's stat
+  cache — no write is ever intended. Applies to
+  `.git/objects/maintenance.lock` as well as `.git/index.lock`.
+  **Removal must happen from Yehor's own terminal, never the sandbox
+  (H20)** — sandbox-side `rm` on a Windows-mounted lock can silently
+  fail (`Operation not permitted`) without clearing the real lock,
+  observed twice. **Standing practice:** clear via `Remove-Item` before
+  any write, every session, not only when a "File exists" error actually
+  appears. Resolves the `.git/index.lock` correlation Session 035 logged
+  as "disclosed but unresolved" — it was never genuine
+  sandbox-vs-real-client contention.
+  **Mitigation, first attempt 2026-08-20 — a data point, NOT a claimed
+  fix:** issuing sandbox git reads as `git --no-optional-locks status`
+  created zero locks across 3 invocations spanning both repos in one
+  session. Adopted as this project's default git-read invocation from
+  Session 037 on (Yehor's call); needs a second and third clean session
+  before it may be described as solving anything.
+  **Cross-session persistence, observed 2026-08-20 (new, and the reason
+  the standing practice is unconditional):** the `maintenance.lock` left
+  in `patchward-landing` by Session 036's close (0 bytes, mtime
+  18:54, one minute after the close commit) was still present at Session
+  037's open, untouched. These do not clear themselves between sessions.
+  Logged honestly as one artifact persisting rather than as a 5th
+  independent occurrence, since it is very likely the 4th one surviving.
 
 Heuristics — candidates (not yet promoted, carried forward so a future
 session doesn't rediscover a pattern already being tracked):
@@ -664,6 +699,25 @@ session doesn't rediscover a pattern already being tracked):
   credential by structural resemblance rather than by performing the
   consumer's real operation is a bypass waiting for input that
   resembles-but-isn't.
+- H31-candidate [1 occurrence, 2026-08-19, costly; relocated here
+  2026-08-20 from the Session 036 per-session appendix]: a compression
+  or archival loss-check must test OPERATIONAL-preservation (does X stay
+  in the file every session actually reads) SEPARATELY from
+  CONTENT-preservation (does X still exist anywhere, even in cold
+  storage) — they are different tests. Session 036's first compression
+  pass verified content-preservation rigorously and still missed that 14
+  earned heuristics, including hard rule H20, had silently dropped out
+  of the routinely-read file. Caught by Yehor's review, not self-caught.
+  Promote on a second occurrence, ideally self-caught.
+  **Near-second occurrence, self-caught 2026-08-20 (Session 037 open):**
+  H30 and this very candidate were themselves content-preserved but
+  operationally displaced — written into a per-session "Heuristics —
+  Session 036 update" appendix rather than the canonical §Heuristics
+  section this file's own Grounding phase reads. Same failure mode, one
+  layer up, found by section-bounded grep rather than whole-document
+  grep. Not counted as the promoting second occurrence because the fix
+  and the finding were the same act; recorded so the next session can
+  judge that call independently.
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -864,6 +918,18 @@ memory or prior statements — the two-pass discipline held the same way
 regardless of source, per H14's spirit, for the second session running.
 
 ## Heuristics — Session 036 update
+
+> **[2026-08-20, Session 037] RELOCATION NOTICE — read §Heuristics, not
+> this block, for the live rules.** H30 and H31-candidate below were
+> written here, in a per-session appendix, rather than in the canonical
+> §Heuristics section that this file's Grounding phase actually reads.
+> Both are now live in §Heuristics (H30 in the earned list, H31 in the
+> candidates subsection), condensed to match H1–H29's format with the
+> operational rule preserved in full. The text below is left as-written
+> per this file's never-launder-history rule; it is now historical
+> narrative, superseded as the operative source. This displacement was
+> itself an instance of what H31-candidate warns about — see the
+> near-second-occurrence note in its relocated entry.
 
 - **H30 [NEW, earned 2026-08-19, 2 independent occurrences in one
   session, two different repos]:** a git `.git/index.lock: File exists`
