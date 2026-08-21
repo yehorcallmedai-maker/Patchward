@@ -15,6 +15,59 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-08-21, Session 038 close] Both repos' verified current HEADs,
+  unchanged from Session 037 (no new commits this session — deploy work
+  only): **Patchward** `09dc925bce1d8705518c13ca35d19831bec7ce52`;
+  **patchward-landing** `7b6cf22339b3dcb34116312a6339d855c487918f`.
+  Corrects two self-references that were already stale the moment the
+  Session 037 close commit wrote them (an H2-shaped drift caught this
+  session's Grounding, not a new occurrence — the entry below was
+  correct when written, just superseded within its own commit): it
+  cited Patchward HEAD as `a246fc6...` (actually `09dc925` is HEAD —
+  `a246fc6` is one commit behind) and STRATEGY.md as 64,254 bytes
+  (actual, before this session's edits: 71,210 bytes; **after this
+  session's edits: ~79,300 bytes — approximately 4.96x the
+  16,000-byte ceiling, climbing again** — stated as approximate
+  deliberately, since this file's own edit that states the number
+  changes the number; Grounding next session should re-run `wc -c`
+  fresh rather than trust this figure, per H2's own logic applied to
+  itself. Part B compression remains deferred, see Open threads). **The four lookbook pages, found this session to be
+  shipped-to-origin but NOT deployed** (Cloudflare Pages here is fed by
+  manual `npx wrangler pages deploy dist`, not a git integration —
+  commit `7b6cf22` triggered no deploy on its own; three-signal proof:
+  identical fallback body on real vs. fake routes, footer still listing
+  only 3 of 6 routes, live `/facts` missing the three new ledger
+  entries), **are now deployed and CONFIRMED LIVE on both hosts**
+  (`patchward.dev` and its `*.patchward-landing.pages.dev` deploy
+  alias): footer lists all six routes, `/facts` carries
+  `branch-convention`/`example-prs-patchward`/`example-pr-checkdmarc`,
+  and every cited figure (565 passed/3 skipped/91.20% coverage,
+  `uv tool install patchward`, checkdmarc#261 labelled "closed —
+  superseded" not "merged") matches live content, checked on both
+  hosts. **AAAA records also newly CONFIRMED** (closing Session 037's
+  structural UNVERIFIED): this sandbox's own resolver is dead (H4), but
+  DNS-over-HTTPS via `https://dns.google/resolve` works from `web_fetch`
+  — `2606:4700:3034::ac43:c99a`, `2606:4700:3036::6815:2cac`; A records
+  `172.67.201.154`, `104.21.44.172`. **A second, independent defect
+  found and fixed the same session:** unmatched routes on both hosts
+  were serving the homepage body (200-looking) instead of a real 404 —
+  the exact soft-failure shape that let the undeployed-pages gap look
+  fine on a casual check. `src/pages/404.astro` created, built, and
+  deployed; post-fix, unknown paths return an empty/error response on
+  both hosts, reproduced with two independent random paths each,
+  sharply distinct from every real page fetched all session. Stated
+  plainly: this is a response-signature inference, not a literal
+  HTTP-status-line read — this sandbox's `web_fetch` doesn't surface
+  status codes, so "real 404" is corroborated, not directly observed.
+  **`src/pages/404.astro` — committed and pushed as `087455d`, CLOSED.**
+  Verified by three independent methods, none trusting the push output
+  alone: (1) fresh `git clone` to `/tmp` (not the mount) →
+  `git rev-parse HEAD` = `087455d4e1eb107c67de2d869a603ebd3ba08466`,
+  exact match; (2) SHA-256 of the file identical across the fresh clone
+  and the mounted working tree
+  (`c0f24e17821b756ca1cf34476d067f019ce74ca99a2f41a57febd1d313b23036`);
+  (3) direct `raw.githubusercontent.com` fetch pinned to `087455d`,
+  content character-for-character identical. All three agree.
 - [2026-08-20, Session 037 close] Both repos' verified current HEADs,
   superseding the Session 036 entry below: **Patchward** `a246fc6446
   87d0e277a9f1002efced1c32a31070`; **patchward-landing** `7b6cf22339
@@ -306,28 +359,26 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
-- [2026-08-20, Session 037] **The four patchward-landing lookbook pages
-  (`/how-it-works`, `/verification`, `/data-boundary`, `/examples`) —
-  CLOSED.** Built from `memory/patchward_lookbook_v1_2026-08-11.md`,
-  every stated figure sourced from `src/data/facts.yaml` (three new
-  ledger entries added: `branch-convention`, `example-prs-patchward`,
-  `example-pr-checkdmarc`), zero hand-typed values, `astro build` clean,
-  shipped in commit `7b6cf22`, sha256-verified on origin against a
-  fresh clone. Supersedes the "unstarted" entry lower in this list,
-  which is left as-written per this file's never-launder-history rule.
-  Next session's own value: confirm the pages render correctly on the
-  live deploy, not just in source — this session verified shipped
-  content, not the live site.
-- [2026-08-20, Session 037] **Retrospective still DUE, number refreshed:
-  STRATEGY.md is now 64,254 bytes — 4.02x the 16,000-byte ceiling**, up
-  from 3.7x/3.2x at Session 036's close (that session's own self-report
-  had drifted to the lower figure by the time it was written; this is
-  a fresh `wc -c`, not a reused estimate). Part B (rewriting Current
-  state/Open threads for genuine compliance) remains the standing,
-  explicitly-deferred fix — not attempted this session, same reasoning
-  as before: a dedicated, approved pass, backup-first, dual loss-check
-  (content AND operational preservation) from the start per
-  H31-candidate.
+- [2026-08-21, Session 038] **The four lookbook pages — DEPLOYED and
+  LIVE, CLOSED.** Session 037 verified shipped content; this session
+  found it wasn't actually live (deploy is manual `wrangler`, not
+  git-triggered), had Yehor run `npm run build` +
+  `npx wrangler pages deploy dist --project-name=patchward-landing`,
+  then confirmed all six routes + `/facts` + every cited figure live
+  on both hosts. See Current state for the full evidence chain. Next
+  session's own value: after ANY future commit to patchward-landing,
+  confirm a deploy actually ran — the git-vs-deploy split is now a
+  known standing gap, not a one-off.
+- [2026-08-20, Session 037] **Retrospective still DUE, number climbing:
+  STRATEGY.md was 71,210 bytes before this session's edits — 4.45x the
+  16,000-byte ceiling** (up from 4.02x/64,254 at Session 037's own
+  close — that entry's self-report was itself already stale, see
+  Current state). Part B (rewriting Current state/Open threads for
+  genuine compliance) remains the standing, explicitly-deferred fix —
+  not attempted this session (deploy verification took priority, by
+  Yehor's explicit choice this session), same reasoning as before: a
+  dedicated, approved pass, backup-first, dual loss-check (content AND
+  operational preservation) from the start per H31-candidate.
 - [2026-08-20, Session 037] **Sandbox-write-to-real-mount propagation
   lag, first occurrence, not yet a heuristic.** A completion report
   claimed real-repository working-tree changes existed; Yehor's own
@@ -541,15 +592,27 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 - H3 [active, carried from project rules, evidence: Sessions 015–018]:
   Tier 2 sources (another project's memory files, unauthenticated proxies)
   are leads, never gating facts.
-- H4 [active, promoted 2026-07-16, evidence: Sessions 020, 021]: this
-  sandbox's bash has no general internet egress to arbitrary hosts
-  (GitHub release CDN via `uv python install`, Fly proxy via direct
-  `curl`) even though `web_fetch`, `pip install` from PyPI, `git`
-  operations against `github.com`/`api.github.com`, and direct `curl` to
-  `raw.githubusercontent.com` all work. Don't assume a bash-level network
-  failure means the target is down or the technique is unusable — test
-  the specific host/tool combination before concluding "network
-  blocked." **Session 021: this is also why a real `uv run pytest`
+- H4 [active, promoted 2026-07-16, evidence: Sessions 020, 021;
+  **CORRECTED 2026-08-21, Session 038**]: this sandbox's bash has no
+  general internet egress to arbitrary hosts (GitHub release CDN via
+  `uv python install`, Fly proxy via direct `curl`) even though
+  `web_fetch`, `pip install` from PyPI, and `git` operations against
+  `github.com`/`api.github.com` all work. **Session 021 originally
+  also listed direct bash `curl` to `raw.githubusercontent.com` as
+  working; Session 038 found this specific claim no longer holds** —
+  bash-level `curl` to that host now returns `403 Forbidden` from the
+  sandbox's own outbound proxy (`X-Proxy-Error: blocked-by-allowlist`),
+  reproduced directly. `web_fetch` to the same host, same exact URL,
+  same session, is unaffected and returned correct content. Stated
+  plainly, without asserting which: either the sandbox's network
+  policy changed since Session 021, or the reachable/blocked boundary
+  was drawn narrower than originally recorded — not yet determined,
+  no further evidence gathered this session. The operative guidance is
+  unchanged and, if anything, reinforced: don't assume a bash-level
+  network failure means the target is down or the technique is
+  unusable — test the specific host/tool combination fresh, every
+  time, rather than trusting a prior session's result, including this
+  file's own. **Session 021: this is also why a real `uv run pytest`
   re-run isn't possible from this sandbox** (`requires-python = ">=3.12"`,
   sandbox has 3.11.15, and fetching 3.12+ via `uv python install` hits
   this exact block) — a standing, not per-session, limitation.
@@ -766,6 +829,23 @@ session doesn't rediscover a pattern already being tracked):
   grep. Not counted as the promoting second occurrence because the fix
   and the finding were the same act; recorded so the next session can
   judge that call independently.
+- H32-candidate [1 occurrence, 2026-08-21]: "shipped to origin" is not
+  "live" when the deploy pipeline is a manual step (`wrangler pages
+  deploy`) rather than a git integration — a commit landing on origin
+  proves nothing about production content on this project. Session 037
+  verified the lookbook pages were correctly committed and sha256-clean
+  on origin, and still reported them as an open thread needing live
+  confirmation (correctly hedged); Session 038 found they were not
+  actually deployed. Whenever work on patchward-landing is described as
+  "shipped," fetch the live site directly — don't infer from git state.
+- H33-candidate [1 occurrence, 2026-08-21]: an unmatched-route fallback
+  that serves the homepage body (200-looking) instead of a real 404
+  silently masks missing-route defects as looking fine on casual
+  inspection — this is exactly what let the H32-candidate deploy gap
+  go unnoticed until a control-URL comparison was run deliberately.
+  When verifying "new routes are live," always diff a real route's
+  response against a deliberately-fake control URL on the same host,
+  not just check the real route in isolation.
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -1024,6 +1104,65 @@ in the same range even as this session's claims skewed more toward
 claims about the agent's own prior output (the working-tree report)
 rather than only claims from external "guide model" text, and the
 two-pass discipline caught the drift regardless of source.
+
+## Session log (continued) — Session 038
+
+- [2026-08-21, open] Opened via session-strategy-synthesis, grounded
+  against Session 037's close. 8 checkable claims re-verified fresh
+  per Yehor's numbered list: both repos' HEADs, callmedai.com's `/`
+  and `/security`, patchward.dev's tagline/test-count/`/facts`,
+  A/AAAA records, the four lookbook pages live, STRATEGY.md/
+  RETROSPECTIVE.md byte counts + all 23 heuristics within canonical
+  §Heuristics bounds (H20, H30 spot-checked). Two DRIFTED findings:
+  (1) the four lookbook pages were shipped to origin but not actually
+  deployed — Cloudflare Pages here is fed by manual `wrangler pages
+  deploy`, not git integration; (2) the Session 037 close entry's own
+  self-citations (Patchward HEAD `a246fc6`, STRATEGY.md 64,254 bytes)
+  were already one commit/edit stale the moment they were written —
+  an H2-shaped drift, corrected in this session's Current state entry.
+  AAAA records resolved this session via DNS-over-HTTPS
+  (`https://dns.google/resolve`), closing a limitation that had been
+  structurally UNVERIFIED for two consecutive sessions.
+- [2026-08-21] Deploy fix: Yehor ran `npm run build` +
+  `npx wrangler pages deploy dist --project-name=patchward-landing`
+  from `D:\Dev\Projects\patchward-landing` (H20 — agent prepared and
+  verified only, did not deploy). Re-verified all six routes + `/facts`
+  live on both `patchward.dev` and the `*.pages.dev` deploy alias:
+  footer link count, `/facts` ledger entries, and every cited figure
+  (565/3/91.20%, install command, checkdmarc#261 label) all confirmed
+  matching, both hosts, evidence in Current state.
+- [2026-08-21] Second defect found independently during the deploy
+  verification itself, not from memory: unmatched routes on both hosts
+  were returning the homepage body instead of a real 404 — masking
+  exactly the kind of gap just found. `src/pages/404.astro` written,
+  built, and deployed (same H20 division of labour); post-fix behavior
+  change confirmed on both hosts with two independent fake paths each.
+  Two candidate heuristics logged from this pair of findings
+  (H32-candidate, H33-candidate) — see §Heuristics candidates.
+  `src/pages/404.astro` remains uncommitted in git; flagged as an open
+  thread for Yehor's own commit.
+
+## Calibration record (continued) — Session 038
+
+Claims checked this session: 8 (the six numbered verification items
+from session open, plus 2 additional self-checks surfaced during
+Grounding — the Session 037 close entry's own stale HEAD/byte
+self-citations). **6 CONFIRMED, 2 DRIFTED, 0 UNVERIFIED.** Both
+drifted claims were root-caused and closed within the same session
+rather than merely logged: the lookbook-pages liveness gap was fixed
+via a real deploy and re-verified live on both hosts; the stale
+self-citations were corrected in this close entry. The AAAA-record
+item, structurally UNVERIFIED across Sessions 037 and 038's open, is
+now resolved (DNS-over-HTTPS) and drops out of the unverifiable
+category going forward. **0.75 on this session's initial check
+(6/8)** — lower than Session 037's 0.857, consistent with this being
+the first session these lookbook pages were checkable against a live
+target rather than only against source, which is exactly the kind of
+claim most likely to have drifted; both drifts were self-caught by
+the two-pass discipline (a control-URL diff test, and a fresh-clone
++ direct-fetch cross-check) rather than surfaced by Yehor, matching
+this project's standing pattern of catching its own drift before it's
+reported as fact.
 
 ## Heuristics — Session 036 update
 
