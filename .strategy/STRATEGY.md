@@ -15,6 +15,138 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-08-22, Session 039 close] BACKLOG 12 (CRA/GDPR counsel) advanced for
+  the first time since Session 024: **discovered the European Commission
+  published official, non-binding CRA guidance on 2026-07-27** (`C(2026)
+  5252`), three days after the base briefing packet was written — it directly
+  addresses open-source scope and introduces a **"remote data processing
+  solutions"** category likely to cover the hosted webhook, plus 67 worked
+  examples aimed at microenterprises/SMEs. Wrote
+  `memory/BACKLOG12_ADDENDUM_2026-08-22.md`: re-verifies every load-bearing
+  base-packet claim against current HEAD (`b5a02ed4`, 42 commits past the
+  packet's `3e63587`) — all still hold; two peripheral details corrected
+  (`CredentialProxy`'s scrubbed-credential set is now 8 keys not 4, BACKLOG 25
+  hardening; `.scrub()` test-occurrence count is 7 not 5) — and adds two
+  questions the base packet lacked (substantial modification; support
+  period), plus one urgent, dated question (does the 2026-09-11 Article 14
+  obligation apply to Patchward specifically, given it binds in 20 days
+  against 2027-12-11 for everything else). **Investigated NJORD Law Firm /
+  Nis Peter Dall (Yehor's existing FixProve counsel contact) as the candidate
+  for this work**, live-verified via NJORD's own site and Legal 500: certified
+  IT attorney, member of Danske IT-Advokater and Rådet for it-sikkerhed,
+  EXIN ISO/IEC 27001-certified, contributor to Chambers' Cybersecurity 2022
+  Global Practice Guide, co-author of a GDPR practitioner handbook. **Gap,
+  stated honestly: no published CRA-specific advisory work found for NJORD**
+  — deep GDPR/IT/cybersecurity credentials confirmed, CRA product-regulation
+  experience specifically unproven. `advokatnoeglen.dk` confirmed to be
+  Advokatsamfundet's self-declared lawyer directory (a lookup tool, not a
+  vetting service) — kept as a fallback only, not preferred over an
+  already-vetted specialist. Decision, Yehor's own: expand NJORD rather than
+  engage new counsel, sequenced deliberately — the CRA question is added to
+  the 2026-08-26 16:00–17:00 meeting agenda as a follow-up **email sent AFTER
+  the meeting**, not during it, to avoid tabling too much at once. Ready-to-copy
+  Danish email drafted; a calendar reminder was created for this
+  (2026-08-26, 17:15–17:30 Europe/Copenhagen) — **first attempt drifted 5
+  days (silently stored as 2026-08-31 despite the creation call's own
+  response echoing back 2026-08-26 as if correct); caught only by this
+  project's standing two-pass-write discipline (an independent `get_event` +
+  `list_events` re-read, not trusting the creation response), fixed via
+  `update_event`, re-confirmed via both independent methods a second time.**
+  See Heuristics, H35-candidate.
+- [2026-08-22, Session 039 open] Both repos' verified current HEADs,
+  superseding the Session 038 entry below (which itself already showed
+  the H2-shaped self-citation lag it warns about — its own close commit
+  is the HEAD this session found): **Patchward**
+  `b5a02ed40064dc68fdcc9254883f0216ca61075d` — confirmed via fresh
+  `git clone` + `git ls-remote`, both agreeing; this IS the Session 038
+  close commit itself (docs: close 404.astro thread + H4 correction),
+  zero new commits since. **patchward-landing**
+  `087455d4e1eb107c67de2d869a603ebd3ba08466`, clean — same two
+  independent methods agree; mount status shows only the two
+  deliberately-untracked ROLLBACK/DRAFT skill-backup files (must stay
+  untracked, see Open threads) plus gitignored build artifacts, no real
+  drift. **callmedai.com** `/` and `/security` re-fetched fresh: Gate-3
+  disclosure language and Patchward branding both still correct, 0
+  RepoMend mentions. **patchward.dev** tagline, "565 passed, 3 skipped
+  · 91.20% coverage", and `/facts` (all cited figures incl.
+  `branch-convention`, `example-prs-patchward`, `example-pr-checkdmarc`
+  labelled "closed — superseded") all re-confirmed live and matching.
+  **A/AAAA records re-confirmed** via DNS-over-HTTPS
+  (`https://dns.google/resolve`): A `172.67.201.154`/`104.21.44.172`,
+  AAAA `2606:4700:3034::ac43:c99a`/`2606:4700:3036::6815:2cac`, exact
+  match. **All six patchward-landing routes re-confirmed live and
+  correct on BOTH hosts** (`patchward.dev` and the
+  `patchward-landing.pages.dev` deploy alias) — with one genuine
+  verification-methodology finding along the way: this session's own
+  `web_fetch` tool, on its very first (non-cache-busted) fetch of
+  `/how-it-works`, `/verification`, and `/examples` on `patchward.dev`,
+  returned the HOMEPAGE's content instead of each route's own
+  page — a false stale-content signal, not a live site defect.
+  Cross-checked and resolved via two independent methods: (1) the same
+  URLs with a cache-busting query string, via the same tool, returned
+  each page's correct distinct content; (2) a genuine Claude-in-Chrome
+  browser render of the plain URLs (no query string, a real visitor's
+  exact request) also returned correct, distinct content immediately,
+  full 6-link footer included. The `patchward-landing.pages.dev` alias
+  never showed the issue on any first-time fetch. Root cause not fully
+  determined (this session's own `web_fetch` tool internals are opaque
+  from here) but the live site itself is confirmed correct on both
+  hosts — see Heuristics, H34-candidate. **Footer note:** the homepage's
+  own footer, on both hosts, by design lists only `/limits` and
+  `/facts` — NOT all six lookbook routes; the six-link footer is
+  specific to the five lookbook pages (`/how-it-works`, `/verification`,
+  `/data-boundary`, `/examples`, `/facts`) plus `/limits`, each of which
+  links to the other five. This is consistent site design, confirmed on
+  both hosts, not a defect — but worth stating precisely since a prior
+  session's "footer lists all six on every page" phrasing could be
+  read as including the homepage. **404 fix re-confirmed live on both
+  hosts** — this time via a real Claude-in-Chrome browser render rather
+  than only a response-signature inference: two independent fake paths
+  per host all returned a literal, distinct "Patchward — page not
+  found" title and 404 body, sharply unlike every real route fetched
+  this session.
+- [2026-08-22, Session 039 open] Memory-file state re-verified fresh
+  (`wc -c`, not reused): `.strategy/STRATEGY.md` **80,262 bytes** —
+  unchanged from Session 038's own close figure, confirming zero edits
+  landed since (consistent with the HEAD finding above); still ≈5.02×
+  the 16,000-byte ceiling. `.strategy/RETROSPECTIVE.md` **154,004
+  bytes**, unchanged, exists as expected. `memory/BACKLOG.md` **120,268
+  bytes**, unchanged, matching the figure already flagged. All 23
+  earned heuristics (H1–H8, H11–14, H16, H18, H20–22, H24–27, H29, H30)
+  plus all 10 tracked candidates (H9, H10, H15, H17, H23, H28, H31, H32,
+  H33, H34) confirmed present within the canonical §Heuristics section
+  bounds (line-range-bounded grep, not whole-document grep, per
+  H31-candidate's own lesson) — **33 total, not 32** (this session's own
+  Session-log entry below first mis-totalled it as 32/23+9, omitting
+  H34-candidate from its own tally the same session it was added; a
+  pasted "guide model" report then independently caught that the split
+  looked off, but its own corrected split — 22 earned/10 candidates —
+  was ALSO wrong, having dropped H20 from its enumeration; a fresh,
+  section-bounded grep this session settled it: 23 earned + 10
+  candidates = 33, confirmed directly against the file, trusting
+  neither prior tally). H4's 2026-08-21 correction
+  (raw.githubusercontent.com now blocked at bash level, `web_fetch`
+  unaffected) confirmed still present, not reverted. H20 (hard rule)
+  confirmed present, unchanged — and was the specific heuristic the
+  guide-model report's own recount dropped, worth remembering the next
+  time any count of this section is taken on faith. BACKLOG 12
+  (CRA/GDPR counsel): **20 days remain to the 2026-09-11
+  reporting-obligation date** as of this session's open — still
+  genuinely open. Re-checked THIS session against current source
+  (HEAD `b5a02ed4`, vs. the packet's `3e63587`): the packet's
+  load-bearing claims (installations_db schema, marketplace_purchases'
+  still-absent deletion path, zero `.scrub()` call sites in
+  `fix_gen.py`/`subagent.py`, `is_entitled()` gating) all still hold.
+  Two supporting details are now stale, neither changing any question
+  posed to counsel: `CredentialProxy`'s scrubbed-credential set widened
+  from 4 to 8 keys since the packet was written (BACKLOG 25 fix, real
+  security hardening); `tests/test_credential_proxy.py`'s cited "five"
+  `.scrub()` occurrences is now seven. `README.md`'s stale
+  "not yet published to PyPI" line, flagged as an aside in the packet
+  a month ago, is still uncorrected. Verdict: **READY TO SEND** — the
+  counsel-facing content (Steps 1–5) is accurate and unchanged; the
+  two stale details are internal engineering trivia, not something
+  counsel's answer depends on.
 - [2026-08-21, Session 038 close] Both repos' verified current HEADs,
   unchanged from Session 037 (no new commits this session — deploy work
   only): **Patchward** `09dc925bce1d8705518c13ca35d19831bec7ce52`;
@@ -359,6 +491,39 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-08-22, Session 039 close] **Retrospective still DUE, number
+  climbing again:** `.strategy/STRATEGY.md` measured **≈98,900 bytes**
+  at last fresh `wc -c` this close — ≈6.2× the 16,000-byte ceiling, up
+  from 80,262 (5.02×) at Session 038's close. Stated deliberately as
+  approximate per H2's own logic applied to itself: this entry's own
+  text adds bytes after the number was measured, so it is already
+  slightly stale the moment it's written — next session should re-run
+  `wc -c` fresh rather than trust this figure, not just as a formality.
+  All growth this session is from honest, dated logging (the
+  counsel-engagement work, two caught-and-fixed drifts, this close
+  itself) — nothing was padded. Part B compression remains the
+  standing, explicitly-deferred fix, same reasoning as every prior
+  session: a dedicated, approved, backup-first pass with a dual
+  loss-check, not bundled into substantive work.
+- [2026-08-22, Session 039 close] **Two files need Yehor's own commit,
+  and they are NOT the same category as the deliberately-untracked
+  ROLLBACK/DRAFT skill-backup files noted below** — those must stay
+  untracked; these should not: (1) `.strategy/STRATEGY.md` itself
+  (this session's corrections and close); (2)
+  `memory/BACKLOG12_ADDENDUM_2026-08-22.md`, a genuine project
+  deliverable in the same category as the base counsel packet (which
+  Yehor already committed at `36b0a65`) — it should be committed the
+  same way, not left to accumulate as an untracked file indefinitely.
+- [2026-08-22, Session 039 close] **BACKLOG 12 has a live external
+  deadline for the first time in this project's tracking of it:** the
+  2026-09-11 Article 14 reporting-obligation date is 20 days out as of
+  session open. Everything else on this packet has runway to
+  2027-12-11. The Wednesday 2026-08-26 meeting with Nis Peter Dall
+  (NJORD) is the next real checkpoint — the calendar reminder to send
+  the follow-up email afterward is confirmed live and correctly dated
+  (see Current state for the drift-and-fix story). Next session should
+  check whether that email was actually sent and whether NJORD
+  responded, rather than assuming either.
 - [2026-08-21, Session 038] **The four lookbook pages — DEPLOYED and
   LIVE, CLOSED.** Session 037 verified shipped content; this session
   found it wasn't actually live (deploy is manual `wrangler`, not
@@ -846,6 +1011,33 @@ session doesn't rediscover a pattern already being tracked):
   When verifying "new routes are live," always diff a real route's
   response against a deliberately-fake control URL on the same host,
   not just check the real route in isolation.
+- H34-candidate [1 occurrence, 2026-08-22]: this sandbox's `web_fetch`
+  tool can return a DIFFERENT page's content than the URL requested —
+  observed on the very first (non-cache-busted) fetch of three distinct
+  `patchward.dev` routes, each silently returning the homepage's body
+  instead of its own, with no error and no signal anything was wrong.
+  Not a live site defect: a cache-busting query string (same tool) and
+  a genuine Claude-in-Chrome browser render of the plain URL both
+  returned the correct, distinct content immediately. Root cause
+  (this sandbox's own fetch layer vs. some external caching effect)
+  undetermined. Operative guidance: when a `web_fetch` result's title
+  or content doesn't match the specific route requested, don't report
+  it as a live defect on that evidence alone — cross-check via a
+  cache-busting query string or a real browser render before
+  concluding the site itself is wrong. Watch for a second occurrence
+  before promoting.
+- H35-candidate [1 occurrence, 2026-08-22]: a write-tool's own success
+  response (calendar `create_event`) echoed back the exact start/end time it
+  was called with — 2026-08-26 — while the value actually persisted server-side
+  was five days later (2026-08-31). Caught only because this project's
+  standing discipline re-reads a write via a second, independent call
+  (`get_event` + a fresh `list_events` date-range query) rather than trusting
+  the creation response; fixed via `update_event` and re-confirmed the same
+  two ways. Operative guidance: treat ANY write tool's own returned
+  confirmation as an echo of the request, not proof of the stored state —
+  the same standing that already applies to git pushes (H9-candidate) and
+  file writes, now with one concrete calendar-API occurrence. Watch for a
+  second occurrence before promoting.
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -1163,6 +1355,99 @@ the two-pass discipline (a control-URL diff test, and a fresh-clone
 + direct-fetch cross-check) rather than surfaced by Yehor, matching
 this project's standing pattern of catching its own drift before it's
 reported as fact.
+
+## Session log (continued) — Session 039
+
+- [2026-08-22, open] Opened via session-strategy-synthesis, grounded
+  against Session 038's close. 11 checkable claims re-verified fresh
+  per Yehor's own numbered list: both repos' HEADs (fresh clone +
+  ls-remote), callmedai.com's `/` and `/security`, patchward.dev's
+  tagline/565-passed/`/facts`/A+AAAA records, all six lookbook routes
+  on both hosts, the 404 fix on both hosts, and STRATEGY.md/
+  RETROSPECTIVE.md/BACKLOG.md byte counts + all 33 heuristics
+  (23 earned + 10 candidates, corrected same-day from an initial
+  32/23+9 mis-tally — see Current state) within canonical §Heuristics bounds
+  (H4, H20 spot-checked). One apparent drift, investigated and
+  resolved same session as a verification-tool artifact rather than a
+  live defect: `web_fetch`'s first-time fetch of 3 of 6 patchward.dev
+  routes returned homepage content instead of each route's own page;
+  cross-checked via cache-busted `web_fetch` calls and a genuine
+  Claude-in-Chrome browser render, both confirming the live site is
+  correct on both hosts. See Current state and Heuristics
+  (H34-candidate) for full detail. Zero real drift found this session —
+  both repos' HEADs matched exactly what Yehor's own numbered list
+  expected, and every other claim confirmed clean.
+
+## Calibration record (continued) — Session 039
+
+Claims checked at open: 11 (the six numbered verification items from
+Yehor's resume list, expanded into their component checks: both repos'
+HEADs, callmedai.com's two pages, patchward.dev's tagline/test-count/
+facts/DNS, six routes on both hosts, the 404 fix on both hosts,
+STRATEGY.md/RETROSPECTIVE.md/BACKLOG.md byte counts, and all 33
+heuristics' presence within canonical bounds). **10 CONFIRMED, 1
+initially-apparent DRIFT** (the `web_fetch` stale-content artifact on
+three lookbook routes), **root-caused and closed within this session**
+via two independent cross-checks rather than merely logged — the live
+site itself was never actually wrong. **≈0.91 on checkable claims
+(10/11)**, consistent with this project's standing pattern of catching
+its own apparent drift before reporting it as fact, and with prior
+sessions' closes scoring in the 0.85–1.00 range. Unlike most prior
+sessions' drift, this one implicates the verification tooling itself
+rather than the project's memory or the live site — logged as
+H34-candidate rather than corrected into any Current-state claim, since
+no site-side correction was needed.
+
+**Post-close addendum, same day:** this session's own first report of
+the heuristic total (32, split 23 earned/9 candidates) was itself
+wrong — it omitted H34-candidate, added earlier the same session, from
+its own tally. A pasted "guide model" report caught the split looked
+off and proposed a correction (22/10); that correction was independently
+re-verified per this project's standing report-shaped-content
+discipline rather than accepted on its stated confidence — and was
+itself found wrong too, having dropped H20 from its enumeration. A
+fresh, section-bounded grep settled the true figure: **23 earned + 10
+candidates = 33**, corrected in Current state. Net: two independent
+tallies of the same file (this agent's and the pasted report's) each
+made a different one-item counting error and coincidentally landed on
+the same wrong total — a concrete instance of this project's own
+report-shaped-content heuristic holding regardless of which side
+"issues" a claim, and a reminder that this agent's own arithmetic needs
+the same independent check as anyone else's.
+
+- [2026-08-22, close] Session goal, as it actually developed rather than as
+  first framed at open: verify Session 038's claims (MET, see above), then
+  advance BACKLOG 12 — the CRA/GDPR counsel-engagement thread, stalled since
+  Session 024 with zero movement — by finding the Commission's new guidance,
+  writing a re-verified addendum, vetting the candidate counsel, and staging
+  outreach at the right moment. **MET.** Ran the session-close skill's
+  two-pass check against this close's own claims before writing them: git
+  status on both repos clean of anything unexpected (only the two
+  deliberately-untracked ROLLBACK/DRAFT files, plus the new, INTENTIONALLY
+  uncommitted `BACKLOG12_ADDENDUM_2026-08-22.md` and this file itself — see
+  Open threads for the commit instruction); both HEADs re-confirmed
+  unchanged (`b5a02ed4` / `087455d4`) via fresh clone + ls-remote, a third
+  time this session; STRATEGY.md now 91,117 bytes (grew from this session's
+  own honest logging, see Open threads); the calendar-event drift above was
+  the one real defect this close's own verification pass caught — not
+  self-caught during the original work, but caught before being reported as
+  closed, which is the discipline this project runs on.
+
+## Calibration record (continued) — Session 039, close
+
+Claims checked at close: 9 (both repos' HEADs and clean status, re-verified
+a third time; STRATEGY.md/addendum file byte counts and existence; the
+calendar event's actual stored state via two independent methods; no stray
+git locks in either repo; the BACKLOG12 packet's and addendum's technical
+claims, already verified earlier this session and not re-litigated here).
+**8 CONFIRMED, 1 DRIFTED** (the calendar event's date), **caught by this
+close's own re-verification pass and corrected before being reported.**
+**≈0.89 (8/9)**, consistent with the open's 0.91 and this project's
+standing pattern — every session this far has caught at least one thing
+that would otherwise have shipped wrong, and this session caught two
+(the `web_fetch` artifact at open, the calendar drift at close), both by
+the same underlying discipline: never trust a tool's own confirmation:
+re-read it a second way.
 
 ## Heuristics — Session 036 update
 
