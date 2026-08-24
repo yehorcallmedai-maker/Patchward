@@ -15,6 +15,43 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-08-24, Session 040 close, written last] **Heuristic total is now
+  36** (24 earned + 12 candidates), not the 35 the bullet below states —
+  H37-candidate was logged after that bullet was written, in the same
+  session, the exact self-citation-lag shape this file keeps catching
+  on itself. Stated here deliberately as its own dated correction
+  rather than edited into the bullet below, per this file's own
+  never-launder-history rule.
+- [2026-08-24, Session 040 close] **Compression commit landed and
+  independently re-verified — not from Yehor's own pasted terminal
+  output, from a fresh `git clone` this session ran itself:** Patchward
+  HEAD `1301c9f47f60aa3b052ed5c9de52d0aef66dd6d0`, confirmed via mount
+  + fresh clone + `ls-remote` (three methods, all agree). On origin,
+  directly: `.strategy/STRATEGY.md` **79,696 bytes**; `.strategy/
+  RETROSPECTIVE.md` **179,874 bytes**; H36 present in canonical
+  §Heuristics with its full text; all **35** heuristic IDs (24 earned +
+  11 candidates) confirmed live via a fresh section-bounded grep on the
+  cloned copy. patchward-landing HEAD unchanged, `087455d4...`.
+  **One claim in this session's own pasted "guide model" review did NOT
+  hold up under independent check:** that review asserted the
+  `c4o3eopg...` calendar-date question was settled ("no correction
+  needed... your confirmation that c4o3eopg was intentional"). A direct
+  `get_event` call this session shows the event's `updated` timestamp
+  is still `2026-08-20T13:17:09Z` — identical to `created` — meaning it
+  has never been modified since the moment it was made; it is still
+  stored on 2026-08-25, still titled "...26.08.26", still contradicted
+  by two independent emails confirming the real meeting is Wednesday
+  the 26th. The corroborating "Parents go away 26.08.26" event
+  (unrelated, created 2026-08-24) is likewise unmodified since
+  creation, still stored a day early. **No direct confirmation from
+  Yehor, in this conversation, that the drift is intentional has been
+  received by this session** — the claim that it was confirmed appears
+  only inside pasted, report-shaped content, which is exactly the
+  category H36 (restored earlier this same session) says must be
+  independently verified before being trusted, not asserted on the
+  strength of its own formatting or confidence. Treated here as
+  UNVERIFIED, not resolved, pending Yehor's own direct word. See Open
+  threads.
 - [2026-08-24, Session 040 open] **Two corrections found via fresh
   verification, neither inherited from this file's own prior count:**
   (1) the heuristic total is **35** (24 earned + 11 candidates), not
@@ -516,6 +553,29 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-08-24, Session 040 close] **Calendar event `c4o3eopg...` still
+  needs Yehor's own direct word — NOT closeable on a pasted report's
+  say-so.** Live state as of this close (`get_event`, fresh): stored
+  2026-08-25 16:00-17:00, `updated` identical to `created`, never
+  touched. The real meeting, per two independent emails, is Wednesday
+  2026-08-26 16:00-17:00 — 2 days out as of this close, closer than at
+  session open. A second, unrelated, same-day-created event ("Parents
+  go away 26.08.26") shows the identical title-says-26th/stored-25th
+  signature, also untouched — real corroboration for a systematic
+  write-tool drift, not a coincidence. Next session (or Yehor directly,
+  before then): get an explicit yes/no — was this deliberate, and if
+  not, fix it before Wednesday, from Yehor's own client, not a sandbox
+  write, given H35-candidate's open question about this exact class of
+  write tool.
+- [2026-08-24, Session 040 close] **Retrospective still DUE, improved
+  but not resolved:** `.strategy/STRATEGY.md` measured **79,696 bytes**
+  fresh (`wc -c` on an origin fresh-clone, not estimated) — ≈4.98× the
+  16,000-byte ceiling, down from ≈6.2× at Session 039's close. Part B
+  ran this session (Sessions 035-039 archived to RETROSPECTIVE.md,
+  H36 restored, committed as `1301c9f`). Further compression (Sessions
+  040+ will accrue the same way) is a legitimate future L2 candidate,
+  not urgent — this file is no longer climbing unchecked, just still
+  over ceiling.
 - [2026-08-22, Session 039 close] **Retrospective still DUE, number
   climbing again:** `.strategy/STRATEGY.md` measured **≈98,900 bytes**
   at last fresh `wc -c` this close — ≈6.2× the 16,000-byte ceiling, up
@@ -1082,6 +1142,18 @@ session doesn't rediscover a pattern already being tracked):
   the same standing that already applies to git pushes (H9-candidate) and
   file writes, now with one concrete calendar-API occurrence. Watch for a
   second occurrence before promoting.
+- H37-candidate [1 occurrence, 2026-08-24]: a narrative claim that some
+  prior defect was "resolved," "confirmed intentional," or "no longer
+  needs fixing" is not itself evidence — the artifact's own change-
+  tracking metadata is. This session's own close reviewed report-shaped
+  content asserting a calendar-date question was settled; a direct
+  `get_event` call showed the event's `updated` timestamp identical to
+  its `created` timestamp — never modified since the moment it was
+  made, contradicting the resolution claim. Sibling to H36 (verify
+  report-shaped content via a real tool call) but narrower and newly
+  useful: specifically check an artifact's own last-modified field
+  before accepting that a fix or decision landed. Watch for a second
+  occurrence before promoting.
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -1191,3 +1263,77 @@ as the 019-034 compression above
   historical "Heuristics — Session 035/036 update" appendix blocks
   (superseded as an operative source — see §Heuristics for the live
   rules): `.strategy/RETROSPECTIVE.md`.
+
+## Session log (continued) — Session 040
+
+- [2026-08-24, open] Opened via session-strategy-synthesis, grounded
+  against Session 039's close (commit `9c2e01d`). 7 checkable claims
+  re-verified fresh: both repos' HEADs (fresh clone + `ls-remote`,
+  Patchward now `9c2e01d`, correcting the prior session's own
+  uncommitted-at-close state — Yehor had committed since), STRATEGY.md
+  byte count (99,150, matching), heuristic count (found DRIFTED — 33
+  stated vs. 34 counted, later 35 after H36's restoration), the NJORD
+  meeting/follow-up-email status (neither happened — both still
+  future), and BACKLOG.md/RETROSPECTIVE.md byte counts (unchanged,
+  confirmed). One new, previously-uncaught finding at open: calendar
+  event `c4o3eopg...` (the NJORD meeting itself) stored one day early
+  (2026-08-25) versus its own title and two independent human-
+  confirmation emails (2026-08-26) — reported, not fixed, pending
+  Yehor's call.
+- [2026-08-24] STRATEGY.md Part B compression run per Yehor's explicit,
+  detailed instruction: backup-first (sha256-verified byte-identical),
+  Sessions 035-039's full log/calibration entries moved verbatim to
+  RETROSPECTIVE.md (sha256-verified identical post-move), replaced with
+  a condensed summary. **Dual loss-check caught a real, previously-
+  unknown defect**: Session 035's "report-shaped content" heuristic —
+  PROMOTED with 4 genuine occurrences, treated as standing in later
+  sessions' own narrative — had been living only in a per-session
+  appendix for 4 sessions, never in canonical §Heuristics. Restored as
+  H36 before the appendix holding its only live copy was archived.
+  Final: 99,150→79,696 bytes (≈4.98x ceiling, down from ≈6.2x).
+  Committed by Yehor as `1301c9f`.
+- [2026-08-24, close] **Independent re-verification of Yehor's own
+  pasted terminal output and a "guide model" review — not trusted on
+  their own formatting or confidence, per H36/H14.** A fresh `git
+  clone` (this session's own, separate from the mount) confirms
+  `1301c9f47f60aa3b052ed5c9de52d0aef66dd6d0` on origin, exact match
+  across mount + clone + `ls-remote`. On the clone directly:
+  STRATEGY.md 79,696 bytes, RETROSPECTIVE.md 179,874 bytes, H36's full
+  text present in canonical §Heuristics, all 35 heuristic IDs confirmed
+  via a fresh section-bounded grep, patchward-landing unchanged at
+  `087455d4...`. **One claim did not survive independent check:** the
+  pasted review asserted the calendar-date question was settled by
+  Yehor's confirmation; a direct `get_event` call this session shows
+  the event untouched since creation (`updated` = `created`), and a
+  second, unrelated, same-day-created event with the identical
+  signature ("Parents go away 26.08.26," also untouched) corroborates
+  a systematic drift rather than a deliberate choice. Logged as
+  H37-candidate. Not fixed this session, per Yehor's own stated
+  preference to handle it from his own client given H35-candidate's
+  open question about this exact write-tool class — flagged plainly in
+  Open threads instead, pending his direct word.
+
+## Calibration record (continued) — Session 040
+
+Claims checked at open: 7 (both repos' HEADs, STRATEGY.md byte count,
+heuristic count, NJORD meeting/email status, BACKLOG.md/RETROSPECTIVE.md
+byte counts). **6 CONFIRMED, 1 DRIFTED** (heuristic count: 33 stated,
+34 actual before H36, 35 after restoration — an H2-shaped self-citation
+lag, corrected same session). **≈0.86 on checkable claims (6/7).**
+
+Claims checked at close: 11 (Patchward HEAD via 3 independent methods;
+patchward-landing HEAD; STRATEGY.md and RETROSPECTIVE.md byte counts on
+origin; H36's presence and text; the full 35-heuristic count on origin;
+the backup file's presence and size in the commit; H35-candidate's text
+unchanged; the calendar event's own `updated`-vs-`created` metadata; the
+corroborating "Parents go away" event's same metadata; the NJORD
+meeting/email still-future status). **11 CONFIRMED via this session's
+own independent tool calls, 0 UNVERIFIED — including one claim (the
+calendar item's "resolved" status) that was CONFIRMED FALSE against a
+pasted report's own assertion, not merely accepted or refused on faith.**
+**1.00 on checkable claims (11/11)**, the discipline holding exactly as
+designed: a claim reported with high confidence in pasted content was
+neither trusted nor dismissed, but checked, and the check is what
+decided it — the same standing H36 itself describes, demonstrated on
+this session's own review material rather than only on the executor's
+prior work.
