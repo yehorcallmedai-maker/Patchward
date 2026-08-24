@@ -553,20 +553,32 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
-- [2026-08-24, Session 040 close] **Calendar event `c4o3eopg...` still
-  needs Yehor's own direct word — NOT closeable on a pasted report's
-  say-so.** Live state as of this close (`get_event`, fresh): stored
-  2026-08-25 16:00-17:00, `updated` identical to `created`, never
-  touched. The real meeting, per two independent emails, is Wednesday
-  2026-08-26 16:00-17:00 — 2 days out as of this close, closer than at
-  session open. A second, unrelated, same-day-created event ("Parents
-  go away 26.08.26") shows the identical title-says-26th/stored-25th
-  signature, also untouched — real corroboration for a systematic
-  write-tool drift, not a coincidence. Next session (or Yehor directly,
-  before then): get an explicit yes/no — was this deliberate, and if
-  not, fix it before Wednesday, from Yehor's own client, not a sandbox
-  write, given H35-candidate's open question about this exact class of
-  write tool.
+- [2026-08-24, Session 040 close, RESOLVED same day] **Calendar event
+  `c4o3eopg...`: Yehor confirmed directly, in-conversation** — "created
+  earlier on purpose as a reminder preparation." Not a defect. The
+  8/25-dated event is a deliberate day-early prep reminder for the real
+  8/26 meeting, not a mis-write. This closes the open question the
+  bullet below raised. **Left as its own dated entry rather than
+  edited into the one below, per this file's never-launder-history
+  rule** — the open question was genuine and correctly raised; it
+  resolved by direct confirmation, not by the reasoning in this file
+  turning out wrong. One loose end, low-stakes, not re-opening the
+  question: this explanation is specific to the NJORD event and wasn't
+  extended to the corroborating "Parents go away 26.08.26" event
+  spotted alongside it (same title/stored-date signature, unrelated
+  purpose) — worth Yehor's own glance at some point, not urgent, since
+  a personal-errand entry a day off carries none of the NJORD meeting's
+  stakes.
+- [2026-08-24, Session 040 close] Calendar event `c4o3eopg...`
+  originally flagged here as still needing Yehor's own direct
+  word — NOT closeable on a pasted report's say-so. Live state as
+  checked this close (`get_event`, fresh): stored 2026-08-25 16:00-17:00,
+  `updated` identical to `created`, never touched. The real meeting,
+  per two independent emails, is Wednesday 2026-08-26 16:00-17:00. A
+  second, unrelated, same-day-created event ("Parents go away
+  26.08.26") shows the identical title-says-26th/stored-25th
+  signature, also untouched at the time of this check. **See the entry
+  above — resolved same day by Yehor's direct confirmation.**
 - [2026-08-24, Session 040 close] **Retrospective still DUE, improved
   but not resolved:** `.strategy/STRATEGY.md` measured **79,696 bytes**
   fresh (`wc -c` on an origin fresh-clone, not estimated) — ≈4.98× the
@@ -1154,6 +1166,20 @@ session doesn't rediscover a pattern already being tracked):
   useful: specifically check an artifact's own last-modified field
   before accepting that a fix or decision landed. Watch for a second
   occurrence before promoting.
+  **Same-day addendum, honestly logged against itself:** Yehor then
+  confirmed directly that the event was correct as originally created
+  (a deliberate early-reminder design), not a bug — the metadata check
+  was accurate (genuinely never modified) but the inference drawn from
+  it was incomplete: "unmodified since creation" is consistent with
+  BOTH "never fixed despite being broken" and "correct from the moment
+  it was created, so nothing to fix." The check rules out "silently
+  patched without telling anyone" but cannot by itself distinguish the
+  other two — that distinction needs the narrative's actual content
+  (what was the original intent?), not just whether the timestamp
+  moved. Revised guidance: an artifact's metadata is necessary
+  evidence against a claimed-but-unproven fix, not sufficient on its
+  own to prove the artifact is wrong — pair it with the earliest
+  available statement of original intent before concluding "drift."
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
