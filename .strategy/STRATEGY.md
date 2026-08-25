@@ -15,6 +15,17 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-08-25, Session 041 close, written last] **The 97,390-byte figure
+  cited earlier in this session's own close entries (Open threads,
+  Calibration, the close-out doc) is already stale — caught here
+  deliberately, applying this same close's own lesson to itself rather
+  than shipping a number known to be wrong.** Writing the close entries
+  themselves added bytes after that measurement was taken; a fresh
+  `wc -c` right now, with no further edits planned this session, reads
+  **101,298 bytes** (≈6.33x the 16,000-byte ceiling). This is the
+  figure the next session should treat as Session 041's true close
+  size — and per this file's own standing lesson, it should still be
+  re-measured fresh next time, not trusted from this line either.
 - [2026-08-25, Session 041 open] **Full re-grounding against Session 040's
   close (`12d542d`) — nothing inherited on faith, 6 claims checked, 6
   CONFIRMED, 0 drift.** (1) Patchward HEAD: local `git log`/`ls-remote`
@@ -603,6 +614,40 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-08-25, Session 041 close] **Retrospective still DUE, number
+  climbing from normal same-day logging, exactly as Session 040's own
+  close flagged would happen:** `.strategy/STRATEGY.md` measured
+  **97,390 bytes** fresh (`wc -c` on an origin fresh-clone, confirmed
+  twice, not estimated) — ≈6.09x the 16,000-byte ceiling, up from
+  90,748 (≈5.67x) at Session 040's close. All growth this session is
+  from honest, dated logging (the re-grounding entries, the
+  guide-model-review correction cycle, this close itself, the
+  §Heuristics counting note) — nothing padded. Compression remains a
+  legitimate future L2 candidate, not urgent — flag only, per this
+  skill's own rule against bundling compression into substantive-work
+  sessions.
+- [2026-08-25, Session 041 close] **NJORD meeting/follow-up-email
+  status re-confirmed unchanged at close, via a third independent
+  method beyond the two used at open** (a `list_events` date-range
+  query, distinct from the `search_events`/`get_event` calls used
+  earlier): calendar event `c4o3eopg...` still stored 2026-08-25
+  16:00-17:00 (the deliberate day-early reminder, per Yehor's own
+  Session 040 confirmation); the real meeting per two independent
+  emails is tomorrow, 2026-08-26 16:00-17:00 — **has not happened as of
+  this close.** Follow-up-email reminder (`enkp47hl...`) still stored
+  2026-08-26 17:15-17:30, untouched; a `njordlaw.com` thread search at
+  close returned the same 4 threads as at open, nothing new — **email
+  still not sent.** Next session's real work starts here, not before.
+- [2026-08-25, Session 041 close] **`.git/index.lock` recurrence, 3rd
+  occurrence, same root cause as Session 033/037's findings — cleared
+  safely, no new information.** Blocked `git add`/`git commit` on the
+  Patchward mount mid-session; Yehor confirmed no real git process
+  running (`Get-Process` empty) before removing it directly
+  (`Remove-Item .git\index.lock -Force`), then the same commands
+  succeeded cleanly. Consistent with H30 (sandbox-side read-only git
+  commands leave a stale lock, not live contention) — not promoted or
+  re-opened as a fresh question, just logged as one more confirming
+  occurrence.
 - [2026-08-24, Session 040 close, RESOLVED same day] **Calendar event
   `c4o3eopg...`: Yehor confirmed directly, in-conversation** — "created
   earlier on purpose as a reminder preparation." Not a defect. The
@@ -1433,12 +1478,40 @@ as the 019-034 compression above
   at the very end of this session's edits, not this number, as the
   figure to inherit.
 
+- [2026-08-25, close] **Session Close run via the `session-close` skill —
+  full gate table, judged at all three zoom levels, sealed as
+  `memory/SESSION_CLOSE_2026-08-25.md`.** L2 (this session's own goal,
+  the re-grounding) verdict: **MET**, 6/6 claims confirmed, re-checked
+  again at close via a third independent method for the NJORD
+  meeting/email status where practical. L1: no direct BACKLOG-12
+  movement (correctly gated on tomorrow's meeting), but real
+  memory-reliability progress — the heuristic-counting gap is now
+  confirmed as a genuine 2-session-running pattern, not a one-off, and
+  is written down where a 3rd occurrence will actually be checked
+  against it. Weakest point stated plainly in the close-out doc: the
+  95,396→97,390 byte-count correction was caught by an external review,
+  not self-caught before being written — the exact H2 shape this file
+  keeps finding in its own drafts. `.git/index.lock` recurred a 3rd
+  time, cleared safely by Yehor directly, no new information beyond
+  H30's existing finding.
+
 ## Calibration record (continued) — Session 041
 
 Claims checked at open: 6 (Patchward HEAD, patchward-landing HEAD,
 STRATEGY.md byte count, NJORD meeting/email status, heuristic count/
 integrity, BACKLOG.md byte count). **6 CONFIRMED, 0 DRIFTED.** **1.00 on
 checkable claims (6/6).**
+
+Claims checked at close: 7 (Patchward HEAD on origin post-commit;
+STRATEGY.md byte count on origin post-push; heuristic count re-run on
+the fresh clone; methodology note's actual presence; patchward-landing
+HEAD unchanged; NJORD meeting/email status via a third independent
+method; the `.git/index.lock` root cause against H30's existing
+finding). **7 CONFIRMED via independent tool calls, 0 UNVERIFIED** —
+including the one claim (the 95,396 byte figure) that a guide-model
+review correctly flagged as unverified-when-written, then re-checked
+and found accurate rather than either trusted or dismissed on faith.
+**1.00 on checkable claims (7/7).**
 
 ## Calibration record (continued) — Session 040
 
