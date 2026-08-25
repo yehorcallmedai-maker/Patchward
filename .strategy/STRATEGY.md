@@ -15,6 +15,56 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-08-25, Session 041 open] **Full re-grounding against Session 040's
+  close (`12d542d`) — nothing inherited on faith, 6 claims checked, 6
+  CONFIRMED, 0 drift.** (1) Patchward HEAD: local `git log`/`ls-remote`
+  AND a separate fresh `git clone` of the origin URL (independent of the
+  mount) both land on `12d542d1d58b8162da9dfb9dda224b14e6e1af30` — exact
+  match, three methods agreeing. (2) patchward-landing HEAD: same
+  two-method check, `087455d4e1eb107c67de2d869a603ebd3ba08466`, clean —
+  only the known deliberately-untracked DRAFT safety-net files present,
+  no real drift. (3) STRATEGY.md byte count: fresh `wc -c` **on the
+  origin fresh-clone**, not the mount, **90,748 bytes exactly** —
+  matches Session 040's own close figure to the byte. (4) NJORD meeting
+  status, checked without assuming either way: today is 2026-08-25: the
+  real meeting (per two independent human-confirmation emails) is
+  **tomorrow**, Wednesday 2026-08-26 16:00-17:00 — **has not happened.**
+  A direct `get_event` on `c4o3eopg...` (independent of the `search_events`
+  read) reconfirms it stored 2026-08-25 16:00-17:00, `updated` still
+  identical to `created` — consistent with Yehor's own same-day
+  confirmation logged at Session 040 close that this is a deliberate
+  day-early reminder, not a live drift. (5) Follow-up email: **not
+  sent.** Two independent Gmail searches (`to:npd@njordlaw.com
+  after:2026/08/24` and `from:njordlaw.com after:2026/08/24`) both
+  return zero results — matches the standing calendar reminder for it,
+  which is itself dated 2026-08-26 17:15-17:30 (after the meeting, not
+  before). No NJORD response exists to evaluate (item 4 of Yehor's
+  brief is moot until the email goes out). (6) Heuristics: **36 total
+  confirmed exactly as claimed — 24 earned + 12 candidates**, via a
+  fresh line-range-bounded extraction (lines 837-1184) on the origin
+  clone. **Worth logging honestly: this session's own first attempt at
+  this count silently undercounted** (23 earned + 10 candidates) —
+  missed `H20` because its line is bold-markered (`- **H20 [HARD
+  RULE...`, not the plain `- H20 [` every other earned entry uses), and
+  missed `H23`/`H28` as candidates because they carry `[CANDIDATE...]`
+  in their body text rather than a `-candidate` ID suffix like the other
+  ten. A second, more careful pass caught both formatting inconsistencies
+  before this entry was written — not promoting this to a heuristic on
+  one occurrence, but flagging it: any future heuristic-count check
+  should grep for the bracket content (`CANDIDATE`/`PROMOTED`/`HARD
+  RULE`/`active`), not just the ID pattern, or it will silently
+  undercount the same way. H34-candidate, H35-candidate, H37-candidate
+  all confirmed still at exactly 1 occurrence each — no second
+  occurrence surfaced, no promotion due. H37-candidate's own same-day
+  reasoning-gap addendum (metadata alone proves "never silently
+  patched," not "correct from creation" vs. "broken and unfixed" —
+  pair with original intent) read in full, not just its headline, per
+  Yehor's own brief. BACKLOG.md re-confirmed unchanged, **120,268
+  bytes**, on the same origin clone. No agent-startable work is queued:
+  BACKLOG 12 follow-through is gated on tomorrow's meeting and the
+  email that follows it; STRATEGY.md compression is explicitly not
+  urgent (Part B just ran); nothing else surfaced as ready. This
+  session's own calibration: **1.00 (6/6)** — see Calibration record.
 - [2026-08-24, Session 040 close, written last] **Heuristic total is now
   36** (24 earned + 12 candidates), not the 35 the bullet below states —
   H37-candidate was logged after that bullet was written, in the same
@@ -835,6 +885,18 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   `git` process), never genuine contention. See Heuristics, H30.
 
 ## Heuristics (earned)
+**Counting note (added 2026-08-25, Session 041 close — 2nd occurrence,
+watch for a 3rd before promoting to its own ID):** a plain-dash or
+suffix-only grep of this section will silently undercount by 3. `H20`
+is formatted `- **H20 [HARD RULE...` (bold-wrapped), not the `- H20 [`
+pattern every other earned entry uses; `H23` and `H28` are candidates
+labeled inline (`[CANDIDATE, ...]`) rather than via the `-candidate` ID
+suffix the other ten candidates use. Two independent sessions hit this
+exact miscount for the exact same reason (Session 040's close-review of
+pasted content, Session 041's own open) — correct method: grep for
+bracket content (`CANDIDATE`/`PROMOTED`/`HARD RULE`/`active`), not just
+the ID pattern, or bound the count to this section's line range AND
+manually confirm every earned/candidate label reads as expected.
 - H1 [active, promoted 2026-07-15, evidence: Session 018 close + Session
   020, WIDENED 2026-07-16]: Sandbox git status/diff and file reads
   against the D:\ mount serve stale content and false diffs; `git show
@@ -1338,6 +1400,45 @@ as the 019-034 compression above
   preference to handle it from his own client given H35-candidate's
   open question about this exact write-tool class — flagged plainly in
   Open threads instead, pending his direct word.
+
+## Session log (continued) — Session 041
+
+- [2026-08-25, open] Opened via session-strategy-synthesis, grounded
+  against Session 040's close (`12d542d`). 6 checkable claims, all
+  re-verified via methods independent of the mount and of each other
+  (fresh `git clone` from the origin URL for both repos' HEADs and both
+  memory-file byte counts; a direct `get_event` call plus two Gmail
+  searches for the NJORD meeting/email status; a fresh line-range-
+  bounded grep for the heuristic count). **All 6 CONFIRMED, 0 drift** —
+  see Current state for full detail, including one self-caught
+  methodology gap (an initial heuristic-count grep undercounted due to
+  inconsistent bracket formatting, corrected before being written down).
+  No new session goal assigned by Yehor; nothing agent-startable is
+  queued until tomorrow's NJORD meeting and its follow-up email happen.
+- [2026-08-25, close] **A "guide model" review of this session's own
+  brief caught a real methodological gap — checked, not dismissed, per
+  H36/H14's own standing.** The brief's Risks & unknowns line cited
+  STRATEGY.md at 95,396 bytes post-edit, but that figure had only ever
+  been self-reported, never independently re-checked — exactly the H2
+  self-citation-lag shape this file keeps catching on itself. Re-ran
+  `wc -c` fresh, twice, by two methods (`wc -c` directly and `cat |
+  wc -c`) — **both return 95,396, confirming the figure was correct**,
+  but confirmed now, not assumed then. The review's second point — that
+  this session's own heuristic-undercount is now a 2nd consecutive
+  occurrence of the identical miscount (Session 040's close-review hit
+  it first) — is accurate; logged as a standing counting-note directly
+  in §Heuristics (not yet its own ID; watch for a 3rd occurrence). Note
+  honestly: this entry's own edits mean the file's byte count has grown
+  again since the 95,396 check above — see the close-out figure logged
+  at the very end of this session's edits, not this number, as the
+  figure to inherit.
+
+## Calibration record (continued) — Session 041
+
+Claims checked at open: 6 (Patchward HEAD, patchward-landing HEAD,
+STRATEGY.md byte count, NJORD meeting/email status, heuristic count/
+integrity, BACKLOG.md byte count). **6 CONFIRMED, 0 DRIFTED.** **1.00 on
+checkable claims (6/6).**
 
 ## Calibration record (continued) — Session 040
 
