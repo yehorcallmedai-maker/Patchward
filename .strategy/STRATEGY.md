@@ -15,6 +15,30 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-08-28, Session 042 close, written last] **BACKLOG 12 / NJORD
+  chain: meeting happened, follow-up email sent, no NJORD reply yet, a
+  nudge reminder is now on the calendar.** Verified across two rounds
+  this session, independent methods each time (Gmail searches + Calendar
+  `list_events`, not assumed either way): the 2026-08-26 16:00-17:00
+  meeting with Nis Peter Dall happened; the CRA follow-up email (thread
+  `1a03eea261e68ac5`) was sent 2026-08-26 18:40 CPH, asking whether
+  CRA/product-regulation work is in NJORD's wheelhouse and whether it
+  can be scoped alongside FixProve Fase 1; no reply as of this close (2
+  days). `memory/BACKLOG.md` item 12's header, stale since Session 024
+  ("AWAITING COUNSEL ENGAGEMENT"), corrected to reflect this. A nudge
+  reminder was created for 2026-08-31 09:00 CPH (event
+  `uueepgqam0mvuh0dngq6sp34tk`) — chosen to be safe whether the real
+  gate is the 2026-09-08 launch-window open or the 2026-09-11 Article 14
+  deadline, since a pasted "guide model" review's claim that memory text
+  already resolves which of those two dates gates action did not survive
+  direct re-verification (see §Heuristics H38-candidate). Two commits
+  landed and independently confirmed on origin via fresh clone +
+  `ls-remote`: `f1fe546` (the base memory update) and `db08053` (this
+  correction + the nudge-event logging). **STRATEGY.md measured 104,784
+  bytes fresh (`wc -c` on the origin clone at `db08053`, before this
+  close's own edits)** — ≈6.55x the 16,000-byte ceiling, still climbing
+  from normal dated logging; will be higher again after this close's own
+  entries land. Compression remains flagged, not run.
 - [2026-08-25, Session 041 close, written last] **The 97,390-byte figure
   cited earlier in this session's own close entries (Open threads,
   Calibration, the close-out doc) is already stale — caught here
@@ -1327,6 +1351,22 @@ session doesn't rediscover a pattern already being tracked):
   evidence against a claimed-but-unproven fix, not sufficient on its
   own to prove the artifact is wrong — pair it with the earliest
   available statement of original intent before concluding "drift."
+- H38-candidate [1 occurrence, 2026-08-28]: a review's claim to have
+  "already resolved" an open question by citing existing memory text
+  must be checked against what that text actually, logically
+  establishes — not just that the quote is real and topically
+  relevant. A pasted "guide model" review this session correctly
+  quoted a real sentence (Patchward's launch window "lands directly on
+  the earlier, reporting-obligation date") and used it to declare a
+  genuinely open sequencing question settled; on direct re-read the
+  quoted sentence only establishes the two dates share one regulatory
+  window, not which one gates action. Sibling to H36 (verify
+  report-shaped content via a real tool call) and to H37-candidate's
+  own addendum (necessary evidence isn't automatically sufficient) —
+  distinct in that the source text itself was real and accurately
+  quoted, and the check that catches this is re-deriving what the
+  cited sentence actually proves, not merely confirming it exists.
+  Watch for a second occurrence before promoting.
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -1534,6 +1574,68 @@ as the 019-034 compression above
   keeps finding in its own drafts. `.git/index.lock` recurred a 3rd
   time, cleared safely by Yehor directly, no new information beyond
   H30's existing finding.
+
+## Session log (continued) — Session 042
+
+- [2026-08-28, open] Opened via session-strategy-synthesis, grounded
+  against Session 041's close (`f1fe546` at open time; the file has
+  since moved to `db08053`). 9 checkable claims from the user's own
+  numbered brief, all re-verified independent of the mount: both repos'
+  HEADs (fresh clone + `ls-remote`), STRATEGY.md/BACKLOG.md byte counts
+  (`wc -c` on fresh clone), heuristic count/integrity (36, bracket-aware
+  recount), H34/H35/H37-candidate occurrence counts (still 1 each), and
+  — the session's real work — the NJORD meeting/email/response chain,
+  checked via Gmail search + Calendar `list_events`, not assumed. **9/9
+  CONFIRMED.** One DRIFT found and fixed: `memory/BACKLOG.md` item 12's
+  header was stale since Session 024 ("AWAITING COUNSEL ENGAGEMENT"),
+  predating the meeting entirely — corrected in place, history not
+  rewritten. Committed as `f1fe546`, independently confirmed on origin.
+- [2026-08-28, continued] A pasted "guide model" review of the open
+  brief was itself checked rather than accepted: its claim that the
+  file already resolves whether counsel sign-off is needed by
+  2026-09-08 or 2026-09-11 did not survive direct re-verification of
+  the cited sentence (new candidate logged: H38-candidate). Its other
+  findings (clean session, both defects found legitimately, the
+  truncated-ID gotcha) held up. Decided and executed: nudge NJORD by
+  2026-08-31 — safe under either date reading, so the unresolved
+  interpretation question doesn't block action. Created calendar event
+  `uueepgqam0mvuh0dngq6sp34tk`, independently re-read via a separate
+  `list_events` call — creation response and re-read agreed exactly, no
+  H35-candidate-style discrepancy this time. Committed as `db08053`,
+  independently confirmed on origin (diff-stat matched Yehor's own
+  pasted terminal output exactly, not trusted on the transcript alone).
+- [2026-08-28, close] **Session Close run via the `session-close`
+  skill — full gate table, judged at all three zoom levels, sealed as
+  `memory/SESSION_CLOSE_2026-08-28.md`.** L2 (verify the NJORD chain and
+  reconcile memory to match) verdict: **MET**. L1: real movement — the
+  project's live external gate shifted from "no counsel engaged" to
+  "counsel engaged, awaiting their scoping answer," with a concrete,
+  reasoned tracking mechanism (the nudge reminder) now in place instead
+  of a narrative promise to check back "around a week." Weakest point
+  stated plainly in the close-out doc.
+
+## Calibration record (continued) — Session 042
+
+Claims checked at open: 9 (Patchward HEAD, patchward-landing HEAD,
+STRATEGY.md byte count, BACKLOG.md byte count, heuristic count/integrity,
+H34/H35/H37-candidate occurrence counts, NJORD meeting happened, follow-up
+email sent, NJORD response status). **9 CONFIRMED, 0 DRIFTED among the
+numbered claims** — plus 1 DRIFT found outside that list (BACKLOG.md item
+12's header, stale since Session 024, corrected). **1.00 on the checkable
+claims (9/9); 1 additional drift caught and fixed.**
+
+Claims checked mid-session/close: commit `f1fe546` on origin (fresh clone
++ `ls-remote`), a pasted "guide model" review's launch-window/Article-14
+resolution claim (re-verified against the actual cited sentence —
+DRIFTED, overstated what the text proves, corrected, logged as
+H38-candidate), the new calendar event's persisted state vs. its own
+creation response (independent `list_events` re-read — CONFIRMED, exact
+match), commit `db08053` on origin (fresh clone + `ls-remote`, diff-stat
+cross-checked against Yehor's own pasted terminal output). **3 CONFIRMED,
+1 DRIFTED (caught and corrected, not repeated). 0.75 on this batch** —
+consistent with the project's standing pattern that externally-sourced
+claims (reviews, transcripts) run closer to 0.75-0.85 than the ~1.00 seen
+on claims checked by direct tool call against this project's own state.
 
 ## Calibration record (continued) — Session 041
 
