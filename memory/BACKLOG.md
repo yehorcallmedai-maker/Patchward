@@ -802,7 +802,7 @@ three unreferenced files are worth keeping at all, versus deleting
 outright — correcting content was the safe, reversible move; deletion is
 a call only he should make.
 
-## 12. Regulatory flags — CRA / GDPR classification — BRIEFING PACKET READY, AWAITING COUNSEL ENGAGEMENT (2026-07-24, Session 024)
+## 12. Regulatory flags — CRA / GDPR classification — MEETING HELD, CRA FOLLOW-UP SENT, AWAITING NJORD RESPONSE (2026-07-24, Session 024; updated 2026-08-28, Session 042 open)
 **WSJF: low urgency now, high cost if skipped before Phase 10.** Get
 Patchward's CRA Annex III classification and a lightweight GDPR
 DPIA/TTL policy on `installations_db.py` confirmed by someone qualified
@@ -843,6 +843,26 @@ reporting-obligation date regardless of how the harder Annex III
 classification question resolves.
 **Owner:** Yehor (external legal input required — not something the agent
 can resolve; the packet above is the agent-startable part, now done).
+
+**Session 042 open update (2026-08-28), verified via Gmail + Calendar,
+two independent tool calls each:** the 2026-08-26 16:00-17:00 NJORD
+meeting (Nis Peter Dall) happened — confirmed by the opening line of
+Yehor's own follow-up email ("Thank you for a good meeting today"), not
+assumed. The CRA follow-up email (subject "Follow-up to today's meeting
+— CRA question as a possible separate task", to `npd@njordlaw.com`,
+with `Patchward_Counsel_Briefing_Packet_2026-08-03.pdf` attached) was
+sent 2026-08-26 18:40 Europe/Copenhagen (thread `1a03eea261e68ac5`) —
+after the meeting as planned, about an hour past the 17:15-17:30
+reminder window, not a concern. It asks NJORD directly (1) whether CRA/
+product-regulation work is in their wheelhouse, and (2) whether the
+Article 14 question can be scoped as a separate task alongside the
+Phase 1 (FixProve) work discussed in the meeting. **No reply from NJORD
+as of this check** (`from:njordlaw.com`/`from:npd@njordlaw.com` searches
+both return nothing newer than the 2026-08-20 meeting-scheduling
+thread) — 2 days elapsed, not yet a concern, but worth a nudge if it
+passes roughly a week with no response given the 2026-09-11 Article 14
+deadline. This item remains NOT closed; still externally gated, now on
+NJORD's answer rather than on getting a meeting scheduled.
 
 ---
 

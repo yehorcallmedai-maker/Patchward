@@ -614,6 +614,28 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-08-28, Session 042 open] **NJORD meeting/follow-up-email chain
+  has moved — verified via Gmail (two independent queries:
+  `from:njordlaw.com OR to:njordlaw.com after:2026/08/25`, then
+  `from:npd@njordlaw.com`) and Calendar (`list_events` date-range on
+  the reminder's stored window), not assumed either way.** The
+  2026-08-26 16:00-17:00 meeting happened — confirmed by the follow-up
+  email's own opening line ("Thank you for a good meeting today"). The
+  CRA follow-up email (thread `1a03eea261e68ac5`, to `npd@njordlaw.com`,
+  briefing packet attached) was sent 2026-08-26 18:40 Europe/Copenhagen —
+  about 1h10m after the 17:15-17:30 reminder window, still same-day and
+  post-meeting, not treated as a problem. It asks the two questions
+  BACKLOG 12 needed answered: whether CRA/product-regulation work is in
+  NJORD's wheelhouse, and whether it can be scoped alongside FixProve
+  Fase 1. **No NJORD reply as of this check** (2 days elapsed) — the
+  most recent inbound NJORD message is still the 2026-08-20
+  meeting-scheduling one. Not yet worth a nudge; worth one if ~a week
+  passes with no response, given the 2026-09-11 Article 14 deadline.
+  BACKLOG 12 updated accordingly in `memory/BACKLOG.md`. Retained event
+  IDs `c4o3eopg...`/`enkp47hl...` from prior entries below turned out
+  truncated for direct `get_event` lookup (full ID needed, e.g.
+  `enkp47hlnoojs3q6a72ctkoknk`) — `list_events` date-range was used
+  instead and found the reminder event intact and unmodified.
 - [2026-08-25, Session 041 close] **Retrospective still DUE, number
   climbing from normal same-day logging, exactly as Session 040's own
   close flagged would happen:** `.strategy/STRATEGY.md` measured
