@@ -614,6 +614,24 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-08-28, Session 042 continued] **Commit `f1fe546` (this session's
+  memory update) independently verified on origin — fresh clone +
+  `ls-remote`, diff-stat matches the pasted terminal transcript exactly
+  (2 files, 43 insertions, 1 deletion) — not trusted on the transcript's
+  say-so alone, per H36.** A NJORD nudge reminder was created for
+  **2026-08-31 09:00 Europe/Copenhagen** (event
+  `uueepgqam0mvuh0dngq6sp34tk`), then independently re-read via a
+  separate `list_events` call; creation response and re-read agree
+  exactly — no discrepancy found (H35-candidate stays at 1 occurrence).
+  **Correction to a claim in a pasted "guide model" review this
+  session:** that review asserted the file already resolves whether
+  counsel sign-off is needed by 2026-09-08 (launch window opening) or
+  2026-09-11 (Article 14 date) — on direct re-read, the cited sentence
+  only establishes the two dates share one regulatory window, not which
+  of them gates action. Flagged honestly rather than repeated; the
+  08-31 nudge date was chosen specifically because it doesn't depend on
+  resolving that reading (safe under either interpretation). Still
+  Yehor's call if he wants it pinned down precisely.
 - [2026-08-28, Session 042 open] **NJORD meeting/follow-up-email chain
   has moved — verified via Gmail (two independent queries:
   `from:njordlaw.com OR to:njordlaw.com after:2026/08/25`, then

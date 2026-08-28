@@ -864,6 +864,24 @@ passes roughly a week with no response given the 2026-09-11 Article 14
 deadline. This item remains NOT closed; still externally gated, now on
 NJORD's answer rather than on getting a meeting scheduled.
 
+**Session 042 continued (2026-08-28), commit + nudge:** commit
+`f1fe546` (the memory update above) independently confirmed on origin
+via fresh clone + `ls-remote` — diff-stat matches exactly (2 files, 43
+insertions, 1 deletion). A nudge reminder was set for **2026-08-31
+09:00 Europe/Copenhagen** (event `uueepgqam0mvuh0dngq6sp34tk`),
+independently re-read via a separate `list_events` call — creation
+response and re-read agree exactly, no discrepancy (H35-candidate
+still just 1 occurrence, not reinforced by this check). **Honest note
+on the 09-08 vs 09-11 question:** the existing text above ("launch
+window lands directly on the earlier, reporting-obligation date")
+confirms the two dates are the same regulatory window, not two
+unrelated numbers — but it does not itself state whether counsel
+sign-off must land before the window opens (09-08) or merely by the
+Article 14 date (09-11); that reading is still Yehor's call, not
+something this file resolves on its own. 2026-08-31 was chosen because
+it is safely conservative either way (8 days before 09-08, 11 before
+09-11) — the date does not depend on settling that interpretation.
+
 ---
 
 ## 14. Stray pre-rename branches on `ssh-audit` — RESOLVED 2026-07-15 (Session 018, cross-project research), origin confirmed
