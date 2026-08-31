@@ -6,7 +6,7 @@
 |---|---|---|---|
 | Patchward HEAD is the session's real final state | local `git status`/`log`: `e5fa195`, tree clean except two known pre-existing untouched items | fresh clone to `/tmp/pw_close_verify`: `e5fa195`, matches exactly | **CONFIRMED** |
 | Both session commits (`b5da9e8`, `e5fa195`) landed on origin | Yehor's own terminal output showed both pushes succeed | `git ls-remote origin main` after each push, and a fresh clone at close, all agree on `e5fa195` | **CONFIRMED** |
-| NJORD fee figures (15,000 kr / 30,000 kr / 6,000–20,000 kr) are absent from both public tracked files | `grep` on the D:\ mount after editing: 0 matches | `grep` on a fresh clone from origin, twice (once after `b5da9e8`, once again at this close): 0 matches both times | **CONFIRMED** |
+| NJORD's three fee figures (filed privately, not tracked in this public repo) are absent from both public tracked files | `grep` on the D:\ mount after editing: 0 matches | `grep` on a fresh clone from origin, twice (once after `b5da9e8`, once again at this close): 0 matches both times | **CONFIRMED** |
 | Patchward repo is genuinely public (the reason the redaction mattered) | assumed risky by a pasted review | live GitHub API call: `"private": false, "visibility": "public"` | **CONFIRMED** |
 | Sufficiency-gap addendum was sent unedited | Yehor's own screenshot showed it in Sent | `get_thread` on `1a0583baf61a4e21`: message `1a0585cbb9e933a7`, 15:07 CPH, sent body compared word-for-word against the reviewed draft — identical | **CONFIRMED** |
 | STRATEGY.md/BACKLOG.md byte counts at close | `wc -c` on fresh clone: 121,428 / 130,087 | re-run a second time on the same clone: identical | **CONFIRMED**, both well past their compression-flag thresholds |
@@ -30,6 +30,25 @@
 
 ## Weakest points, stated plainly
 
+- **This close-out document itself leaked the three redacted NJORD fee
+  figures, in its own Gate-status table, and that leaked version was
+  committed and pushed to the public repo (`9c44b5e`) before being
+  caught.** Describing what had been redacted from `BACKLOG.md`/
+  `STRATEGY.md` restated the exact figures being protected — the
+  redaction discipline was applied correctly to the two files it was
+  designed for and then broken by the very document written to
+  describe that discipline. Caught by this close's own final
+  verification pass (a fresh-clone grep across *all three* files, not
+  just the two originally in scope) rather than by any check before
+  committing. Fixed in a same-day follow-up commit, re-verified clean
+  on a fresh clone. This is the session's single most serious lapse —
+  stated plainly rather than folded into the "two guide-model claims"
+  bullet below, because unlike those, this one was the agent's own
+  error, not a claim to evaluate. Logged as H40-candidate in
+  `.strategy/STRATEGY.md`: **when writing anything that describes what
+  content was redacted, the description itself must never restate the
+  redacted values** — verify the *describing* document too, not only
+  the documents it describes.
 - **STRATEGY.md is now 121,428 bytes (≈7.59× the 16,000-byte ceiling), up from 111,439 at this session's open — the single largest one-session jump on record, and the strongest-worded version of a flag that has been climbing for four sessions running.** BACKLOG.md is 130,087 bytes, similarly overdue. Neither was compressed this session — correctly, per protocol, but this is now past "worth flagging" and into "should probably be the very next session's L2 goal, not a fifth session deferred."
 - **Two pasted "guide model" review claims did not survive verification this session** ("first time sensitive figures", "redaction unverified"). Both were caught and corrected in-session, but this is the third session running where a pasted review's confident framing needed correcting rather than simply repeating (see H38-candidate's own origin last session). Logged as a new candidate below rather than force-fit into H38, since the claim-shape differs (novelty/absence claims, not text-resolves-a-question claims) — but if a fourth instance appears, these may turn out to be the same underlying pattern and worth merging.
 - **`tests/fixture_repo` (modified, untracked content) and `memory/DRAFT-STRATEGY-COMPRESSED-2026-08-19.md` (untracked) remain unaddressed**, exactly as at session open — correctly out of this session's scope, but they've now sat untouched across at least two sessions running without anyone confirming whether they're intentional or abandoned. Worth a direct question to Yehor at some point, not indefinite silent carry-forward.
@@ -52,13 +71,18 @@
 ```
 Open this session via the session-strategy-synthesis skill, grounding in
 D:\Dev\Projects\Patchward\.strategy\STRATEGY.md (Session 043's close is
-the most recent entry, committed as `e5fa195` — confirm this is still
-HEAD fresh, don't assume it from this prompt).
+the most recent entry. This close-out went through 3 commits, not 2 —
+`e5fa195`, then `9c44b5e` (the close-out doc itself), then a same-day
+follow-up after this very doc was found to leak the three NJORD fee
+figures in its own Gate-status table before that leak was caught and
+fixed pre-next-session. Do not assume any single hash is still HEAD —
+confirm fresh via ls-remote, exactly as item 1 below already says).
 
 Re-verify — don't inherit:
 
-1. Patchward HEAD (expect `e5fa195` unless Yehor made further changes
-   between sessions — confirm via fresh clone + ls-remote).
+1. Patchward HEAD (this session closed across 3 commits ending in a
+   same-day redaction-fix follow-up — confirm the real current hash via
+   fresh clone + ls-remote, don't trust any hash written in this file).
 2. patchward-landing HEAD (expect `087455d4e1eb107c67de2d869a603ebd3
    ba08466`, clean, unchanged — untouched for many sessions running).
 3. NJORD thread `1a0583baf61a4e21`: has NJORD replied to Yehor's 14:34

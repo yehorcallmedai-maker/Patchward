@@ -1493,6 +1493,28 @@ session doesn't rediscover a pattern already being tracked):
   merge into H38 as one broader "verify a guide-model review's factual
   claims independently, regardless of claim shape" heuristic — before
   promoting either way.
+- H40-candidate [1 occurrence, 2026-08-31, real incident not a
+  near-miss]: **when writing anything that describes what content was
+  redacted from elsewhere, the description itself must never restate
+  the redacted values.** This session's close-out doc
+  (`memory/SESSION_CLOSE_2026-08-31.md`) correctly described that three
+  NJORD fee figures had been redacted from `BACKLOG.md`/`STRATEGY.md`
+  — by naming the exact figures directly in its own Gate-status table
+  (deliberately not re-quoted here, for the same reason), restating the
+  values the redaction existed to keep off this public repo. Committed
+  and pushed
+  (`9c44b5e`) before being caught. Root cause: this session's own
+  fee-figure verification greps, run repeatedly and correctly all
+  session, were scoped to the two files the redaction decision named
+  — never re-scoped to include documents written *about* that
+  decision. Caught only because this close's own final-verification
+  pass grepped all three files fresh from origin, not by any
+  pre-commit check. Fixed same-day, re-verified clean. **Standing
+  practice going forward: any grep verifying a redaction's absence
+  must cover every tracked file touched that session, not just the
+  files named in the original redaction decision** — a close-out doc,
+  a session log entry, or any other document describing sensitive
+  content is exactly as much a leak vector as the original file.
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -1918,6 +1940,24 @@ prior work.
   session (mid-session batch, below) did not hold for the session as a
   whole — worth noting as itself a small instance of the exact pattern
   this project's calibration discipline exists to catch.
+- [2026-08-31, close continued] **Real incident, not a near-miss:**
+  Yehor's own post-push double-check request triggered this close's
+  final verification pass, which grepped all three files touched this
+  session (not just the two the redaction decision named) and found
+  the close-out doc itself, `memory/SESSION_CLOSE_2026-08-31.md`,
+  restated the three redacted NJORD fee figures verbatim in its own
+  Gate-status table — describing what had been redacted by quoting the
+  redacted values. That version had already been committed and pushed
+  (`9c44b5e`). Fixed same-day: the leaking line rewritten, the
+  close-out's own "next session, expect HEAD `e5fa195`" guidance
+  corrected (it was already stale by one commit before this fix, and
+  would have been stale by two after it — the exact self-reference
+  trap this skill's own Phase 1.7 names), re-verified clean on a fresh
+  clone. Logged as H40-candidate. Stated plainly as this session's
+  single most serious lapse, not folded into the guide-model-claims
+  bullet above — this one was the agent's own error, not a claim being
+  evaluated. A follow-up commit lands this fix; see Open threads for
+  its hash once Yehor runs it.
 
 ## Calibration record (continued) — Session 043
 
@@ -1963,3 +2003,19 @@ mid-session zero-drift note itself). ≈0.81 on the full session** — the
 project's calibration continues to track direct-verification claims
 near 1.00 and externally-sourced review claims near 0.75, exactly as
 Session 042 first characterized the pattern.
+
+**Addendum, same-day, caught by Yehor's own request to double-check
+before final close:** a fresh-clone grep across *all three* files
+touched this session (not just the two the redaction decision named)
+found the close-out doc itself restated the three redacted NJORD
+figures verbatim, already committed and pushed. This is not a review
+claim to score — it is the agent's own error, and the honest count is
+different in kind from the 0.75/1.00 pattern above: **1 real incident,
+caught not by any pre-commit check but by the verification pass this
+skill's own Phase 6 (and Yehor's explicit request) required.** Fixed
+and re-verified same-day. Logged as H40-candidate. The mechanism that
+caught it — re-verifying the close-out's own claims one more time
+before declaring closed, exactly as Phase 6 prescribes — worked as
+designed; the gap was upstream, in scoping the original redaction
+verification to only the files named in the decision rather than every
+file the session touched.
