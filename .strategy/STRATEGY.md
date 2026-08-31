@@ -685,6 +685,22 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-08-31, Session 043 close] **Retrospective due — strongest flag
+  yet, measured fresh via `wc -c` on an origin clone, not estimated:**
+  `.strategy/STRATEGY.md` **121,428 bytes** (≈7.59x the 16,000-byte
+  ceiling, up from 111,439 at this session's open — the largest
+  single-session jump on record). `memory/BACKLOG.md` **130,087 bytes**
+  (≈8.13x), also overdue. Flagged only, per this skill's own rule
+  against bundling a destructive rewrite into a substantive-work
+  session — not compressed this session. See
+  `memory/SESSION_CLOSE_2026-08-31.md` for the full close-out and a
+  ready next-session prompt naming this as the leading L2 candidate.
+- [2026-08-31, Session 043 close] **`tests/fixture_repo` (modified,
+  untracked content) and `memory/DRAFT-STRATEGY-COMPRESSED-2026-08-19.md`
+  (untracked) have now sat unaddressed across at least two sessions
+  running**, correctly out of scope each time but never confirmed
+  intentional vs. abandoned. Worth Yehor's direct call, not indefinite
+  silent carry-forward.
 - [2026-08-31, Session 043 open] **This session's own edits (BACKLOG 12
   update, this file's Current state/Open threads/Session log/Calibration
   entries) are UNCOMMITTED as of this write — blocked by a genuine
@@ -1265,9 +1281,12 @@ manually confirm every earned/candidate label reads as expected.
   source, don't infer it from the field's surface shape. (Sibling of
   H24.)
 - H30 [PROMOTED — earned 2026-08-19, relocated here 2026-08-20 from the
-  Session 036 per-session appendix where it was first written; 4
-  confirmed occurrences across both repos, plus a 5th observation of a
-  different kind, below]: a `.git/index.lock: File exists` error on this
+  Session 036 per-session appendix where it was first written; 5
+  confirmed occurrences across both repos (Session 043, 2026-08-31:
+  genuine `.git/index.lock` blocked a `git add`, cleared from Yehor's
+  own terminal per standing practice, exactly as documented — no new
+  symptom), plus a 6th observation of a different kind, below]: a
+  `.git/index.lock: File exists` error on this
   project's Windows-origin repos is very likely a STALE ORPHAN, not live
   contention — diagnose before assuming a blocking process. Check the
   lock's byte size (0 bytes = created, never completed) and its mtime
@@ -1450,6 +1469,30 @@ session doesn't rediscover a pattern already being tracked):
   quoted, and the check that catches this is re-deriving what the
   cited sentence actually proves, not merely confirming it exists.
   Watch for a second occurrence before promoting.
+- H39-candidate [1 occurrence, 2026-08-31]: a pasted "guide model"
+  review's confident claims about **novelty** ("this is the first time
+  X has happened") or **absence** ("Y wasn't checked/verified") need
+  the same independent verification as any other claim in this
+  project, not just its topically-relevant quotes (H38-candidate) or
+  report-shaped content generally (H36). This session, one review made
+  both kinds of claim in the same message: "first time genuinely
+  commercially-sensitive figures have entered the ledger" (checked via
+  `git log -p` across both files' full history — false: $1,500/
+  $3,000-4,000 consulting-price figures already sit in committed
+  history; the accurate distinction was vendor-cost-quote vs.
+  published-selling-price, not first-ever) and "nothing shows the
+  promised redaction check actually happening" (checked by re-reading
+  the same turn's own tool calls — false: the check had already run,
+  just hadn't been narrated as its own sentence before the turn moved
+  on). Both corrected in-session rather than repeated. Distinct from
+  H38-candidate (which is about a review citing real memory text and
+  overstating what it logically establishes) — this is about claims
+  the review makes from its own assumed knowledge of project history
+  or session events, not from a quoted source at all. Watch for a
+  second occurrence — including checking whether it should instead
+  merge into H38 as one broader "verify a guide-model review's factual
+  claims independently, regardless of claim shape" heuristic — before
+  promoting either way.
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -1816,6 +1859,65 @@ prior work.
   this file and `memory/BACKLOG.md`, non-commercial facts (scope,
   thread IDs, timestamps) left untouched. Not yet committed — same
   index.lock blocker above.
+- [2026-08-31, continued] Genuine `.git/index.lock` blocked the
+  sandbox's own `git add` (5th confirmed H30 occurrence) — cleared from
+  Yehor's own terminal per standing practice, not the sandbox. Commit
+  `b5da9e8` landed and independently confirmed on origin via fresh
+  clone — HEAD matched, and a second, independent fee-figure grep on
+  that clone found 0 matches (redaction held on origin, not just
+  locally).
+- [2026-08-31, continued] Before the follow-up-thread question could be
+  answered, Yehor surfaced that a reply to NJORD had already been sent.
+  `get_thread` on the actual message (`1a0583baf61a4e21`, 14:34 CPH) —
+  not the user's own paraphrase — confirmed it covers all three NJORD
+  offers, including the Patchward CRA question split into two steps
+  with a Sept-11 delivery-feasibility ask. This superseded the "gated
+  on Yehor's decision" framing this file had logged only hours earlier
+  — corrected same-day rather than left stale, and logged as its own
+  dated entry rather than silently overwriting the earlier one.
+- [2026-08-31, continued] **A second pasted "guide model" review
+  claimed the promised redaction-verification check had not happened.**
+  Re-read of the same turn's own tool calls found this false — the
+  fresh-clone grep confirming 0 fee-figure matches had already run,
+  just hadn't been narrated as its own sentence. Corrected explicitly
+  rather than silently absorbed. Both this and the "first time
+  sensitive figures" claim logged as a new candidate, H39-candidate
+  (§Heuristics) — distinct from H38 (real quote, overstated meaning)
+  since these claims cite no source at all, just asserted confidence.
+- [2026-08-31, continued] The review's separate, substantive finding
+  (the sent 14:34 reply asks about step 1's *timing* before Sept 11,
+  not whether step 1 alone *discharges* the obligation) was checked
+  against the literal Danish text, quoted verbatim rather than
+  paraphrased, and held up — a real, if subtle, gap. A short addendum
+  was drafted, reviewed by Yehor, and created as a Gmail draft
+  (`create_draft`, same thread, not a new one) via explicit
+  authorization ("you can create a draft in my gmail").
+- [2026-08-31, continued] Yehor sent the addendum himself. Verified via
+  `get_thread`, not the screenshot alone: message `1a0585cbb9e933a7`,
+  15:07 CPH, sent body compared word-for-word against the drafted
+  version — identical, no edits. Logged into both memory files, commit
+  `e5fa195` landed and independently confirmed on a fresh clone
+  (HEAD matched; both the fee-figure absence and the new message ID's
+  presence re-verified on that same clone).
+- [2026-08-31, close] **Session Close run via the `session-close`
+  skill.** Full gate table (9 claims: HEADs, byte counts, heuristic
+  integrity, fee-figure absence, repo publicity, addendum-send fidelity,
+  two guide-model claims) — 7 CONFIRMED, 2 DRIFTED (both guide-model
+  claims, both caught and corrected in-session, neither repeated).
+  Judged at all three zoom levels: L2 MET and exceeded (NJORD's answer
+  read and logged, a real commercial-sensitivity decision applied and
+  verified on origin, a genuine legal-scope gap found and closed with
+  counsel 11 days before the deadline it bears on). L1: real movement —
+  BACKLOG 12 shifted twice in one session, ending with the one question
+  that actually mattered explicitly in front of counsel. Retrospective
+  flagged at its highest figure yet (121,428 / 130,087 bytes,
+  ≈7.59x/8.13x ceiling) — not run, correctly deferred per protocol, but
+  named as next session's leading L2 candidate. Sealed as
+  `memory/SESSION_CLOSE_2026-08-31.md`. Weakest point stated plainly in
+  the close-out doc: the "zero drift" observation logged earlier this
+  session (mid-session batch, below) did not hold for the session as a
+  whole — worth noting as itself a small instance of the exact pattern
+  this project's calibration discipline exists to catch.
 
 ## Calibration record (continued) — Session 043
 
@@ -1833,3 +1935,31 @@ fire-vs-reply timing (`get_event` re-read against the Gmail timestamp).
 the logged run with zero drift found anywhere, worth noting rather than
 treating as unremarkable: either the project's memory discipline is
 compounding as designed, or the sample is still too small to tell.
+**That observation did not survive the rest of the session — see
+below.**
+
+Claims checked after the mid-session batch: repo publicity (live
+GitHub API), the "first time sensitive figures" review claim (`git
+log -p` full history), the "redaction unverified" review claim
+(re-read of the same turn's own tool calls), the sufficiency-gap
+review finding (literal Danish text, quoted verbatim), fee-figure
+absence on origin after commit `b5da9e8` (fresh-clone grep), sent
+addendum vs. draft fidelity (`get_thread` word-for-word compare), and
+fee-figure absence again on origin after commit `e5fa195` at this
+close (fresh-clone grep, second independent run). **6 CONFIRMED, 2
+DRIFTED** (both guide-model claims — both caught and corrected
+in-session, neither repeated, both logged as H39-candidate). **0.75 on
+this batch** — matches Session 042's own observed pattern almost
+exactly: externally-sourced claims (pasted reviews) run 0.75-0.85,
+claims checked by direct tool call against this project's own state
+run 1.00. The mid-session "zero drift" note above turned out to be a
+mid-session snapshot, not a session-final one — worth stating plainly
+rather than letting the earlier, more flattering number stand as the
+session's only recorded figure.
+
+**Session 043 overall: 16 claims checked, 13 CONFIRMED, 2 DRIFTED
+(guide-model claims, corrected), 1 correction-of-a-correction (the
+mid-session zero-drift note itself). ≈0.81 on the full session** — the
+project's calibration continues to track direct-verification claims
+near 1.00 and externally-sourced review claims near 0.75, exactly as
+Session 042 first characterized the pattern.
