@@ -15,6 +15,32 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-08-31, Session 043 continued, 15:07 CPH] **Sufficiency-gap
+  addendum sent — the real gap this session's own three-way-question
+  check surfaced.** Yehor's 14:34 message asked whether step 1's answer
+  can arrive by 2026-09-11; it never asked whether step 1 alone (absent
+  step 2) actually discharges the Article 14 obligation by that date.
+  A short addendum was drafted (Gmail `create_draft`, same thread, not
+  a new one), reviewed by Yehor, sent unedited — verified via `get_thread`
+  comparing sent body to draft body word for word, not assumed. Message
+  `1a0585cbb9e933a7`, thread `1a0583baf61a4e21`. Full verbatim text and
+  EN gloss in `memory/BACKLOG.md` item 12. Ball now on NJORD for both
+  the original two-step proposal and this sufficiency question.
+- [2026-08-31, Session 043 continued] **BACKLOG 12 / NJORD chain moved
+  again, past this session's own commit `b5da9e8` before it even
+  landed:** Yehor replied to NJORD at 14:34 CPH (thread
+  `1a0583baf61a4e21`), verified via `get_thread` on the sent message,
+  not the user's own paraphrase. Covers all three NJORD offers: asked
+  for a narrower Phase-1-only FixProve terms/privacy estimate (defers
+  payment-flow/paid-version terms to Phase 2), parked the ApS question
+  pending real demand, and — the item this backlog entry tracks — split
+  the Patchward CRA question into two steps and asked for an estimate
+  and delivery-by-09-11 feasibility on step 1 alone. That last point
+  functionally supersedes this session's earlier-flagged "confirm 15k
+  satisfies 09-11" suggestion with a more precise ask of Yehor's own
+  design. Full detail in `memory/BACKLOG.md` item 12. Ball is now on
+  NJORD's side on all points; no agent action pending here beyond
+  checking that thread next session.
 - [2026-08-31, Session 043 open] **BACKLOG 12 / NJORD chain: NJORD
   responded — answered both open questions, quoted a price, awaiting
   Yehor's go/no-go.** Verified via `get_thread` on the message body (not
@@ -675,6 +701,13 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   blocker, not housekeeping — until it clears, the commit history does
   not yet reflect this session's NJORD-response finding or memory
   updates**, even though the working-tree files themselves are correct.
+- [2026-08-31, Session 043 continued] **Superseded within hours: Yehor
+  already replied (14:34 CPH, thread `1a0583baf61a4e21`) with scoping
+  questions on all three NJORD offers before this session's own commit
+  landed.** See Current state's top entry and `memory/BACKLOG.md` item
+  12 for full detail. Gate is back to externally waiting — on NJORD's
+  answer this time, not Yehor's decision. Nothing pending for the agent
+  beyond checking that thread next session.
 - [2026-08-31, Session 043 open] **BACKLOG 12 is no longer externally
   gated on NJORD replying — it's gated on Yehor deciding.** NJORD's
   2026-08-31 11:39 CPH reply (thread `1a0579e503bd7a7f`) answers both

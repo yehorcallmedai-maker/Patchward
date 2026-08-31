@@ -802,7 +802,7 @@ three unreferenced files are worth keeping at all, versus deleting
 outright — correcting content was the safe, reversible move; deletion is
 a call only he should make.
 
-## 12. Regulatory flags — CRA / GDPR classification — NJORD RESPONDED, AWAITING YEHOR'S GO/NO-GO ON THREE SCOPED OFFERS (2026-07-24, Session 024; updated 2026-08-31, Session 043 open)
+## 12. Regulatory flags — CRA / GDPR classification — YEHOR REPLIED WITH SCOPING QUESTIONS ON ALL THREE OFFERS, AWAITING NJORD (2026-07-24, Session 024; updated 2026-08-31, Session 043 continued)
 **WSJF: low urgency now, high cost if skipped before Phase 10.** Get
 Patchward's CRA Annex III classification and a lightweight GDPR
 DPIA/TTL policy on `installations_db.py` confirmed by someone qualified
@@ -930,9 +930,67 @@ close asks Yehor to confirm, in one reply, which of the three
 (FixProve terms, company structuring, Patchward CRA assessment) to
 proceed with — nothing is actioned automatically.
 
-**Owner:** Yehor — this is a paid-engagement go/no-go decision, not
-something the agent can make. Next action on this item is Yehor's reply
-to NJORD, not further agent work, unless Yehor asks for a drafted reply.
+**Session 043 continued (2026-08-31), Yehor already replied — verified
+via `get_thread` on the actual sent message, not assumed from the
+user's own paraphrase:** Yehor sent a reply at 14:34 CPH (thread
+`1a0583baf61a4e21`, "SV: Opfølgning på møde - Fixprove - Patchward",
+to `npd@njordlaw.com`) — **before this session's Session 043 memory
+commit (`b5da9e8`) had even landed**, meaning the "awaiting Yehor's
+go/no-go" framing above was already stale the moment it was pushed.
+Logged honestly rather than left uncorrected. The reply covers all
+three of NJORD's offers in one message:
+1. **Correction on record:** FixProve is a CLI (npm/PyPI) + GitHub App
+   only — no separate web-based version, contra NJORD's notes.
+2. **FixProve terms/privacy:** before committing to the full quoted
+   estimate, Yehor asked for a narrower "Phase 1" estimate instead —
+   the legal minimum to open the GitHub App for free third-party
+   installs (durable terms + privacy policy for the current free beta,
+   with the business-only restriction NJORD recommended). Payment flow,
+   paid-version terms, and broader consumer-law questions deferred to a
+   Phase 2 once a paid version actually ships. Noted that drafts of
+   both documents already exist for NJORD to start from.
+3. **ApS structuring:** agrees with the direction, explicitly parks it
+   until there's real demand and paying customers — doesn't block
+   opening the app. Will revisit separately.
+4. **Patchward CRA/Article 14 — this backlog item's own question:**
+   thanked NJORD for the narrow scoping, then proposed splitting it
+   further into two steps: (1) a short assessment of whether Article 14
+   is expected to apply to Patchward *in its current form* (free open
+   source only, paid Marketplace not live), and (2) the practical
+   procedure overview — **only if step (1) answers yes.** Explicitly
+   asked for an estimate for step 1 alone, and whether step 1 can be
+   delivered before 2026-09-11. This functionally supersedes the
+   "confirm whether 15k alone satisfies 09-11" question flagged earlier
+   this session — Yehor's actual question is more precise (asks for a
+   deliverable and a deadline commitment, not just a yes/no).
+5. Also asked NJORD about the partial extended payment terms they
+   mentioned in the meeting, for whichever tasks proceed.
+
+**Session 043 continued (2026-08-31, 15:07 CPH), sufficiency-gap
+addendum sent — verified via `get_thread`, sent text compared word for
+word against the drafted version, not assumed unchanged:** a re-read of
+point 4 above found a real, if subtle, gap: Yehor's 14:34 message asks
+whether the **step 1 answer** can arrive before 2026-09-11, but never
+asks whether **step 1 alone** (without step 2 also being in place)
+actually **discharges** the Article 14 reporting obligation by that
+date. A short addendum was drafted, reviewed by Yehor, sent unedited
+(sent body matches the draft exactly) at 15:07 CPH — same thread
+(`1a0583baf61a4e21`), message `1a0585cbb9e933a7`, to `npd@njordlaw.com`
+cc `malped@njordlaw.com`. Verbatim: *"Endnu en kort opfølgning på
+CRA-spørgsmålet: mit spørgsmål ovenfor gik på, om selve
+trin 1-vurderingen kan leveres inden den 11. september. Jeg vil gerne
+præcisere om det er trin 1 alene — altså blot vurderingen af, om
+artikel 14 gælder — der opfylder rapporteringsforpligtelsen pr. den
+11. september, eller om trin 2 (den praktiske procedure) også skal
+være på plads inden da, for at forpligtelsen reelt er overholdt."*
+(EN gloss: does step 1 alone satisfy the Sept 11 obligation, or does
+step 2 also need to be in place by then.)
+
+**Owner:** NJORD now — the ball is genuinely in their court on all four
+numbered points from the 14:34 message plus this addendum's
+sufficiency question. Next agent-relevant action is checking for
+NJORD's reply in thread `1a0583baf61a4e21` in a future session, not
+drafting anything further now.
 
 **Nudge reminder status:** the 2026-08-31 09:00 CPH nudge event
 (`uueepgqam0mvuh0dngq6sp34tk`) fired before NJORD's 11:39 CPH reply — at
