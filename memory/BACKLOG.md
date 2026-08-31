@@ -802,7 +802,7 @@ three unreferenced files are worth keeping at all, versus deleting
 outright — correcting content was the safe, reversible move; deletion is
 a call only he should make.
 
-## 12. Regulatory flags — CRA / GDPR classification — MEETING HELD, CRA FOLLOW-UP SENT, AWAITING NJORD RESPONSE (2026-07-24, Session 024; updated 2026-08-28, Session 042 open)
+## 12. Regulatory flags — CRA / GDPR classification — NJORD RESPONDED, AWAITING YEHOR'S GO/NO-GO ON THREE SCOPED OFFERS (2026-07-24, Session 024; updated 2026-08-31, Session 043 open)
 **WSJF: low urgency now, high cost if skipped before Phase 10.** Get
 Patchward's CRA Annex III classification and a lightweight GDPR
 DPIA/TTL policy on `installations_db.py` confirmed by someone qualified
@@ -881,6 +881,66 @@ Article 14 date (09-11); that reading is still Yehor's call, not
 something this file resolves on its own. 2026-08-31 was chosen because
 it is safely conservative either way (8 days before 09-08, 11 before
 09-11) — the date does not depend on settling that interpretation.
+
+**Session 043 open (2026-08-31), NJORD responded — verified via
+`get_thread` on the actual message body, not the search snippet alone:**
+NJORD replied 2026-08-31 11:39 CPH, **not in the CRA-specific thread**
+(`1a03eea261e68ac5` — re-checked via `get_thread`, still shows only
+Yehor's original outbound message, no reply landed there) **but in a
+separate, broader meeting-follow-up thread** (`1a0579e503bd7a7f`,
+subject "Opfølgning på møde - Fixprove - Patchward") that covers three
+distinct workstreams in one email. Answering this item's two open
+questions directly:
+
+1. **Is CRA/product-regulation work in NJORD's wheelhouse? Yes,
+   explicitly.** ("Vi kan bistå med en særskilt og afgrænset vurdering
+   af CRA-spørgsmålet ift. Patchward ved siden af arbejdet med
+   privatlivspolitik og vilkår for anvendelse til FixProve.")
+2. **How would it be scoped alongside FixProve Fase 1?** As a
+   deliberately narrow, separate task, priced and delivered
+   independently of the FixProve privacy-policy/terms work:
+   - **Scope offered:** an assessment of whether the CRA Article 14
+     reporting obligation applies to Patchward from 2026-09-11,
+     touching CRA's scope of application and the "manufacturer" role
+     only as far as needed to answer that one question. Deliverable: a
+     short written memo, plus — if the reporting obligation is found to
+     apply — a practical minimum-procedure overview for handling
+     relevant vulnerabilities/security incidents.
+   - **Price:** [quote received, filed privately — see Yehor's own
+     records, not tracked in this public repo].
+   - **Explicitly out of scope** of this narrow assessment (NJORD's own
+     words): full CRA classification, GDPR roles, DPIA, US transfers,
+     data processing agreement, disclaimer-text review — all available
+     as further separate tasks if/when relevant. This confirms the
+     Article 14 question and the fuller classification question this
+     backlog item originally scoped are NOT the same engagement in
+     NJORD's proposal; Article 14 alone is what's on the table at the
+     price quoted above.
+   - **Not yet engaged/paid** — this is a quote, not a completed
+     assessment. The item stays open until Yehor confirms he wants this
+     workstream started and NJORD delivers the memo.
+
+The same email also quotes: FixProve privacy policy + terms of use
+[quote received, filed privately]; and, unprompted, a company-structure
+recommendation (convert/found an ApS to limit personal liability —
+[quotes received, filed privately] depending on the chosen model) — both
+out of this item's scope (CRA/GDPR classification) and logged here only so the
+three-offer email isn't read as CRA-only if revisited later. NJORD's
+close asks Yehor to confirm, in one reply, which of the three
+(FixProve terms, company structuring, Patchward CRA assessment) to
+proceed with — nothing is actioned automatically.
+
+**Owner:** Yehor — this is a paid-engagement go/no-go decision, not
+something the agent can make. Next action on this item is Yehor's reply
+to NJORD, not further agent work, unless Yehor asks for a drafted reply.
+
+**Nudge reminder status:** the 2026-08-31 09:00 CPH nudge event
+(`uueepgqam0mvuh0dngq6sp34tk`) fired before NJORD's 11:39 CPH reply — at
+09:00 the silence was still real (2 → 5 days elapsed, correctly past
+the "worth a nudge" threshold set in Session 042), so the reminder was
+not a false alarm; it is simply superseded now — no nudge send is
+needed today, NJORD answered on its own first. No further action needed
+on the reminder itself.
 
 ---
 

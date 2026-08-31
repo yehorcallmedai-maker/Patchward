@@ -15,6 +15,27 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-08-31, Session 043 open] **BACKLOG 12 / NJORD chain: NJORD
+  responded — answered both open questions, quoted a price, awaiting
+  Yehor's go/no-go.** Verified via `get_thread` on the message body (not
+  the search snippet): NJORD replied 2026-08-31 11:39 CPH, not in the
+  CRA-specific thread (`1a03eea261e68ac5`, still unanswered on its own)
+  but in a broader meeting-follow-up thread (`1a0579e503bd7a7f`) that
+  also quotes FixProve terms/privacy work and a company-structuring
+  option (ApS) — both priced, figures filed privately (see Yehor's own
+  records, not tracked in this public repo). On the CRA question
+  specifically: yes, CRA/product-regulation work is in NJORD's
+  wheelhouse; the Article 14 applicability question for Patchward is
+  offered as its own narrowly scoped task (assessment of the 2026-09-11
+  reporting obligation, short memo, minimum-procedure overview if
+  applicable) — priced separately, figure filed privately — full CRA
+  classification, GDPR roles, DPIA etc. explicitly excluded from that
+  price/scope. `memory/
+  BACKLOG.md` item 12 updated with the full quote and the still-open
+  next action (Yehor's reply to NJORD choosing what to proceed with).
+  The 2026-08-31 09:00 CPH nudge reminder (event
+  `uueepgqam0mvuh0dngq6sp34tk`) fired before the 11:39 reply landed — not
+  a false alarm, just superseded; no nudge send needed today.
 - [2026-08-28, Session 042 close, written last] **BACKLOG 12 / NJORD
   chain: meeting happened, follow-up email sent, no NJORD reply yet, a
   nudge reminder is now on the calendar.** Verified across two rounds
@@ -638,6 +659,35 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-08-31, Session 043 open] **This session's own edits (BACKLOG 12
+  update, this file's Current state/Open threads/Session log/Calibration
+  entries) are UNCOMMITTED as of this write — blocked by a genuine
+  `.git/index.lock` on Patchward, 5th occurrence of H30's known pattern.**
+  0 bytes, created moments before by the sandbox's own `git status`;
+  sandbox `rm` failed with `Operation not permitted` (matches H30's
+  documented silent-failure mode exactly, not a new symptom); a
+  subsequent `git add` failed with `fatal: Unable to create
+  '.../index.lock': File exists`, confirming the lock is real, not just
+  a stale artifact this session imagined past. Per H30's standing
+  practice this must be cleared from Yehor's own terminal
+  (`Remove-Item .git\index.lock`), not the sandbox — flagged to Yehor
+  directly rather than retried repeatedly from here. **This is a real
+  blocker, not housekeeping — until it clears, the commit history does
+  not yet reflect this session's NJORD-response finding or memory
+  updates**, even though the working-tree files themselves are correct.
+- [2026-08-31, Session 043 open] **BACKLOG 12 is no longer externally
+  gated on NJORD replying — it's gated on Yehor deciding.** NJORD's
+  2026-08-31 11:39 CPH reply (thread `1a0579e503bd7a7f`) answers both
+  open questions and quotes a price (filed privately, not tracked in
+  this public repo) for the narrow Article 14 assessment, but explicitly
+  excludes full CRA classification/GDPR roles/DPIA from that price. Next
+  action belongs to Yehor: reply to
+  NJORD choosing which of the three quoted workstreams (FixProve terms,
+  ApS structuring, Patchward CRA assessment) to greenlight. Nothing for
+  the agent to do here unless asked to draft that reply. STRATEGY.md's
+  byte count (111,439, unchanged from Session 042's pre-commit figure)
+  and BACKLOG.md's (122,782) remain the standing compression flags below
+  — see the retrospective-due entries.
 - [2026-08-28, Session 042 continued] **Commit `f1fe546` (this session's
   memory update) independently verified on origin — fresh clone +
   `ls-remote`, diff-stat matches the pasted terminal transcript exactly
@@ -1679,3 +1729,74 @@ neither trusted nor dismissed, but checked, and the check is what
 decided it — the same standing H36 itself describes, demonstrated on
 this session's own review material rather than only on the executor's
 prior work.
+
+## Session log (continued) — Session 043
+
+- [2026-08-31, open] Opened via session-strategy-synthesis, grounded
+  against Session 042's close (`db08053` at close time, per that
+  session's own log). 7 checkable claims re-verified independent of the
+  mount: Patchward HEAD (fresh clone into a sandbox tmp dir + `ls-remote`,
+  both agree on `431a480` — one commit past `db08053`, as expected for
+  the close-out doc's own follow-up commit — tree clean), patchward-
+  landing HEAD unchanged (`087455d...`, clean), STRATEGY.md byte count
+  (`wc -c` on the same fresh clone: **111,439 bytes**, identical to the
+  figure Session 042 logged pre-commit — the extra commit did not grow
+  the file further, worth noting since the open brief expected it
+  "slightly higher"; not a drift against any claim this file itself
+  made, just against an outside expectation, and recorded honestly
+  either way), BACKLOG.md byte count (122,782, matches), heuristic
+  count/integrity (37 — 24 earned + 13 candidates, bracket-aware
+  `awk`+`grep` recount bounded to the §Heuristics section, matches
+  expectation exactly), H34/H35/H37-candidate occurrence counts (all
+  still 1, confirmed via direct grep on the section text — H35's clean
+  re-application this session correctly not counted toward promotion,
+  per the open brief's own instruction), H38-candidate (1, as logged at
+  Session 042 close). **7/7 CONFIRMED, 0 DRIFTED.**
+- [2026-08-31, continued] NJORD response check — the session's real
+  work: `get_thread` on the CRA-specific thread (`1a03eea261e68ac5`)
+  confirmed it still has no reply. `search_threads` for
+  `from:njordlaw.com` surfaced a newer, separate thread
+  (`1a0579e503bd7a7f`) with an inbound message dated 2026-08-31 11:39
+  CPH; `get_thread` on its full body (not the search snippet) confirmed
+  it substantively answers both of BACKLOG 12's open questions and adds
+  two unrelated quotes (FixProve terms, ApS structuring). `memory/
+  BACKLOG.md` item 12 and this file's Current state updated with the
+  full content, price, and explicit scope boundary NJORD stated,
+  without assuming favorable or unfavorable before reading it, per the
+  open brief's own instruction. Nudge event `uueepgqam0mvuh0dngq6sp34tk`
+  re-read via `get_event`: fired at 09:00 CPH, before the 11:39 reply —
+  correctly fired (silence was still real at fire time), now superseded
+  rather than a false alarm. No email sent by the agent; next action is
+  Yehor's own reply to NJORD's three-way question.
+- [2026-08-31, continued] **A pasted "guide model" review flagged the
+  NJORD kr figures as commercially sensitive for a public repo —
+  checked rather than trusted, per this project's standing practice.**
+  Repo visibility confirmed live via GitHub's API (`"private": false`),
+  not assumed: real risk. The review's "first time genuinely
+  commercially-sensitive figures have entered the ledger" claim did NOT
+  fully hold on re-check: prior committed history already carries
+  Yehor's own public selling prices ($1,500/$3,000-4,000, Mirror Pass
+  consulting service) — a different risk category (published outbound
+  price vs. this session's inbound vendor/counsel quote and negotiating
+  position). Corrected rather than repeated. Yehor chose redaction; all
+  three kr figures replaced with a private-filing placeholder in both
+  this file and `memory/BACKLOG.md`, non-commercial facts (scope,
+  thread IDs, timestamps) left untouched. Not yet committed — same
+  index.lock blocker above.
+
+## Calibration record (continued) — Session 043
+
+Claims checked at open: 7 (Patchward HEAD, patchward-landing HEAD,
+STRATEGY.md byte count, BACKLOG.md byte count, heuristic count/
+integrity, H34/H35/H37-candidate occurrence counts, H38-candidate
+occurrence count). **7 CONFIRMED, 0 DRIFTED. 1.00 on checkable claims
+(7/7).**
+
+Claims checked mid-session: NJORD response existence and content (2
+independent thread reads — the CRA thread directly, and the actual
+reply thread's full body rather than its search snippet), nudge event
+fire-vs-reply timing (`get_event` re-read against the Gmail timestamp).
+**3 CONFIRMED, 0 DRIFTED. 1.00 on this batch** — the first session in
+the logged run with zero drift found anywhere, worth noting rather than
+treating as unremarkable: either the project's memory discipline is
+compounding as designed, or the sample is still too small to tell.
