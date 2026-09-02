@@ -802,7 +802,7 @@ three unreferenced files are worth keeping at all, versus deleting
 outright — correcting content was the safe, reversible move; deletion is
 a call only he should make.
 
-## 12. Regulatory flags — CRA / GDPR classification — YEHOR REPLIED WITH SCOPING QUESTIONS ON ALL THREE OFFERS, AWAITING NJORD (2026-07-24, Session 024; updated 2026-08-31, Session 043 continued)
+## 12. Regulatory flags — CRA / GDPR classification — PAUSED BY YEHOR (BUDGET/TIMING, PRE-REVENUE) — REOPENS ON HIS OWN INITIATIVE, NO FIXED DATE (2026-07-24, Session 024; updated 2026-09-02, Session 044)
 **WSJF: low urgency now, high cost if skipped before Phase 10.** Get
 Patchward's CRA Annex III classification and a lightweight GDPR
 DPIA/TTL policy on `installations_db.py` confirmed by someone qualified
@@ -999,6 +999,128 @@ the "worth a nudge" threshold set in Session 042), so the reminder was
 not a false alarm; it is simply superseded now — no nudge send is
 needed today, NJORD answered on its own first. No further action needed
 on the reminder itself.
+
+**Session 044 open (2026-09-02), NJORD answered both outstanding
+questions — verified via `get_thread` on thread `1a0583baf61a4e21`
+directly (not a search snippet), cross-checked via `search_threads
+from:njordlaw.com newer_than:1d` (returns the same single thread, no
+reply landed anywhere else this time — contra Session 043's own
+two-threads-in-one-day pattern, worth noting since this project has
+hit that shape twice before):** NJORD (Nis Peter Dall) replied
+2026-09-02 11:23 CPH (09:23:41 UTC), message `1a0616f07ab2fe70`, to
+`yehor.callmedai@gmail.com`, cc `malped@njordlaw.com` — same thread as
+Yehor's 14:34/15:07 messages, not a new one.
+
+1. **Scope/price for the Article 14 step-1 assessment, confirmed as
+   offered:** "Vedrørende CRA-spørgsmålet om Patchward kan vi godt
+   afgrænse opgaven, som du foreslår. Vi kan først foretage en kort
+   vurdering af, om rapporteringsforpligtelsen i artikel 14 må
+   forventes at gælde for Patchward i dets nuværende form. Den
+   praktiske procedure vil herefter kun blive relevant, hvis
+   vurderingen fører til, at rapporteringsforpligtelsen finder
+   anvendelse." Price for step 1 alone: [quote received, filed
+   privately — see Yehor's own records, not tracked in this public
+   repo]. Step 2 (the practical procedure) would be separately scoped
+   and separately priced, only if step 1 concludes the obligation
+   applies.
+
+2. **The sufficiency question (does step 1 alone discharge the Sept 11
+   obligation, or is step 2 also required by then) is answered
+   directly, not hedged — quoted verbatim, this is NJORD's legal
+   reading, not this project's own interpretation, logged per this
+   file's standing rule against hedging toward a legal conclusion:**
+   "Hvis Patchward er omfattet af rapporteringsforpligtelsen i CRA
+   artikel 14, er den 11. september 2026 ikke en frist, hvor der skal
+   indsendes en rapport eller dokumenteres en konkret sårbarhed på
+   forhånd. Datoen er derimod det tidspunkt, hvor rapporteringsreglerne
+   begynder at gælde. Skulle Patchward efter denne dato bliver
+   opmærksom på en aktivt udnyttet sårbarhed eller en alvorlig
+   sikkerhedshændelse, kan der opstå pligt til at foretage
+   indberetning inden for de frister, som artikel 14 fastsætter." (EN
+   gloss: if Patchward is covered by Article 14, Sept 11 2026 is NOT a
+   deadline to file a report or document a specific vulnerability in
+   advance — it is the date the reporting *rules* start applying. Only
+   if Patchward becomes aware, after that date, of an actively
+   exploited vulnerability or a serious security incident does an
+   obligation to report within Article 14's own (24h/72h/14-day)
+   deadlines arise — those sub-deadlines would run from the incident,
+   not from Sept 11 itself.) **Answering this item's open sufficiency
+   question: step 1 alone is what's needed by/around Sept 11; there is
+   no separate requirement that step 2 also be in place by that date
+   as a compliance gate.** Step 2 only becomes operationally relevant
+   if a real triggering incident occurs after Sept 11 and Article 14
+   is found to apply.
+
+3. **Real timing pressure:** NJORD states they need Yehor's go-ahead by
+   Friday (2026-09-04) to be able to deliver the Article 14 assessment
+   before Sept 11.
+
+4. **Payment terms proposed:** FixProve terms/privacy work — half
+   invoiced with 14 days' notice on completion, remainder over 3
+   months (final payment by year-end). The smaller Patchward CRA task
+   specifically — full amount invoiced at once, 14 days' notice.
+
+**Owner: Yehor.** Next action is his decision on whether to greenlight
+the CRA step-1 assessment (and/or the other two NJORD offers), ideally
+before Friday 2026-09-04 per NJORD's own stated cutoff. Nothing further
+for the agent unless asked to draft that reply.
+
+**Session 044 continued (2026-09-02, 17:39 CPH) — RESOLVED, PAUSED BY
+YEHOR'S OWN DECISION. Verified via a fresh `get_thread` on the actual
+sent message, not the pasted screenshot text alone — one correction to
+a claim made about it:** a pasted review ("guide model") reported this
+reply as landing in thread `1a0583baf61a4e21` (the same thread as the
+14:34/15:07 messages and NJORD's 09:23 reply). Independent check
+(`search_threads to:npd@njordlaw.com newer_than:1d` + `get_thread`)
+found this is **not accurate — the reply landed in a new thread,
+`1a062be715af4ce6`**, same subject line, sent 2026-09-02T15:39:01Z
+(17:39 CPH), matching the pasted content word-for-word once located.
+Corrected here rather than silently inherited — this is the same
+thread-splitting shape NJORD's own side has hit twice before, now
+observed on Yehor's outbound side too; a future session checking this
+chain should search broadly
+(`{from:npd@njordlaw.com OR to:npd@njordlaw.com} newer_than:Xd`)
+rather than assume every message lands in one known thread ID.
+
+**Outcome, Yehor's own words, verified:** both open workstreams —
+FixProve Fase 1 (terms/privacy) and Patchward CRA Article 14 step 1 —
+are **paused indefinitely**, for timing/economics in a pre-revenue
+phase, explicitly not dissatisfaction with NJORD's offer (Yehor called
+it "fair and well-scoped" — "fair og velafgrænset"). He thanked NJORD
+for the Sept-11 clarification (rules-start-date, not a filing
+deadline), said he'll return "when the foundation is in place" ("når
+grundlaget er på plads") and assumes the same estimates will still
+apply then — **his own stated assumption, not a commitment NJORD has
+agreed to**; nothing in NJORD's own reply promises the quote holds
+open. No fixed revisit date; reopens on Yehor's own initiative, tied
+to revenue/funding.
+
+**What this changes for BACKLOG 12:** the counsel-engagement path is
+parked, not abandoned and not answered. The technical briefing packet
+(`memory/BACKLOG12_counsel_briefing_packet_2026-07-24.md`) remains on
+file as Yehor's own preliminary, good-faith self-assessment — stated
+here plainly, as it should be stated anywhere this is referenced
+again: **this is not a substitute for qualified legal review**, only a
+documented starting position for whenever counsel is re-engaged.
+NJORD's own clarification on the Article 14 timeline (2026-09-11 is
+when the reporting obligation's rules begin applying, not a one-time
+filing deadline; an actual reporting duty, with its own 24h/72h/14-day
+sub-deadlines, would only arise from a real post-Sept-11 incident)
+stands on record regardless of the pause and remains the most current,
+qualified-source information this project has on the question — even
+though it stops short of full formal advice.
+
+**Redaction check on this update, per H40's standing rule, run before
+writing rather than after:** neither NJORD's fee quote nor any other
+kr figure appears in the sent reply itself (confirmed by reading its
+full body) or in this entry. A fresh grep of the actual local working
+tree (`.strategy/STRATEGY.md`, `memory/BACKLOG.md`, both files this
+session has touched) for currency patterns and the bare word "kr"
+found zero numeric leaks — the two "kr" matches present are prose
+describing the earlier redaction, not restated figures.
+
+**Owner: Yehor**, for whenever he chooses to reopen this — no
+agent-startable work remains on BACKLOG 12 at this time.
 
 ---
 
