@@ -2775,3 +2775,476 @@ re-read it a second way.
   plausibility; both were caught only by direct verification (a literal
   `grep` for `H19`; checking whether any terminal output for the claimed
   `fetch` existed anywhere in the transcript).
+
+## Session log (continued) — Session 040
+
+- [2026-08-24, open] Opened via session-strategy-synthesis, grounded
+  against Session 039's close (commit `9c2e01d`). 7 checkable claims
+  re-verified fresh: both repos' HEADs (fresh clone + `ls-remote`,
+  Patchward now `9c2e01d`, correcting the prior session's own
+  uncommitted-at-close state — Yehor had committed since), STRATEGY.md
+  byte count (99,150, matching), heuristic count (found DRIFTED — 33
+  stated vs. 34 counted, later 35 after H36's restoration), the NJORD
+  meeting/follow-up-email status (neither happened — both still
+  future), and BACKLOG.md/RETROSPECTIVE.md byte counts (unchanged,
+  confirmed). One new, previously-uncaught finding at open: calendar
+  event `c4o3eopg...` (the NJORD meeting itself) stored one day early
+  (2026-08-25) versus its own title and two independent human-
+  confirmation emails (2026-08-26) — reported, not fixed, pending
+  Yehor's call.
+- [2026-08-24] STRATEGY.md Part B compression run per Yehor's explicit,
+  detailed instruction: backup-first (sha256-verified byte-identical),
+  Sessions 035-039's full log/calibration entries moved verbatim to
+  RETROSPECTIVE.md (sha256-verified identical post-move), replaced with
+  a condensed summary. **Dual loss-check caught a real, previously-
+  unknown defect**: Session 035's "report-shaped content" heuristic —
+  PROMOTED with 4 genuine occurrences, treated as standing in later
+  sessions' own narrative — had been living only in a per-session
+  appendix for 4 sessions, never in canonical §Heuristics. Restored as
+  H36 before the appendix holding its only live copy was archived.
+  Final: 99,150→79,696 bytes (≈4.98x ceiling, down from ≈6.2x).
+  Committed by Yehor as `1301c9f`.
+- [2026-08-24, close] **Independent re-verification of Yehor's own
+  pasted terminal output and a "guide model" review — not trusted on
+  their own formatting or confidence, per H36/H14.** A fresh `git
+  clone` (this session's own, separate from the mount) confirms
+  `1301c9f47f60aa3b052ed5c9de52d0aef66dd6d0` on origin, exact match
+  across mount + clone + `ls-remote`. On the clone directly:
+  STRATEGY.md 79,696 bytes, RETROSPECTIVE.md 179,874 bytes, H36's full
+  text present in canonical §Heuristics, all 35 heuristic IDs confirmed
+  via a fresh section-bounded grep, patchward-landing unchanged at
+  `087455d4...`. **One claim did not survive independent check:** the
+  pasted review asserted the calendar-date question was settled by
+  Yehor's confirmation; a direct `get_event` call this session shows
+  the event untouched since creation (`updated` = `created`), and a
+  second, unrelated, same-day-created event with the identical
+  signature ("Parents go away 26.08.26," also untouched) corroborates
+  a systematic drift rather than a deliberate choice. Logged as
+  H37-candidate. Not fixed this session, per Yehor's own stated
+  preference to handle it from his own client given H35-candidate's
+  open question about this exact write-tool class — flagged plainly in
+  Open threads instead, pending his direct word.
+
+## Session log (continued) — Session 041
+
+- [2026-08-25, open] Opened via session-strategy-synthesis, grounded
+  against Session 040's close (`12d542d`). 6 checkable claims, all
+  re-verified via methods independent of the mount and of each other
+  (fresh `git clone` from the origin URL for both repos' HEADs and both
+  memory-file byte counts; a direct `get_event` call plus two Gmail
+  searches for the NJORD meeting/email status; a fresh line-range-
+  bounded grep for the heuristic count). **All 6 CONFIRMED, 0 drift** —
+  see Current state for full detail, including one self-caught
+  methodology gap (an initial heuristic-count grep undercounted due to
+  inconsistent bracket formatting, corrected before being written down).
+  No new session goal assigned by Yehor; nothing agent-startable is
+  queued until tomorrow's NJORD meeting and its follow-up email happen.
+- [2026-08-25, close] **A "guide model" review of this session's own
+  brief caught a real methodological gap — checked, not dismissed, per
+  H36/H14's own standing.** The brief's Risks & unknowns line cited
+  STRATEGY.md at 95,396 bytes post-edit, but that figure had only ever
+  been self-reported, never independently re-checked — exactly the H2
+  self-citation-lag shape this file keeps catching on itself. Re-ran
+  `wc -c` fresh, twice, by two methods (`wc -c` directly and `cat |
+  wc -c`) — **both return 95,396, confirming the figure was correct**,
+  but confirmed now, not assumed then. The review's second point — that
+  this session's own heuristic-undercount is now a 2nd consecutive
+  occurrence of the identical miscount (Session 040's close-review hit
+  it first) — is accurate; logged as a standing counting-note directly
+  in §Heuristics (not yet its own ID; watch for a 3rd occurrence). Note
+  honestly: this entry's own edits mean the file's byte count has grown
+  again since the 95,396 check above — see the close-out figure logged
+  at the very end of this session's edits, not this number, as the
+  figure to inherit.
+
+- [2026-08-25, close] **Session Close run via the `session-close` skill —
+  full gate table, judged at all three zoom levels, sealed as
+  `memory/SESSION_CLOSE_2026-08-25.md`.** L2 (this session's own goal,
+  the re-grounding) verdict: **MET**, 6/6 claims confirmed, re-checked
+  again at close via a third independent method for the NJORD
+  meeting/email status where practical. L1: no direct BACKLOG-12
+  movement (correctly gated on tomorrow's meeting), but real
+  memory-reliability progress — the heuristic-counting gap is now
+  confirmed as a genuine 2-session-running pattern, not a one-off, and
+  is written down where a 3rd occurrence will actually be checked
+  against it. Weakest point stated plainly in the close-out doc: the
+  95,396→97,390 byte-count correction was caught by an external review,
+  not self-caught before being written — the exact H2 shape this file
+  keeps finding in its own drafts. `.git/index.lock` recurred a 3rd
+  time, cleared safely by Yehor directly, no new information beyond
+  H30's existing finding.
+
+## Session log (continued) — Session 042
+
+- [2026-08-28, open] Opened via session-strategy-synthesis, grounded
+  against Session 041's close (`f1fe546` at open time; the file has
+  since moved to `db08053`). 9 checkable claims from the user's own
+  numbered brief, all re-verified independent of the mount: both repos'
+  HEADs (fresh clone + `ls-remote`), STRATEGY.md/BACKLOG.md byte counts
+  (`wc -c` on fresh clone), heuristic count/integrity (36, bracket-aware
+  recount), H34/H35/H37-candidate occurrence counts (still 1 each), and
+  — the session's real work — the NJORD meeting/email/response chain,
+  checked via Gmail search + Calendar `list_events`, not assumed. **9/9
+  CONFIRMED.** One DRIFT found and fixed: `memory/BACKLOG.md` item 12's
+  header was stale since Session 024 ("AWAITING COUNSEL ENGAGEMENT"),
+  predating the meeting entirely — corrected in place, history not
+  rewritten. Committed as `f1fe546`, independently confirmed on origin.
+- [2026-08-28, continued] A pasted "guide model" review of the open
+  brief was itself checked rather than accepted: its claim that the
+  file already resolves whether counsel sign-off is needed by
+  2026-09-08 or 2026-09-11 did not survive direct re-verification of
+  the cited sentence (new candidate logged: H38-candidate). Its other
+  findings (clean session, both defects found legitimately, the
+  truncated-ID gotcha) held up. Decided and executed: nudge NJORD by
+  2026-08-31 — safe under either date reading, so the unresolved
+  interpretation question doesn't block action. Created calendar event
+  `uueepgqam0mvuh0dngq6sp34tk`, independently re-read via a separate
+  `list_events` call — creation response and re-read agreed exactly, no
+  H35-candidate-style discrepancy this time. Committed as `db08053`,
+  independently confirmed on origin (diff-stat matched Yehor's own
+  pasted terminal output exactly, not trusted on the transcript alone).
+- [2026-08-28, close] **Session Close run via the `session-close`
+  skill — full gate table, judged at all three zoom levels, sealed as
+  `memory/SESSION_CLOSE_2026-08-28.md`.** L2 (verify the NJORD chain and
+  reconcile memory to match) verdict: **MET**. L1: real movement — the
+  project's live external gate shifted from "no counsel engaged" to
+  "counsel engaged, awaiting their scoping answer," with a concrete,
+  reasoned tracking mechanism (the nudge reminder) now in place instead
+  of a narrative promise to check back "around a week." Weakest point
+  stated plainly in the close-out doc.
+
+## Calibration record (continued) — Session 042
+
+Claims checked at open: 9 (Patchward HEAD, patchward-landing HEAD,
+STRATEGY.md byte count, BACKLOG.md byte count, heuristic count/integrity,
+H34/H35/H37-candidate occurrence counts, NJORD meeting happened, follow-up
+email sent, NJORD response status). **9 CONFIRMED, 0 DRIFTED among the
+numbered claims** — plus 1 DRIFT found outside that list (BACKLOG.md item
+12's header, stale since Session 024, corrected). **1.00 on the checkable
+claims (9/9); 1 additional drift caught and fixed.**
+
+Claims checked mid-session/close: commit `f1fe546` on origin (fresh clone
++ `ls-remote`), a pasted "guide model" review's launch-window/Article-14
+resolution claim (re-verified against the actual cited sentence —
+DRIFTED, overstated what the text proves, corrected, logged as
+H38-candidate), the new calendar event's persisted state vs. its own
+creation response (independent `list_events` re-read — CONFIRMED, exact
+match), commit `db08053` on origin (fresh clone + `ls-remote`, diff-stat
+cross-checked against Yehor's own pasted terminal output). **3 CONFIRMED,
+1 DRIFTED (caught and corrected, not repeated). 0.75 on this batch** —
+consistent with the project's standing pattern that externally-sourced
+claims (reviews, transcripts) run closer to 0.75-0.85 than the ~1.00 seen
+on claims checked by direct tool call against this project's own state.
+
+## Calibration record (continued) — Session 041
+
+Claims checked at open: 6 (Patchward HEAD, patchward-landing HEAD,
+STRATEGY.md byte count, NJORD meeting/email status, heuristic count/
+integrity, BACKLOG.md byte count). **6 CONFIRMED, 0 DRIFTED.** **1.00 on
+checkable claims (6/6).**
+
+Claims checked at close: 7 (Patchward HEAD on origin post-commit;
+STRATEGY.md byte count on origin post-push; heuristic count re-run on
+the fresh clone; methodology note's actual presence; patchward-landing
+HEAD unchanged; NJORD meeting/email status via a third independent
+method; the `.git/index.lock` root cause against H30's existing
+finding). **7 CONFIRMED via independent tool calls, 0 UNVERIFIED** —
+including the one claim (the 95,396 byte figure) that a guide-model
+review correctly flagged as unverified-when-written, then re-checked
+and found accurate rather than either trusted or dismissed on faith.
+**1.00 on checkable claims (7/7).**
+
+## Calibration record (continued) — Session 040
+
+Claims checked at open: 7 (both repos' HEADs, STRATEGY.md byte count,
+heuristic count, NJORD meeting/email status, BACKLOG.md/RETROSPECTIVE.md
+byte counts). **6 CONFIRMED, 1 DRIFTED** (heuristic count: 33 stated,
+34 actual before H36, 35 after restoration — an H2-shaped self-citation
+lag, corrected same session). **≈0.86 on checkable claims (6/7).**
+
+Claims checked at close: 11 (Patchward HEAD via 3 independent methods;
+patchward-landing HEAD; STRATEGY.md and RETROSPECTIVE.md byte counts on
+origin; H36's presence and text; the full 35-heuristic count on origin;
+the backup file's presence and size in the commit; H35-candidate's text
+unchanged; the calendar event's own `updated`-vs-`created` metadata; the
+corroborating "Parents go away" event's same metadata; the NJORD
+meeting/email still-future status). **11 CONFIRMED via this session's
+own independent tool calls, 0 UNVERIFIED — including one claim (the
+calendar item's "resolved" status) that was CONFIRMED FALSE against a
+pasted report's own assertion, not merely accepted or refused on faith.**
+**1.00 on checkable claims (11/11)**, the discipline holding exactly as
+designed: a claim reported with high confidence in pasted content was
+neither trusted nor dismissed, but checked, and the check is what
+decided it — the same standing H36 itself describes, demonstrated on
+this session's own review material rather than only on the executor's
+prior work.
+
+## Session log (continued) — Session 043
+
+- [2026-08-31, open] Opened via session-strategy-synthesis, grounded
+  against Session 042's close (`db08053` at close time, per that
+  session's own log). 7 checkable claims re-verified independent of the
+  mount: Patchward HEAD (fresh clone into a sandbox tmp dir + `ls-remote`,
+  both agree on `431a480` — one commit past `db08053`, as expected for
+  the close-out doc's own follow-up commit — tree clean), patchward-
+  landing HEAD unchanged (`087455d...`, clean), STRATEGY.md byte count
+  (`wc -c` on the same fresh clone: **111,439 bytes**, identical to the
+  figure Session 042 logged pre-commit — the extra commit did not grow
+  the file further, worth noting since the open brief expected it
+  "slightly higher"; not a drift against any claim this file itself
+  made, just against an outside expectation, and recorded honestly
+  either way), BACKLOG.md byte count (122,782, matches), heuristic
+  count/integrity (37 — 24 earned + 13 candidates, bracket-aware
+  `awk`+`grep` recount bounded to the §Heuristics section, matches
+  expectation exactly), H34/H35/H37-candidate occurrence counts (all
+  still 1, confirmed via direct grep on the section text — H35's clean
+  re-application this session correctly not counted toward promotion,
+  per the open brief's own instruction), H38-candidate (1, as logged at
+  Session 042 close). **7/7 CONFIRMED, 0 DRIFTED.**
+- [2026-08-31, continued] NJORD response check — the session's real
+  work: `get_thread` on the CRA-specific thread (`1a03eea261e68ac5`)
+  confirmed it still has no reply. `search_threads` for
+  `from:njordlaw.com` surfaced a newer, separate thread
+  (`1a0579e503bd7a7f`) with an inbound message dated 2026-08-31 11:39
+  CPH; `get_thread` on its full body (not the search snippet) confirmed
+  it substantively answers both of BACKLOG 12's open questions and adds
+  two unrelated quotes (FixProve terms, ApS structuring). `memory/
+  BACKLOG.md` item 12 and this file's Current state updated with the
+  full content, price, and explicit scope boundary NJORD stated,
+  without assuming favorable or unfavorable before reading it, per the
+  open brief's own instruction. Nudge event `uueepgqam0mvuh0dngq6sp34tk`
+  re-read via `get_event`: fired at 09:00 CPH, before the 11:39 reply —
+  correctly fired (silence was still real at fire time), now superseded
+  rather than a false alarm. No email sent by the agent; next action is
+  Yehor's own reply to NJORD's three-way question.
+- [2026-08-31, continued] **A pasted "guide model" review flagged the
+  NJORD kr figures as commercially sensitive for a public repo —
+  checked rather than trusted, per this project's standing practice.**
+  Repo visibility confirmed live via GitHub's API (`"private": false`),
+  not assumed: real risk. The review's "first time genuinely
+  commercially-sensitive figures have entered the ledger" claim did NOT
+  fully hold on re-check: prior committed history already carries
+  Yehor's own public selling prices ($1,500/$3,000-4,000, Mirror Pass
+  consulting service) — a different risk category (published outbound
+  price vs. this session's inbound vendor/counsel quote and negotiating
+  position). Corrected rather than repeated. Yehor chose redaction; all
+  three kr figures replaced with a private-filing placeholder in both
+  this file and `memory/BACKLOG.md`, non-commercial facts (scope,
+  thread IDs, timestamps) left untouched. Not yet committed — same
+  index.lock blocker above.
+- [2026-08-31, continued] Genuine `.git/index.lock` blocked the
+  sandbox's own `git add` (5th confirmed H30 occurrence) — cleared from
+  Yehor's own terminal per standing practice, not the sandbox. Commit
+  `b5da9e8` landed and independently confirmed on origin via fresh
+  clone — HEAD matched, and a second, independent fee-figure grep on
+  that clone found 0 matches (redaction held on origin, not just
+  locally).
+- [2026-08-31, continued] Before the follow-up-thread question could be
+  answered, Yehor surfaced that a reply to NJORD had already been sent.
+  `get_thread` on the actual message (`1a0583baf61a4e21`, 14:34 CPH) —
+  not the user's own paraphrase — confirmed it covers all three NJORD
+  offers, including the Patchward CRA question split into two steps
+  with a Sept-11 delivery-feasibility ask. This superseded the "gated
+  on Yehor's decision" framing this file had logged only hours earlier
+  — corrected same-day rather than left stale, and logged as its own
+  dated entry rather than silently overwriting the earlier one.
+- [2026-08-31, continued] **A second pasted "guide model" review
+  claimed the promised redaction-verification check had not happened.**
+  Re-read of the same turn's own tool calls found this false — the
+  fresh-clone grep confirming 0 fee-figure matches had already run,
+  just hadn't been narrated as its own sentence. Corrected explicitly
+  rather than silently absorbed. Both this and the "first time
+  sensitive figures" claim logged as a new candidate, H39-candidate
+  (§Heuristics) — distinct from H38 (real quote, overstated meaning)
+  since these claims cite no source at all, just asserted confidence.
+- [2026-08-31, continued] The review's separate, substantive finding
+  (the sent 14:34 reply asks about step 1's *timing* before Sept 11,
+  not whether step 1 alone *discharges* the obligation) was checked
+  against the literal Danish text, quoted verbatim rather than
+  paraphrased, and held up — a real, if subtle, gap. A short addendum
+  was drafted, reviewed by Yehor, and created as a Gmail draft
+  (`create_draft`, same thread, not a new one) via explicit
+  authorization ("you can create a draft in my gmail").
+- [2026-08-31, continued] Yehor sent the addendum himself. Verified via
+  `get_thread`, not the screenshot alone: message `1a0585cbb9e933a7`,
+  15:07 CPH, sent body compared word-for-word against the drafted
+  version — identical, no edits. Logged into both memory files, commit
+  `e5fa195` landed and independently confirmed on a fresh clone
+  (HEAD matched; both the fee-figure absence and the new message ID's
+  presence re-verified on that same clone).
+- [2026-08-31, close] **Session Close run via the `session-close`
+  skill.** Full gate table (9 claims: HEADs, byte counts, heuristic
+  integrity, fee-figure absence, repo publicity, addendum-send fidelity,
+  two guide-model claims) — 7 CONFIRMED, 2 DRIFTED (both guide-model
+  claims, both caught and corrected in-session, neither repeated).
+  Judged at all three zoom levels: L2 MET and exceeded (NJORD's answer
+  read and logged, a real commercial-sensitivity decision applied and
+  verified on origin, a genuine legal-scope gap found and closed with
+  counsel 11 days before the deadline it bears on). L1: real movement —
+  BACKLOG 12 shifted twice in one session, ending with the one question
+  that actually mattered explicitly in front of counsel. Retrospective
+  flagged at its highest figure yet (121,428 / 130,087 bytes,
+  ≈7.59x/8.13x ceiling) — not run, correctly deferred per protocol, but
+  named as next session's leading L2 candidate. Sealed as
+  `memory/SESSION_CLOSE_2026-08-31.md`. Weakest point stated plainly in
+  the close-out doc: the "zero drift" observation logged earlier this
+  session (mid-session batch, below) did not hold for the session as a
+  whole — worth noting as itself a small instance of the exact pattern
+  this project's calibration discipline exists to catch.
+- [2026-08-31, close continued] **Real incident, not a near-miss:**
+  Yehor's own post-push double-check request triggered this close's
+  final verification pass, which grepped all three files touched this
+  session (not just the two the redaction decision named) and found
+  the close-out doc itself, `memory/SESSION_CLOSE_2026-08-31.md`,
+  restated the three redacted NJORD fee figures verbatim in its own
+  Gate-status table — describing what had been redacted by quoting the
+  redacted values. That version had already been committed and pushed
+  (`9c44b5e`). Fixed same-day: the leaking line rewritten, the
+  close-out's own "next session, expect HEAD `e5fa195`" guidance
+  corrected (it was already stale by one commit before this fix, and
+  would have been stale by two after it — the exact self-reference
+  trap this skill's own Phase 1.7 names), re-verified clean on a fresh
+  clone. Logged as H40-candidate. Stated plainly as this session's
+  single most serious lapse, not folded into the guide-model-claims
+  bullet above — this one was the agent's own error, not a claim being
+  evaluated. A follow-up commit lands this fix; see Open threads for
+  its hash once Yehor runs it.
+
+## Calibration record (continued) — Session 043
+
+Claims checked at open: 7 (Patchward HEAD, patchward-landing HEAD,
+STRATEGY.md byte count, BACKLOG.md byte count, heuristic count/
+integrity, H34/H35/H37-candidate occurrence counts, H38-candidate
+occurrence count). **7 CONFIRMED, 0 DRIFTED. 1.00 on checkable claims
+(7/7).**
+
+Claims checked mid-session: NJORD response existence and content (2
+independent thread reads — the CRA thread directly, and the actual
+reply thread's full body rather than its search snippet), nudge event
+fire-vs-reply timing (`get_event` re-read against the Gmail timestamp).
+**3 CONFIRMED, 0 DRIFTED. 1.00 on this batch** — the first session in
+the logged run with zero drift found anywhere, worth noting rather than
+treating as unremarkable: either the project's memory discipline is
+compounding as designed, or the sample is still too small to tell.
+**That observation did not survive the rest of the session — see
+below.**
+
+Claims checked after the mid-session batch: repo publicity (live
+GitHub API), the "first time sensitive figures" review claim (`git
+log -p` full history), the "redaction unverified" review claim
+(re-read of the same turn's own tool calls), the sufficiency-gap
+review finding (literal Danish text, quoted verbatim), fee-figure
+absence on origin after commit `b5da9e8` (fresh-clone grep), sent
+addendum vs. draft fidelity (`get_thread` word-for-word compare), and
+fee-figure absence again on origin after commit `e5fa195` at this
+close (fresh-clone grep, second independent run). **6 CONFIRMED, 2
+DRIFTED** (both guide-model claims — both caught and corrected
+in-session, neither repeated, both logged as H39-candidate). **0.75 on
+this batch** — matches Session 042's own observed pattern almost
+exactly: externally-sourced claims (pasted reviews) run 0.75-0.85,
+claims checked by direct tool call against this project's own state
+run 1.00. The mid-session "zero drift" note above turned out to be a
+mid-session snapshot, not a session-final one — worth stating plainly
+rather than letting the earlier, more flattering number stand as the
+session's only recorded figure.
+
+**Session 043 overall: 16 claims checked, 13 CONFIRMED, 2 DRIFTED
+(guide-model claims, corrected), 1 correction-of-a-correction (the
+mid-session zero-drift note itself). ≈0.81 on the full session** — the
+project's calibration continues to track direct-verification claims
+near 1.00 and externally-sourced review claims near 0.75, exactly as
+Session 042 first characterized the pattern.
+
+**Addendum, same-day, caught by Yehor's own request to double-check
+before final close:** a fresh-clone grep across *all three* files
+touched this session (not just the two the redaction decision named)
+found the close-out doc itself restated the three redacted NJORD
+figures verbatim, already committed and pushed. This is not a review
+claim to score — it is the agent's own error, and the honest count is
+different in kind from the 0.75/1.00 pattern above: **1 real incident,
+caught not by any pre-commit check but by the verification pass this
+skill's own Phase 6 (and Yehor's explicit request) required.** Fixed
+and re-verified same-day. Logged as H40-candidate. The mechanism that
+caught it — re-verifying the close-out's own claims one more time
+before declaring closed, exactly as Phase 6 prescribes — worked as
+designed; the gap was upstream, in scoping the original redaction
+verification to only the files named in the decision rather than every
+file the session touched.
+
+## Session log (continued) — Session 044
+
+- [2026-09-02, Session 044 open] Opened via `session-strategy-synthesis`.
+  Full two-pass re-grounding (6 claims, 6 CONFIRMED, 0 drift — see
+  Current state above) found the resume prompt's own two flagged
+  numbers behaved differently under direct check: the Patchward HEAD
+  hash (`0090fc3...`) it explicitly told this session not to trust DID
+  verify true on independent check; the heuristic-count guess ("26
+  earned + 13 candidates") it did NOT flag as unreliable turned out
+  wrong on the split (actual: 24 earned + 15 candidates), though the
+  39 total happened to match. Read as intended: neither a hash's
+  presence in a prompt nor its absence from this file is itself
+  evidence — only the independent check is. NJORD's thread checked via
+  two independent methods (direct `get_thread` + a broader
+  `from:njordlaw.com newer_than:1d` search, specifically because this
+  project has seen NJORD split a reply across threads twice before) —
+  one reply found, in the same thread, answering both the scope and
+  the sufficiency question BACKLOG 12 was left open on. `memory/
+  BACKLOG.md` item 12 updated with the full answer (verbatim Danish +
+  EN gloss); `.strategy/STRATEGY.md` Current state and Open threads
+  updated above. A new fee figure (NJORD's step-1 price) arrived and
+  was kept out of both public files, consistent with H40-candidate's
+  standing practice — this entry itself checked before being written
+  for the same leak shape that caused that incident. Retrospective
+  (STRATEGY.md/BACKLOG.md compression) remains flagged, not run —
+  correctly, since NJORD's answer with its own Friday 2026-09-04
+  externally-set deadline is the higher-leverage L2 goal this session,
+  per this file's standing rule against bundling a destructive rewrite
+  into a substantive-work session. Not yet committed — per H20, this
+  is Yehor's own terminal's job, not the agent's.
+- [2026-09-02, Session 044 continued] Yehor pasted a "guide model"
+  review analysing this session's own work and reporting a further
+  development: he had decided to pause both NJORD workstreams and had
+  already sent the reply. Per this project's standing practice for
+  report-shaped content (H36/H38/H39), the claim was checked via real
+  tool calls rather than accepted on the paste's own confidence — the
+  substance (a pause reply, genuinely sent, content matching
+  word-for-word) held; one supporting detail (which thread it landed
+  in) did not, and was corrected in `memory/BACKLOG.md` item 12 and
+  above rather than silently inherited. BACKLOG 12 is now resolved for
+  this session's purposes — paused by Yehor's own documented decision,
+  nothing further agent-actionable. Retrospective compression is now
+  the clear next candidate with nothing external competing, pending
+  Yehor's explicit go-ahead per this file's own rule on destructive
+  rewrites.
+
+## Calibration record (continued) — Session 044
+
+Claims checked at open: 6 (Patchward HEAD, patchward-landing HEAD,
+STRATEGY.md byte count, BACKLOG.md byte count, NJORD thread reply
+existence/content, heuristic count/integrity). **6 CONFIRMED, 0
+DRIFTED. 1.00 on checkable claims (6/6).** Two of the six directly
+contradicted an unverified number handed to this session at open (the
+heuristic split) or a number this session was told explicitly not to
+trust (the HEAD hash) — both resolved by independent check rather than
+by trusting either the prompt's framing or this file's own prior
+figures, consistent with this project's standing discipline.
+
+Claims checked mid-session, against a pasted "guide model" review
+covering a claimed NJORD pause-reply: (1) that the reply was actually
+sent — CONFIRMED, `get_thread` on an independently-located thread
+matched the pasted content word-for-word; (2) that it landed in thread
+`1a0583baf61a4e21` — **DRIFTED**, it landed in a new thread,
+`1a062be715af4ce6`, found only via a broader `search_threads` query,
+not the ID the review assumed; (3) that the local working tree's
+redaction holds — CONFIRMED via a fresh grep run before writing
+anything, not assumed from the review's own claimed checks (which,
+per H36/H38/H39, are this file's own unverifiable self-reports of
+another session's tool calls, not evidence on their own). **2
+CONFIRMED, 1 DRIFTED on this batch (0.67)** — consistent with this
+project's now-repeated pattern that externally-sourced review claims
+need direct verification even when, as here, the substance turns out
+true and only a supporting detail (the thread ID) was wrong.
+
+**Session 044 overall: 9 claims checked, 8 CONFIRMED, 1 DRIFTED
+(guide-model thread-ID claim, corrected same session). ≈0.89 on the
+full session.**
