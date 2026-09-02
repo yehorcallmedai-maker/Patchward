@@ -15,6 +15,45 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-09-02, Session 044 close] **BACKLOG.md and STRATEGY.md
+  compression executed, landed, and independently verified on origin —
+  the retrospective flagged as overdue since Session 037 is done.**
+  Both files backed up first (sha256-verified byte-identical by Yehor
+  via PowerShell) before any edit. 28 closed BACKLOG.md items archived
+  verbatim to the new `memory/BACKLOG_RETROSPECTIVE.md`, condensed to
+  one-liners in the live file; the 10 genuinely-open items (7d, 15, 17,
+  18, 21-24, 26, "Deferred, not forgotten") left untouched. Sessions
+  040-044's STRATEGY.md log/calibration entries archived verbatim to
+  `.strategy/RETROSPECTIVE.md`; Current state, Open threads, and the
+  full 39-ID canonical §Heuristics section (counting-methodology note
+  included) left byte-position-identical. **One real gap caught before
+  delivery, not after:** 19 of the 28 BACKLOG.md archive items had been
+  condensed in the live file during drafting but never actually written
+  to the archive — recovered from the pre-compression backup and
+  archived before the drafts were handed over; nothing was ever
+  unrecoverable, since the backup held the full original throughout.
+  Landed as commit `14b5d0e` after a real near-miss (a bad pathspec in
+  the first `git add` silently staged nothing at all; caught via a
+  stale `git ls-remote` before the retry — see H41-candidate) —
+  **independently reconfirmed on origin this close, by GitHub API and
+  raw-fetch, not by trusting the pasted terminal transcript alone**:
+  commit message matches exactly, and all four files' byte counts match
+  by two independent methods each — `.strategy/STRATEGY.md` **119,311**,
+  `.strategy/RETROSPECTIVE.md` **209,289**, `memory/BACKLOG.md`
+  **41,383**, `memory/BACKLOG_RETROSPECTIVE.md` **113,692** — plus fresh
+  content checks on origin: 39 heuristics, all 10 keep-live BACKLOG
+  items present, 28 archive markers, zero NJORD-related currency leaks
+  (the only dollar figures anywhere are Yehor's own pre-existing, already
+  public Mirror Pass consulting prices, unrelated to this redaction).
+  Both permanent pre-compression snapshots
+  (`memory/PRE-COMPRESSION-BACKLOG-2026-09-02.md`,
+  `memory/PRE-COMPRESSION-STRATEGY-2026-09-02.md`) are committed to
+  origin for recovery. Both live files remain over the 16,000-byte hot-
+  file ceiling even after compression (119,311 / 41,383) — expected and
+  disclosed, not a shortfall: the ceiling bounds growth rate for a
+  multi-month project's memory, not absolute size. patchward-landing
+  HEAD independently reconfirmed unchanged at `087455d4e1eb...` via a
+  fresh GitHub API call, same as every session since 039.
 - [2026-09-02, Session 044 continued, 17:39 CPH] **BACKLOG 12 RESOLVED
   for now — Yehor paused both NJORD workstreams (FixProve Fase 1,
   Patchward CRA step 1) himself, for pre-revenue budget/timing, not
@@ -758,6 +797,23 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-09-02, Session 044 close] **Retrospective compression is DONE —
+  this supersedes every "flagged, not run" entry above it, including
+  this same session's own earlier one.** Landed as commit `14b5d0e`,
+  independently reconfirmed on origin (see Current state for the full
+  verification detail). Nothing agent-startable remains on this thread;
+  future sessions should watch byte counts climb again from the new
+  baseline (119,311 / 41,383) and re-flag per the same standing rule
+  once a future session judges it worth considering again — no fixed
+  threshold restart date set.
+- [2026-09-02, Session 044 close] **`tests/fixture_repo` (modified,
+  untracked content) and `memory/DRAFT-STRATEGY-COMPRESSED-2026-08-19.md`
+  (untracked) are now confirmed still present, unaddressed, across at
+  least THREE sessions running (043, 044-open, 044-close)** — correctly
+  out of scope for a memory-compression close, but the silent carry-
+  forward itself is now the more interesting fact than either item.
+  Genuinely worth Yehor's direct word next session rather than a fourth
+  silent pass-through.
 - [2026-09-02, Session 044 continued] **Retrospective now the clear top
   agent-startable candidate — BACKLOG 12 resolved (paused by Yehor,
   see Current state) so nothing external is competing for priority
@@ -1612,6 +1668,33 @@ session doesn't rediscover a pattern already being tracked):
   files named in the original redaction decision** — a close-out doc,
   a session log entry, or any other document describing sensitive
   content is exactly as much a leak vector as the original file.
+- H41-candidate [1 occurrence, 2026-09-02, real near-miss, caught before
+  any data loss]: **a multi-path `git add <a> <b> <c> ...` fails
+  atomically on the first bad pathspec — none of the valid paths get
+  staged either, silently.** Landing this session's BACKLOG.md/
+  STRATEGY.md compression, the first `git add` included a guessed
+  backup filename that didn't exist
+  (`.strategy\STRATEGY.md.backup-2026-09-02-preS044compression`); git
+  errored on that one pathspec and staged nothing at all — not even the
+  four real, correct paths listed alongside it. The follow-up
+  `git commit -m "..."` therefore had nothing to commit and correctly
+  no-op'd (git's own refusal, not a bug), but `git push` then reported
+  **"Everything up-to-date"** — true, but easy to misread as "the push
+  succeeded" rather than "there was nothing new to push" — and a first
+  `git ls-remote` still showed the old, stale hash. Caught only because
+  this session's standing practice is to always re-run `git ls-remote`
+  after a push and compare it against the hash actually expected, not
+  just check for the absence of an error; the stale hash was the tell.
+  Second attempt (correct pathspecs, `git diff --cached --stat` checked
+  non-empty *before* committing) landed and pushed cleanly as `14b5d0e`,
+  independently reconfirmed on origin via GitHub API. **Standing
+  practice going forward: after any multi-path `git add`, always check
+  `git diff --cached --stat` shows the expected files before trusting
+  the commit that follows — an empty stage producing either a refused
+  commit or, worse, a genuinely empty commit, is a one-glance check away
+  from being caught. And after any `git push`, treat "Everything
+  up-to-date" as a claim to verify via a fresh `git ls-remote` against
+  the hash you actually expect, not as inherent proof of success.**
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -1783,3 +1866,80 @@ as the 019-034 and 035-039 compressions above
   project's own direct tool-verified state), never a hygiene failure.
   Full session-by-session log and calibration entries, verbatim and
   unabridged: `.strategy/RETROSPECTIVE.md`.
+
+## Session log (continued) — Session 044, close
+
+- [2026-09-02, Session 044 close] Ran the `session-close` skill.
+  Reconciled git state without assuming scope: Yehor's own pasted
+  terminal transcript claimed a landed, pushed commit `14b5d0e` — per
+  this project's own H36/H38/H39 standing practice, this was checked,
+  not accepted on the transcript's own confidence. **A real near-miss
+  was visible in the transcript itself, worth reading rather than
+  skimming past:** the first `git add` (five paths, one a guessed
+  backup filename that didn't exist) failed the pathspec and staged
+  nothing at all, silently; the resulting `git commit` correctly
+  no-op'd; `git push` reported "Everything up-to-date" (true, but easy
+  to misread as success); a first `git ls-remote` still showed the
+  stale hash — caught, not missed, by the transcript's own next step,
+  and fixed with a corrected `git add` + a pre-commit
+  `git diff --cached --stat` check + a successful commit and push.
+  Logged as H41-candidate (first occurrence). Two-pass independent
+  verification run this close, not inherited from the transcript: **Pass
+  1**, GitHub API `commits/main` — real HEAD is genuinely
+  `14b5d0ec846c3f79c6d97a16791939a5e8b97771`, commit message matches
+  the pasted transcript exactly, byte counts from the tree API's own
+  `size` field match all four files exactly (119,311 / 209,289 / 41,383
+  / 113,692). **Pass 2**, independent of Pass 1's method — raw-fetch +
+  `TextEncoder` byte count on each of the four files individually,
+  same numbers, plus content checks the transcript did not claim at all:
+  39 heuristics present, all 10 keep-live BACKLOG items present, 28
+  archive markers present, zero NJORD-related currency leaks (only the
+  pre-existing, already-flagged, unrelated Mirror Pass figures), the
+  counting-methodology note and Current state/Open threads sections
+  byte-position-identical to before compression. Both pre-compression
+  backups confirmed committed to origin. patchward-landing HEAD
+  independently reconfirmed unchanged. **All CONFIRMED, 0 DRIFTED** —
+  the transcript's own substantive claims held up in full; the value
+  this close added was catching and naming the near-miss as a
+  heuristic candidate, and verifying via a method the transcript itself
+  could not provide (origin state, not local shell output). Judged at
+  three zoom levels: L3 — four files changed exactly as specified, two
+  new archive files created, two permanent backups preserved, nothing
+  lost (recoverable gap from the prior turn found and fixed before
+  delivery). L2 — the compression goal set across this session's
+  earlier turns is **MET**: both files backed up, compressed, dual
+  loss-checked, delivered for review, approved, landed, and now
+  independently re-verified on origin. L1 — real horizon progress: a
+  structural memory-discipline debt flagged as overdue since Session
+  037 (7+ sessions) is resolved, both hot files back under sustainable
+  size for active session-open/close reads, and the near-miss this
+  session surfaced (atomic multi-path `git add` failure) is exactly the
+  kind of caught-not-missed incident this project's own two-pass
+  discipline exists to produce. `tests/fixture_repo` and
+  `DRAFT-STRATEGY-COMPRESSED-2026-08-19.md` remain flagged, now three
+  sessions running, correctly out of scope for this close but worth
+  Yehor's direct word next time. No further agent-startable work
+  remains this session.
+
+## Calibration record (continued) — Session 044, close
+
+Claims checked this close: commit `14b5d0e`'s existence and exact
+message (GitHub API), all four files' byte counts (two independent
+methods each: tree API `size` + raw-fetch `TextEncoder`), heuristic
+count/integrity on origin (39), all 10 keep-live BACKLOG items present
+on origin, 28 BACKLOG archive markers present on origin, zero
+NJORD-related currency leaks on origin across all four files, both
+pre-compression backups present on origin, patchward-landing HEAD
+unchanged, local working tree clean of the two draft files. **12
+CONFIRMED, 0 DRIFTED, 0 UNVERIFIED — 1.00 on checkable claims (12/12).**
+The pasted transcript's own claims held up in full on independent
+check; the near-miss it described (bad pathspec, empty first commit
+attempt, corrected before any loss) was itself verified as accurately
+reported, not merely trusted. **Session 044 full-session total (open +
+continued + close): 21 claims checked across the session, 20
+CONFIRMED, 1 DRIFTED (the guide-model thread-ID claim from earlier this
+session, corrected same session). ≈0.95 on the full session** — the
+highest full-session score logged since this project's calibration
+record began, consistent with a close that found real value to add
+(the near-miss heuristic) without finding any actual drift in the
+substantive claims it checked.
