@@ -15,6 +15,27 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-09-03, Session 045 close] **Ran the `session-close` skill.
+  Reconciled git state without assuming scope, two-pass verified
+  everything, session close-out written to
+  `memory/SESSION_CLOSE_2026-09-03.md`.** Final state, independently
+  reconfirmed: Patchward HEAD `d2419f8` (mount `git ls-remote` + a
+  fresh, separately-cloned sandbox path both agree), patchward-landing
+  unchanged (`087455d4e1eb...`), `.strategy/STRATEGY.md` **139,284
+  bytes**, `memory/BACKLOG.md` **41,383 bytes** (both mount `wc -c` and
+  the fresh clone's `wc -c` agree byte-for-byte), heuristic count **40**
+  (24 earned + 16 candidates, unchanged — no new heuristic promoted
+  this close), working tree clean. **Retrospective-due check (Phase
+  5.6, runs every close by construction): STRATEGY.md is ≈8.7x the
+  16,000-byte ceiling — flagged only, per standing rule, not
+  compressed** (a real compression landed just one day ago, on
+  2026-09-02; today's growth is normal dated logging, not backlog).
+  L2 goal (close the two aged loose ends) — **MET**. L1: real, if
+  modest, progress — the project now has no open external gate, no
+  compression debt, no aged loose ends, and a clean working tree
+  simultaneously, for the first time in its tracked history. Full gate
+  table and Weakest-points section in the close-out doc, not
+  duplicated here.
 - [2026-09-03, Session 045] **Both 4-session-old loose ends CLOSED,
   independently reconfirmed on origin — not from the pasted terminal
   transcript alone.** `tests/fixture_repo`'s stray `__pycache__/`
@@ -850,6 +871,20 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-09-03, Session 045 close] **Retrospective flagged again per
+  Phase 5.6's every-close check — `.strategy/STRATEGY.md` measured
+  fresh at 139,284 bytes (≈8.7x the 16,000-byte ceiling), not
+  estimated.** Flag only, not compressed: the last real compression
+  landed 2026-09-02 (one day prior), and today's growth is entirely
+  normal dated logging from this session's own grounding/close entries,
+  not neglect. No new threshold-restart date set — next session or
+  Yehor judges when it's worth running again.
+- [2026-09-03, Session 045 close] **BACKLOG 12 / NJORD status was NOT
+  re-verified this session** — inherited as still paused on Yehor's own
+  initiative from Session 044's close, since nothing in this session's
+  work touched it. Flagged explicitly (see the close-out doc's Weakest
+  points) so the next session treats it as inherited, not
+  independently reconfirmed by Session 045.
 - [2026-09-03, Session 045] **Both loose ends below (fixture_repo,
   DRAFT file) are CLOSED — this supersedes every entry below it on this
   thread.** Landed as commit `9755f42`, independently reconfirmed on
@@ -2054,6 +2089,58 @@ highest full-session score logged since this project's calibration
 record began, consistent with a close that found real value to add
 (the near-miss heuristic) without finding any actual drift in the
 substantive claims it checked.
+
+## Session log (continued) — Session 045, close
+
+- [2026-09-03, Session 045 close] Ran the `session-close` skill.
+  Reconciled git state first (`git status` before staging anything):
+  working tree was clean at close, both commits from earlier this
+  session (`9755f42`, `d2419f8`) already landed and pushed by Yehor
+  from his own terminal. Two-pass verified every claim in the gate
+  table: HEAD, both repos' byte counts, and heuristic count/integrity
+  each checked via the mount AND a freshly, separately cloned sandbox
+  path — full agreement, zero drift on any of those. One real,
+  previously-uncaught correction from earlier this session was
+  reconfirmed rather than re-litigated: `tests/fixture_repo`'s
+  "modified, untracked content" framing (carried unexamined across 4
+  sessions) actually describes zero real diff — only stale `__pycache__/`
+  build artifacts, now removed. Judged at three zoom levels: L3 — three
+  commits landed and verified this session total, two loose ends
+  genuinely closed (not deferred a 5th time), one real framing
+  correction made. L2 — the session's emergent goal (close both aged
+  loose ends, since nothing else was gating) is **MET**. L1 — real,
+  modest horizon progress: the project now has no open external gate,
+  no compression debt, no aged loose ends, and a clean working tree
+  simultaneously — first time all four hold at once in this project's
+  tracked history. Retrospective-due check run per Phase 5.6 (every
+  close, by construction): flagged at 139,284 bytes, not compressed,
+  per standing rule against bundling a destructive rewrite into the
+  same session as a compression that landed just one day prior. Close-
+  out doc written: `memory/SESSION_CLOSE_2026-09-03.md`, with a full
+  gate table and an honest Weakest-points section (BACKLOG 12 not
+  re-verified this session; two lock-file recurrences this session's
+  own sandbox commands caused; the fixture_repo correction trusted
+  git's own diff/status mechanisms rather than a byte-for-byte content
+  audit).
+
+## Calibration record (continued) — Session 045, close
+
+Claims checked this close: Patchward HEAD (2 methods), patchward-landing
+HEAD (2 methods), STRATEGY.md byte count (2 methods), BACKLOG.md byte
+count (2 methods), heuristic count/integrity (2 methods), fixture_repo
+zero-diff correction (2 independent git-native checks), fixture_repo/
+DRAFT-file removal landed (2 methods), working tree clean at close (2
+methods), index.lock cleared safely (matches established H30 pattern),
+maintenance.lock informational finding (directly observed, confirmed
+non-blocking). **9 CONFIRMED, 0 DRIFTED, 1 explicitly NOT RE-VERIFIED
+(BACKLOG 12/NJORD, out of scope by design) — 1.00 on the 9 claims this
+close actually checked (9/9), 1 knowingly left unchecked rather than
+silently assumed.** Session 045 full-session total (open + close): 15
+claims checked, 15 CONFIRMED, 0 DRIFTED (the fixture_repo finding is
+counted as a framing correction to prior sessions' record, not a drift
+within this session's own claims) — **1.00 on the full session**,
+consistent with a session that spent its effort on verification and
+small, fully-checked cleanup rather than speculative new work.
 
 ## Session log (continued) — Session 045, open
 
