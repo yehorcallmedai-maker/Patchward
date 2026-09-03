@@ -15,6 +15,38 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-09-03, Session 045 open] **Full re-grounding against Session
+  044's close — nothing inherited on faith, 6 claims checked, 6
+  CONFIRMED, 0 drift.** (1) Patchward HEAD: `git ls-remote` on the
+  mount, GitHub API `commits/main`, AND a brand-new `git clone` into a
+  separate sandbox path all agree on `d1ddc30aac3fd7532260da8623e1f2bdc4c9f648`
+  — one commit past the `14b5d0e` compression commit, exactly the
+  close-out-doc commit the prior session's own resume prompt predicted
+  might land after it was written. (2) patchward-landing HEAD: same
+  two-method check (`git ls-remote` + GitHub API), `087455d4e1eb107c
+  67de2d869a603ebd3ba08466`, unchanged since Session 039. (3)
+  `.strategy/STRATEGY.md`: **129,792 bytes** — three independent
+  methods agree (local `wc -c` on the mount, GitHub tree API `size`
+  field, and `wc -c` on the fresh clone) — grown from the prior close's
+  119,311 by exactly this session's own close-out logging, as the
+  resume prompt expected ("will have grown slightly"). (4)
+  `memory/BACKLOG.md`: **41,383 bytes exactly**, same three methods,
+  unchanged from the prior close — confirms no edits landed between
+  sessions. (5) Heuristic count/integrity: a fresh, bracket-aware,
+  section-bounded extraction (lines 1248-1698, the canonical
+  §Heuristics section) — done independently on both the mount and the
+  fresh clone, byte-identical output both times — found **40 total: 24
+  earned + 16 candidates**, matching the prior close's own prediction
+  exactly, H41-candidate (the atomic multi-path `git add` failure)
+  correctly included. (6) `tests/fixture_repo` (modified, untracked
+  content) and `memory/DRAFT-STRATEGY-COMPRESSED-2026-08-19.md`
+  (untracked, 50,776 bytes) both directly reconfirmed still present on
+  the mount, unaddressed — see Open threads, this is now the 4th
+  session running without Yehor's direct word. This session's own
+  calibration: **1.00 (6/6)** — see Calibration record. No BACKLOG-12
+  re-verification attempted this session (nothing changed there per the
+  prior close, not one of the five things the resume prompt asked to
+  re-check, and no agent action is pending on it regardless).
 - [2026-09-02, Session 044 close] **BACKLOG.md and STRATEGY.md
   compression executed, landed, and independently verified on origin —
   the retrospective flagged as overdue since Session 037 is done.**
@@ -797,6 +829,56 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-09-03, Session 045 open] **`tests/fixture_repo`: a real drift
+  correction, found by direct inspection rather than accepting a
+  pasted "guide model" review's framing at face value (H36/H38/H39
+  pattern).** Across at least 4 prior sessions this was carried as
+  "modified, untracked content" / "one harmless docstring-only diff" —
+  **direct check this session (`cd tests/fixture_repo && git status` +
+  `git diff`, on the mount) shows ZERO uncommitted diff.** The
+  submodule's own HEAD, `3984504`, already IS the docstring-fix commit
+  ("docs: update docstring reference from RepoMend to patchward"), and
+  it matches the parent repo's gitlink entry (`git ls-tree HEAD
+  tests/fixture_repo` → same SHA) exactly — no divergence. The parent's
+  `?` status marker is caused entirely by untracked `__pycache__/`
+  build-artifact directories inside the submodule, which the top-level
+  `.gitignore` covers for the main repo but the submodule has no
+  `.gitignore` of its own to inherit that rule (confirmed: `.gitignore`
+  search of `tests/fixture_repo/` finds nothing). **No real content
+  decision is actually pending here** — recommended fix is a trivial
+  `Remove-Item -Recurse` on the two pycache dirs, not a judgment call.
+  Also worth noting for the record: this repo has NO `.gitmodules` file
+  at all (`cat .gitmodules` → not found, on both the mount and a fresh
+  clone) — `tests/fixture_repo` is a bare gitlink (mode 160000) with no
+  formal submodule registration, which is why `git submodule status`
+  errors with "no submodule mapping found." Harmless as long as nobody
+  expects `git submodule update` to work on it, but worth Yehor knowing
+  it's not a conventionally-configured submodule.
+- [2026-09-03, Session 045 open] **`memory/DRAFT-STRATEGY-COMPRESSED-2026-08-19.md`
+  — confirmed by direct read to be an early, now-superseded compression
+  draft** (its own header shows Session-036-era content, predating both
+  the eventual Session 036 Option A compression and the real
+  2026-09-02 compression that actually landed). Recommended: delete,
+  pending Yehor's own word — not destructive, since two permanent,
+  already-committed backups from the real compression
+  (`memory/PRE-COMPRESSION-STRATEGY-2026-08-19.md`,
+  `memory/PRE-COMPRESSION-STRATEGY-2026-09-02.md`) already cover
+  recovery if anything from this era is ever needed again.
+- [2026-09-03, Session 045 open] **`.git/index.lock` recurrence, same
+  H30 root cause, cleared safely.** Blocked Yehor's `git add`/`git
+  commit` on the STRATEGY.md edit closing the fixture_repo/DRAFT
+  loose ends — created by this sandbox's own read-only git commands
+  against the mount earlier this session (`git ls-remote`, `git log`,
+  `git status`, the `fixture_repo` inspection), consistent with every
+  prior occurrence. Not promoted or re-investigated; cleared from
+  Yehor's own terminal per H30's standing practice.
+- [2026-09-03, Session 045 open] **No agent-startable work is queued
+  and no external gate is open** — BACKLOG 12 stays resolved/paused on
+  Yehor's own initiative (unchanged, not re-verified this session, see
+  Current state); the compression debt that was the standing L2
+  candidate for 7+ sessions is done and stayed done. Per the prior
+  session's own resume prompt, this is a legitimate session to ask
+  Yehor directly what he wants worked on next.
 - [2026-09-02, Session 044 close] **Retrospective compression is DONE —
   this supersedes every "flagged, not run" entry above it, including
   this same session's own earlier one.** Landed as commit `14b5d0e`,
@@ -1943,3 +2025,37 @@ highest full-session score logged since this project's calibration
 record began, consistent with a close that found real value to add
 (the near-miss heuristic) without finding any actual drift in the
 substantive claims it checked.
+
+## Session log (continued) — Session 045, open
+
+- [2026-09-03, Session 045 open] Ran the `session-strategy-synthesis`
+  skill, grounding in this file. Re-verified fresh rather than
+  inheriting the prior close's resume prompt: all 5 named checks (both
+  repo HEADs, both memory-file byte counts, heuristic count/integrity)
+  held exactly as predicted — see Current state for full detail. Two
+  independent methods per claim throughout (a fresh `git clone` in a
+  separate sandbox path, distinct from reading the D:\ mount, served as
+  Pass 2 for HEAD/byte-count/heuristic-content claims; GitHub's REST
+  and raw-content APIs served as a third cross-check on HEAD and byte
+  counts). `tests/fixture_repo` and the old DRAFT file were directly
+  reconfirmed still present and unaddressed — now flagged a 4th session
+  running, per the prior close's own explicit concern about silent
+  neglect. L1: project remains in a healthy, non-gated state — PyPI and
+  branding success criteria stay met, BACKLOG 12 stays paused on
+  Yehor's own initiative, the memory-discipline debt is resolved and
+  stayed resolved. L2/L3: since nothing is currently gating or urgent,
+  asked Yehor directly (a) what he wants worked on this session, and
+  (b) for a direct decision on the two flagged loose ends, rather than
+  guessing or deferring a 5th time.
+
+## Calibration record (continued) — Session 045, open
+
+Claims checked at open: Patchward HEAD, patchward-landing HEAD,
+STRATEGY.md byte count, BACKLOG.md byte count, heuristic count/
+integrity, and fixture_repo/DRAFT-file presence — **6 CONFIRMED, 0
+DRIFTED, 0 UNVERIFIED — 1.00 (6/6)**. Every claim checked by at least
+two independent methods (fresh isolated clone + GitHub API, or fresh
+clone + direct mount read), none accepted on the strength of the prior
+session's own resume prompt alone, though all six matched that prompt's
+predictions exactly — a clean grounding, not a coincidence given how
+recently and carefully Session 044's close verified the same figures.
