@@ -15,6 +15,27 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-09-03, Session 045] **Both 4-session-old loose ends CLOSED,
+  independently reconfirmed on origin — not from the pasted terminal
+  transcript alone.** `tests/fixture_repo`'s stray `__pycache__/`
+  directories and `memory/DRAFT-STRATEGY-COMPRESSED-2026-08-19.md`
+  removed from Yehor's working tree; landed as commit `9755f42`
+  ("docs: close fixture_repo/DRAFT-file loose ends..."). Verified via
+  two independent methods: a fresh `git fetch` + `git rev-parse
+  origin/main` on the mount, AND `git ls-remote origin main` — both
+  return `9755f42913e5e59ac5fe392136589d25055e2cd2`, matching the
+  pasted `git push`/`git ls-remote` output exactly. Local working tree
+  is clean (`git status --short` — no output at all, first time in at
+  least 4 sessions). `.strategy/STRATEGY.md` now **137,371 bytes**
+  (fresh `wc -c`), `memory/BACKLOG.md` unchanged, **41,383 bytes**. One
+  more `.git/index.lock` recurrence (H30, cleared by Yehor from his own
+  terminal) happened mid-thread — see Open threads. **A second,
+  new-variant lock file was also left behind by this session's own
+  `git fetch`: `.git/objects/maintenance.lock`** (0 bytes, sandbox
+  `rm`/`unlink` fails the same way index.lock does) — flagged
+  preemptively in case a future git-maintenance operation on Yehor's
+  side errors on it; ordinary `add`/`commit`/`push` are unaffected by
+  this specific lock file (only `index.lock` blocks those).
 - [2026-09-03, Session 045 open] **Full re-grounding against Session
   044's close — nothing inherited on faith, 6 claims checked, 6
   CONFIRMED, 0 drift.** (1) Patchward HEAD: `git ls-remote` on the
@@ -829,6 +850,14 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-09-03, Session 045] **Both loose ends below (fixture_repo,
+  DRAFT file) are CLOSED — this supersedes every entry below it on this
+  thread.** Landed as commit `9755f42`, independently reconfirmed on
+  origin (see Current state). Nothing agent-startable remains here.
+  This session also leaves the project in a genuinely clean state for
+  the first time in the tracked history: no open external gate, no
+  memory-compression debt, no aged loose ends, local working tree
+  clean.
 - [2026-09-03, Session 045 open] **`tests/fixture_repo`: a real drift
   correction, found by direct inspection rather than accepting a
   pasted "guide model" review's framing at face value (H36/H38/H39
