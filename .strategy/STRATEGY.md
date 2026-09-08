@@ -15,6 +15,100 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-09-08, Session 046 close] **Ran the `session-close` skill.
+  Pure verification/documentation session — no code, BACKLOG, or
+  external-state changes; the only durable artifact is this file's own
+  Session 046 entries, uncommitted per H20 (agent never commits on this
+  repo — Yehor stages and pushes from Windows).** Reconciled git state
+  first: `git status` on Patchward shows only `.strategy/STRATEGY.md`
+  modified (this session's own edits, +91 lines before this close
+  entry); patchward-landing untouched, carrying only the two
+  already-known, deliberately-untracked DRAFT files. Two-pass
+  re-verified this session's own open-time claims rather than trusting
+  them: a fresh, independent grep (different construction than the
+  open-time check) recounted the canonical §Heuristics section at
+  exactly 40 before this close's own H42-candidate addition, then 41
+  (24 earned + 17 candidates) after it — both counts match what each
+  edit should produce; `## ` header scan confirmed no duplicate or
+  garbled section markers introduced by any edit; the Current-state
+  insertion was read back via the file tool and matches what was
+  written. **Yehor independently re-verified the open-time report
+  himself before accepting it** (his own words: "let me independently
+  verify this before recommending anything") and confirmed all six
+  claims held, explicitly naming one pattern worth keeping in mind
+  going forward rather than treating as a defect — see the new
+  H42-candidate. L2 goal as it stood at open ("verify fresh, get
+  direction from Yehor since nothing is gating") — **MET**: verification
+  held 6/6 with 0 drift, and Yehor's direction was to close. L1: no
+  horizon movement this session, by design — the project was already in
+  its cleanest verified state in tracked history at open, and this
+  session's job was to confirm that stayed true and close cleanly
+  rather than manufacture work to fill the slot. Full gate table and
+  Weakest-points section in `memory/SESSION_CLOSE_2026-09-08.md`, not
+  duplicated here. `.strategy/STRATEGY.md` measured **fresh, immediately
+  before this entry was written, at 150,327 bytes** — per this file's
+  own standing self-reference lesson (H2/Session 041), this entry's own
+  text will push it somewhat higher again; the next session's Grounding
+  should re-measure fresh rather than trust this number, same as every
+  prior close.
+- [2026-09-08, Session 046 open] **Full re-grounding against Session
+  045's close — nothing inherited on faith, 6 claims checked, 6
+  CONFIRMED, 0 drift, no open external gate.** (1) Patchward HEAD:
+  `git ls-remote origin main` on the mount (pre-fetch) and a fresh
+  `git fetch` + `git log` (post-fetch) both land on
+  `13f03fdcb7b41188cfdb951b4a46e6156e4684cd` — one commit past
+  `d2419f8` (its direct parent in `git log`), exactly "d2419f8 or
+  later" as the resume prompt anticipated (this close's own commit
+  landing after the prompt was written). GitHub API cross-check
+  attempted but returned empty both via `web_fetch` and sandbox
+  `curl` (curl blocked, consistent with H4) — two independent
+  git-native methods already agreed, so this is not treated as a
+  gap. (2) patchward-landing HEAD: local `git rev-parse HEAD` and
+  `git ls-remote origin main` both agree on
+  `087455d4e1eb107c67de2d869a603ebd3ba08466`, unchanged since Session
+  039 — confirmed by two independent methods. Working tree carries
+  only the two known, deliberately-untracked
+  `memory/DRAFT-session-close-2026-08-15.md` /
+  `memory/DRAFT-session-strategy-synthesis-2026-08-15.md` files, not
+  new drift. (3) `.strategy/STRATEGY.md`: fresh `wc -c` on the mount
+  **144,762 bytes exactly**, matching the resume prompt's own
+  "roughly 144,762+" prediction to the byte (grown only by Session
+  045's own close-out logging since its 139,284-byte close figure, as
+  expected — not compressed this session, per standing rule: a real
+  compression landed 2026-09-02, six days ago, and no new
+  retrospective is due). (4) `memory/BACKLOG.md`: fresh `wc -c`
+  **41,383 bytes exactly**, unchanged from every session since the
+  2026-09-02 compression — confirms no edits landed between sessions.
+  (5) Heuristic count/integrity: a fresh, bracket-aware,
+  section-bounded extraction (canonical §Heuristics, lines
+  1394-1845) using two independent grep methods (absence of
+  "candidate" in the bracket vs. presence of an
+  active/PROMOTED/NEW/HARD-RULE marker) both agree: **40 total — 24
+  earned + 16 candidates**, matching the prior close's figure
+  exactly; a third check (unique H-number dedup count) also returned
+  40. No new heuristic promoted this close, consistent with the
+  memory's own claim. (6) `tests/fixture_repo` and the old DRAFT
+  file: `git status --short --untracked-files=all` on both the full
+  repo and `tests/fixture_repo` specifically returned clean (no
+  output); `find tests/fixture_repo -name __pycache__` found nothing
+  regenerated; `memory/DRAFT-STRATEGY-COMPRESSED-2026-08-19.md` does
+  not exist on disk — both loose ends stay closed, no new untracked
+  content beyond what Session 045 already resolved. One informational,
+  non-blocking finding: a stale 0-byte `.git/index.lock` is present on
+  the Patchward mount again (same recurring H30-shaped sandbox
+  permission issue — `rm`/`unlink` fails with "Operation not
+  permitted") but did not block any read operation this session
+  (`status`, `fetch`, `log` all succeeded normally); flagged, not
+  acted on, consistent with prior sessions' handling of this same
+  class of lock file. BACKLOG 12 (NJORD/CRA) reconfirmed still
+  PAUSED per its own record (`memory/BACKLOG.md` item 12) — not
+  re-verified this session, per the resume prompt's own explicit
+  instruction that it stays paused on Yehor's initiative, not this
+  session's to reopen. This session's own calibration: **1.00 (6/6)**
+  — see Calibration record. No agent-startable work is queued: with
+  no open external gate, no compression debt, and no aged loose ends,
+  this is a genuinely open session — asked Yehor directly what he
+  wants worked on, rather than inventing a task to fill the slot.
 - [2026-09-03, Session 045 close] **Ran the `session-close` skill.
   Reconciled git state without assuming scope, two-pass verified
   everything, session close-out written to
@@ -871,6 +965,56 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-09-08, Session 046 close, post-close] **H30 recurred and this
+  time genuinely blocked Yehor's own commit attempt, not just a
+  sandbox-side symptom — 6th+ confirmed occurrence, first one caught
+  live in Yehor's own terminal output rather than inferred.** Yehor
+  pasted his own PowerShell session: `git add` and `git commit` both
+  failed with `Unable to create '.git/index.lock': File exists`; the
+  follow-on `git push` correctly reported "Everything up-to-date"
+  (true — nothing had been staged) and `git ls-remote` confirmed origin
+  was still at the pre-close hash `13f03fd`, not the intended close
+  commit. Independently re-verified from the sandbox side (not just
+  trusting the pasted transcript): the same 0-byte `.git/index.lock`,
+  mtime `2026-09-08 15:31` — unchanged since first observed at this
+  session's own close, i.e. it predates Yehor's commit attempt by
+  enough time to be the orphan H30 already describes, not fresh live
+  contention; local `HEAD` and `git ls-remote origin main` both still
+  read `13f03fd`, `git diff --stat` still shows the same 223
+  insertions uncommitted, `memory/SESSION_CLOSE_2026-09-08.md` still
+  untracked — full agreement with Yehor's own paste, nothing drifted
+  or lost. **Not a new failure mode — exactly H30's documented shape
+  and its documented fix** (clear via `Remove-Item` from Yehor's own
+  terminal, then retry `add`/`commit`/`push`). Corrected close
+  instructions with the removal step added to
+  `memory/SESSION_CLOSE_2026-09-08.md`. Session 046 is **NOT yet
+  actually closed on origin** as of this entry — this file's own prior
+  "close" entries above correctly described the intended state and
+  gave instructions; they did not claim the commit had landed, and
+  this entry does not retract them, only adds what happened next.
+- [2026-09-08, Session 046 close] **Retrospective flagged again per
+  Phase 5.6's every-close check — `.strategy/STRATEGY.md` measured
+  fresh at 150,327 bytes (≈9.4x the 16,000-byte ceiling) before this
+  close entry's own text, climbing from Session 045's 139,284 close
+  figure.** Flag only, not compressed: the last real compression landed
+  2026-09-02 (six days prior), this session added no project work (pure
+  verification + documentation), and the growth is exactly what dated
+  logging from two full sessions' worth of open/close entries produces
+  — not neglect. Still not urgent by this file's own standing rule
+  against bundling a destructive rewrite into a session that did
+  nothing else; worth Yehor's own judgment call on timing next time the
+  file is opened for real project work, not a default action.
+- [2026-09-08, Session 046 close] **This session made zero changes to
+  BACKLOG.md or BACKLOG 12 specifically — inherited as PAUSED on
+  Yehor's own initiative from Session 044, same as Session 045
+  inherited it.** Nothing this session's work touched it; not
+  independently re-verified, consistent with the resume prompt's own
+  instruction that it stays paused until Yehor reopens it himself.
+- [2026-09-08, Session 046 close] **Nothing agent-startable is queued.**
+  Session ended by Yehor's own explicit choice ("thank you for today")
+  after independently re-confirming the clean-state finding himself —
+  not a default or a guess. Next session opens with no recorded L2 goal
+  by design; see the next-session prompt in the close-out doc.
 - [2026-09-03, Session 045 close] **Retrospective flagged again per
   Phase 5.6's every-close check — `.strategy/STRATEGY.md` measured
   fresh at 139,284 bytes (≈8.7x the 16,000-byte ceiling), not
@@ -1841,6 +1985,25 @@ session doesn't rediscover a pattern already being tracked):
   from being caught. And after any `git push`, treat "Everything
   up-to-date" as a claim to verify via a fresh `git ls-remote` against
   the hash you actually expect, not as inherent proof of success.**
+- H42-candidate [1 formal log occurrence, 2026-09-08, but named by Yehor
+  as a recurring pattern across "several other sessions"]: **a task
+  framed as small/quick in this project has a track record of taking
+  more verification passes than the framing implied — budget for it,
+  don't be surprised by it.** Named directly by Yehor at Session 046
+  close: Session 045's two loose ends (`tests/fixture_repo` stale
+  artifacts, the old DRAFT file) were each framed as "quick, five-minute"
+  cleanup but took a 3-commit sequence to actually close
+  (`9755f42` fix → `d2419f8` confirm-on-origin → `13f03fd` write the
+  close-out doc). Yehor's own framing, stated plainly: this is a feature
+  of the discipline (fix → independently confirm → document, each step
+  earning its own commit), not a flaw — worth logging so a future
+  session isn't surprised when it happens again, and doesn't read a
+  3-commit trail on a "small" item as something having gone wrong. Not
+  independently re-derived from raw commit data this session (accepted
+  as Yehor's own qualitative read of a pattern he's watched across
+  multiple sessions, distinct from this file's own numerically-verified
+  claims) — logged as a candidate on that basis, promotable if a future
+  session independently notices the same shape without prompting.
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -2175,3 +2338,90 @@ clone + direct mount read), none accepted on the strength of the prior
 session's own resume prompt alone, though all six matched that prompt's
 predictions exactly — a clean grounding, not a coincidence given how
 recently and carefully Session 044's close verified the same figures.
+
+## Session log (continued) — Session 046, open
+
+- [2026-09-08, Session 046 open] Ran the `session-strategy-synthesis`
+  skill, grounding in this file. Re-verified fresh rather than
+  inheriting the prompt's own predicted figures: all 6 named checks
+  (both repo HEADs, both memory-file byte counts, heuristic
+  count/integrity, fixture_repo/DRAFT-file status) held exactly as
+  predicted — see Current state for full detail. Two independent
+  methods per claim (pre-fetch `ls-remote` + post-fetch `git log`
+  for HEAD; local `wc -c` for byte counts, cross-checked against the
+  resume prompt's own independently-derived figures; two differently-
+  constructed greps for the heuristic split, plus a dedup count as a
+  third check). GitHub REST API cross-check on Patchward HEAD returned
+  empty (both `web_fetch` and sandbox `curl`) — noted as a gap in that
+  one specific cross-check, not treated as blocking since two
+  git-native methods already agreed independently. L1: project remains
+  in a healthy, non-gated state — no open external gate, no
+  compression debt, no aged loose ends, clean working tree, same as
+  Session 045's close. L2/L3: since nothing is currently gating or
+  urgent (BACKLOG 12 stays paused on Yehor's own initiative, not
+  re-verified per the resume prompt's own instruction), asked Yehor
+  directly what he wants worked on this session rather than inventing
+  a task.
+
+## Calibration record (continued) — Session 046, open
+
+Claims checked at open: Patchward HEAD, patchward-landing HEAD,
+STRATEGY.md byte count, BACKLOG.md byte count, heuristic count/
+integrity, and fixture_repo/DRAFT-file presence — **6 CONFIRMED, 0
+DRIFTED, 0 UNVERIFIED — 1.00 (6/6)**. Every claim checked by at least
+two independent methods; all six matched the resume prompt's
+predictions exactly.
+
+## Session log (continued) — Session 046, close
+
+- [2026-09-08, Session 046 close] Ran the `session-close` skill.
+  Reconciled git state first (`git status` before any edit was
+  considered final): Patchward shows only this session's own
+  `.strategy/STRATEGY.md` edits modified, nothing else; deliberately
+  left uncommitted per H20 (agent never runs `git add`/`commit`/`push`
+  on this repo — instructions for Yehor to commit from Windows are in
+  the close-out doc). patchward-landing untouched. Two-pass verified
+  this session's own claims: a fresh independent grep re-confirmed the
+  heuristic count transitioned 40 → 41 (24 earned + 17 candidates)
+  exactly as the new H42-candidate entry should produce; a `## `
+  header scan confirmed no structural damage (no duplicate/garbled
+  section markers) from any of this session's four edits; the
+  Current-state and Open-threads insertions were read back via the
+  file tool and match what was written. Judged at three zoom levels:
+  L3 — one file modified (this memory file only), zero commits (by
+  design, per H20), a close-out doc written. L2 — the open-time goal
+  ("verify fresh, get direction from Yehor") is **MET**: verification
+  held 6/6 with 0 drift both at open and re-checked at close, and
+  Yehor gave clear direction (close the session) after independently
+  re-verifying the open-time findings himself. L1 — no horizon
+  movement, correctly: the project entered this session in its
+  cleanest verified state in tracked history and leaves it in the same
+  state, confirmed twice over (once by the agent at open, once by
+  Yehor independently) rather than assumed. One new candidate
+  heuristic logged (H42-candidate, at Yehor's own explicit naming, not
+  self-generated) — see Heuristics. Retrospective-due check run per
+  Phase 5.6: flagged again (150,327 bytes pre-close-entry, ≈9.4x
+  ceiling), not compressed, consistent with the standing rule against
+  bundling a destructive rewrite into a session with no other project
+  work. Close-out doc: `memory/SESSION_CLOSE_2026-09-08.md`, with a
+  full gate table and an honest Weakest-points section (the GitHub API
+  cross-check gap from open; the uncommitted state, which is correct
+  per H20 but means this session's work isn't durable until Yehor
+  commits it; H42-candidate resting on Yehor's own qualitative
+  read rather than this session's own independent data mining).
+
+## Calibration record (continued) — Session 046, close
+
+Claims checked this close: git status on both repos (1 method,
+direct — no second method needed for a binary present/absent check),
+heuristic count transition 40→41 (2 independent grep constructions),
+structural integrity of all four edits (2 methods: header-count scan +
+file-tool read-back), STRATEGY.md byte count (1 fresh `wc -c`,
+self-reference caveat stated explicitly per standing practice). **4 of
+5 claims checked by 2+ independent methods, 1 by a single sufficient
+method (a binary status check doesn't benefit from a second method) —
+5 CONFIRMED, 0 DRIFTED, 0 UNVERIFIED — 1.00 (5/5).** Session 046
+full-session total (open + close): 11 claims checked, 11 CONFIRMED, 0
+DRIFTED — **1.00 on the full session**, a session that did no new
+project work and spent its entire effort on verification, direction-
+seeking, and a clean, properly-documented close.
