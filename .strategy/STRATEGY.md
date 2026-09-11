@@ -15,6 +15,70 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
 4. CRA/GDPR question (BACKLOG 12) answered by qualified counsel.
 
 ## Current state
+- [2026-09-11, Session 047 open] **Session 046's close commit landed
+  successfully on origin — confirmed fresh this session via two
+  independent methods, resolving the prior entry's open "NOT yet
+  actually closed" state.** That entry (below, under Open threads) was
+  accurate as of when it was written: Yehor's first commit attempt hit
+  the stale `.git/index.lock` (H30) and origin was still at `13f03fd`.
+  Re-verified fresh, not inherited: local `.git/logs/HEAD` on the mount
+  shows HEAD at `d5ed154ce8f5fabea4e459c065fb9945872b3ba1` ("docs: close
+  Session 046..."), one commit past `13f03fd`, timestamped 2026-09-08
+  14:03 UTC (16:03 CPH) — about 32 minutes after the lock was last
+  observed at 15:31 CPH, consistent with Yehor clearing it and
+  retrying. Independently, `git ls-remote
+  https://github.com/yehorcallmedai-maker/Patchward.git HEAD
+  refs/heads/main` from the cloud sandbox (a different machine and a
+  different method than reading the mount) returns the exact same
+  hash. **Both methods agree: the close did land.** patchward-landing
+  HEAD reconfirmed unchanged at `087455d4e1eb107c67de2d869a603ebd3ba08466`
+  the same way (mount read + fresh `git ls-remote` to
+  `github.com/yehorcallmedai-maker/patchward-landing.git`).
+  STRATEGY.md/BACKLOG.md byte counts reconfirmed: STRATEGY.md exactly
+  160,814 bytes (matches the size at Session 046's own close-commit
+  time — nothing has touched it between then and now, so the resume
+  prompt's own "expect noticeably above 160,814" simply didn't apply
+  yet, not a sign of drift); BACKLOG.md unchanged at 41,383 bytes.
+  Heuristic count/integrity reconfirmed at 41 (24 earned + 17
+  candidates) using this file's own bracket-content-aware method
+  (a naive ID-suffix grep undercounts by exactly the 2 the file's own
+  counting note warns about — H23/H28 are candidates labeled inline,
+  not via the `-candidate` suffix); H42-candidate present and reads as
+  intended. `tests/fixture_repo` and the old DRAFT file confirmed still
+  closed by direct listing (no `__pycache__`, no DRAFT file at
+  Patchward's memory root) — weaker than usual here: `git status`/`git
+  diff` could not be run this session (device-bridge shell outage, see
+  below), so this one check rests on a directory listing rather than
+  git's own diff mechanism.
+- [2026-09-11, Session 047 open] **New, previously-unlogged finding:
+  `patchward-landing/.git/index.lock` is a stale 0-byte orphan dated
+  2026-08-25 14:02 UTC** — four days after the last real landing commit
+  (`087455d`, 2026-08-21). Exactly the H30 pattern, just never
+  logged against this repo before. Not currently blocking anything (no
+  patchward-landing commit is pending), but it will reproduce the same
+  `Unable to create '.git/index.lock': File exists` failure the moment
+  anyone next tries to commit there — flagged now so it isn't found the
+  hard way later. `tests/fixture_repo`'s own nested `.git` also carries
+  two long-standing orphan locks (`index.lock`, `objects/maintenance.lock`,
+  both dated 2026-07-15, Session 014 era) plus a stray worktree
+  (`patchward-fix-p4-e2e-failed-oob`) with its own `HEAD.lock` — none of
+  this is new, none of it has ever blocked a real operation, and it sits
+  inside a test fixture whose whole purpose is exercising Patchward's
+  own git-branch machinery, so it's noted for completeness, not raised
+  as an action item.
+- [2026-09-11, Session 047 open] **`device_bash` (the device-bridge
+  shell) was unavailable for this entire session** — every call failed
+  with "no Plan9 drive shares mounted," which the tool's own error text
+  attributes to a Windows update released 2026-09-08 affecting the
+  workspace-to-device bridge generally, not this project specifically.
+  Worked around via `device_list_dir`/`device_stage_files` (both still
+  functional) for every check that didn't need a live git/shell command,
+  and via the cloud sandbox's own network for `git ls-remote` against
+  both repos' real GitHub remotes. No project-side impact this session,
+  but it's why this grounding's git-status-equivalent checks rest on
+  directory listings rather than `git status`/`git diff` output — worth
+  naming so a future session doesn't assume a stronger method was used
+  than actually was.
 - [2026-09-08, Session 046 close] **Ran the `session-close` skill.
   Pure verification/documentation session — no code, BACKLOG, or
   external-state changes; the only durable artifact is this file's own
@@ -965,6 +1029,22 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   in its own right before; it should have been.
 
 ## Open threads
+- [2026-09-11, Session 047 open] **Yehor floated a broad go-to-market
+  initiative for consideration, not yet scoped or started.** Shape as
+  described: an organized, double-checked competitive-intelligence pass
+  on Patchward's competitors; using that intelligence to reposition
+  Patchward favorably and revise its Terms of Service / Privacy Policy
+  accordingly; then going to market — finding suitable open-source
+  repos to showcase in Patchward's own portfolio on its site, offering
+  Patchward free to those maintainers, collecting developer feedback,
+  and iterating session by session (eventually automating that
+  feedback-to-adjustment loop). Per this project's own standing rule
+  (see every resume prompt since Session 044: "scope that precisely
+  before starting rather than guessing at what 'worth doing' means"),
+  this is logged as a candidate direction, not started — it touches
+  legal documents (ToS/Privacy), public positioning, and outbound
+  contact with third-party maintainers, all of which warrant Yehor's
+  explicit sequencing and scope decisions before any work begins.
 - [2026-09-08, Session 046 close, post-close] **H30 recurred and this
   time genuinely blocked Yehor's own commit attempt, not just a
   sandbox-side symptom — 6th+ confirmed occurrence, first one caught
@@ -2425,3 +2505,159 @@ full-session total (open + close): 11 claims checked, 11 CONFIRMED, 0
 DRIFTED — **1.00 on the full session**, a session that did no new
 project work and spent its entire effort on verification, direction-
 seeking, and a clean, properly-documented close.
+
+## Session log (continued) — Session 047, open
+
+- [2026-09-11, Session 047 open] Ran the `session-strategy-synthesis`
+  skill, grounding in this file. Re-verified fresh rather than
+  inheriting the prior close's resume prompt: 5 of 6 named checks held
+  exactly as the project's own steady-state predicts (patchward-landing
+  HEAD unchanged, BACKLOG.md unchanged, heuristic count/integrity at 41,
+  fixture_repo/DRAFT-file status clean); the 6th (Patchward HEAD) was
+  the one this session's re-verification actually mattered for — it
+  resolved Session 046's own last open thread ("NOT yet actually
+  closed") by confirming, via `git ls-remote` from the sandbox
+  independent of the mount, that Yehor's retried commit (`d5ed154`) did
+  land on origin. One new finding surfaced that no prior session had
+  logged: a stale `.git/index.lock` orphan in `patchward-landing`
+  (H30-pattern, dated 2026-08-25). `device_bash` was unavailable all
+  session (Windows-update-related device-bridge issue, not
+  project-specific) — worked around via `device_list_dir`/
+  `device_stage_files` plus the sandbox's own `git ls-remote` against
+  both real GitHub remotes; this made the fixture_repo/DRAFT-file check
+  slightly weaker than usual (directory listing only, no live `git
+  status`). L1: project remains in a healthy, non-gated state — no open
+  external gate, no compression debt beyond the already-flagged
+  retrospective, no aged loose ends, and now, as of this session, no
+  stale doubt about whether Session 046 actually closed. L2/L3: nothing
+  is currently gating or urgent; Yehor separately floated a broad
+  go-to-market initiative (competitor research, ToS/Privacy revision,
+  portfolio repos, free offers to maintainers, feedback iteration) —
+  logged under Open threads as an unscoped candidate direction, to be
+  scoped with him directly before any of it starts, per this project's
+  own standing rule against guessing at new-direction scope.
+
+## Calibration record (continued) — Session 047, open
+
+Claims checked at open: Patchward HEAD, patchward-landing HEAD,
+STRATEGY.md byte count, BACKLOG.md byte count, heuristic count/
+integrity, and fixture_repo/DRAFT-file presence — **6 CONFIRMED, 0
+DRIFTED, 0 UNVERIFIED (6/6)**, but methodologically uneven this time
+because of the `device_bash` outage: 4 of 6 (Patchward HEAD,
+patchward-landing HEAD, STRATEGY.md byte count, heuristic count/
+integrity) held up under two genuinely independent methods each
+(mount-read + fresh sandbox `git ls-remote`/`wc -c`/dual-grep-construction);
+2 of 6 (BACKLOG.md byte count, fixture_repo/DRAFT-file presence) rest
+on a single method (a directory-listing size field, and a directory
+listing in place of `git status`) because the device-bridge shell
+wasn't available to provide the usual second, independent check. Both
+are still judged CONFIRMED — the single method used for each is direct
+observation, not hearsay or an inherited claim — but flagged honestly
+as resting on one method rather than two, consistent with this file's
+own practice of naming exactly which checks met the two-method bar.
+The prior session's own final open thread ("Session 046 is NOT yet
+actually closed on origin") is superseded by this session's own
+findings, not retracted — it was accurate when written; reality moved
+after it was written and this session is the first to record that.
+
+## Session log (continued) — Session 047, continued
+
+- [2026-09-11, Session 047 continued] Yehor pasted a "guide model" review
+  of the competitor-positioning brief (a second AI's independent
+  verification pass) proposing two corrections and a ToS-path decision
+  point. Per this project's own standing pattern (H36/H38/H39 — a pasted
+  guide-model review gets checked directly, not accepted at face value),
+  both claims were independently re-verified against primary sources
+  before being applied: **Snyk Agent Fix confirmed** (its own "Building
+  AI Trust" post: every generated fix runs through a Snyk Code SAST scan
+  *before* being shown to the user, checking it "actually solves the
+  problem" and "doesn't introduce any new security issues" — real, but
+  worded differently than the guide model's paraphrase, which did not
+  appear verbatim anywhere checked); **GitHub's scoped-rescan limitation
+  confirmed verbatim** against GitHub's own docs ("can't confirm that a
+  fix resolves alerts generated by custom queries or the
+  security-extended query suite"; "Fix quality for alerts from
+  third-party tools is also not guaranteed."). Both corrections applied
+  to `memory/competitor_positioning_brief_2026-09-11.md` directly, with
+  the sharper, now-precise wedge framing ("uniform verification across
+  every scanner, no stated scope carve-out" vs. the original "verification
+  exists nowhere else," which undercounted at two competitors instead of
+  four). Separately, Yehor asked whether to make Patchward fully free and
+  open-source to redirect his time elsewhere. Checked directly rather
+  than answered from priors: `github.com/yehorcallmedai-maker/Patchward`
+  is **already public** (0 stars, no LICENSE file) — has been readable
+  by anyone for ~2 months with zero visibility gained, so "open-sourcing
+  it" is really "licensing it + promoting it," two different-cost
+  problems, not one switch. Also surfaced: Patchward and FixProve are
+  **parallel projects under the same CVR** (own persistent record,
+  cross-checked this turn) — FixProve is the materially more advanced of
+  the two (live CLI, MIT-licensed, active GTM, running demand test
+  through 2026-11-12) — which reframes the pivot as consolidation toward
+  the stronger project, not abandonment. Also checked `patchward.toml.example`
+  directly: the CLI path is fully BYO-credentials (user's own
+  `ANTHROPIC_API_KEY`, own repo path) — Patchward's own infrastructure
+  never touches a CLI user's code or keys, which meaningfully de-risks
+  the ToS/Privacy urgency from this session's earlier brief **for that
+  specific distribution path** (a standard OSS license's "AS IS" language
+  covers it; the fuller Privacy Policy need is still real for Yehor
+  personally running the tool against someone else's repo, or any future
+  hosted/webhook path). No decision made yet — surfaced back to Yehor
+  with a clarifying question (license choice; whether to formally end
+  the paid Marketplace ambition or keep it dormant) before proceeding.
+
+## Calibration record (continued) — Session 047, continued
+
+Claims checked this turn: Snyk Agent Fix's pre-presentation SAST scan (1
+method, direct fetch of Snyk's own post — the guide model's exact quote
+wording was not found verbatim anywhere checked, only the substance);
+GitHub's scoped-rescan limitation (1 method, direct fetch, verbatim
+match); Patchward GitHub repo visibility/license status (1 method,
+direct fetch of the repo page — the sandbox's own GitHub API access is
+blocked for this session, a tooling restriction unrelated to the repo's
+actual visibility, correctly not treated as evidence either way);
+FixProve/Patchward parallel-project relationship (1 method, this
+project's own persistent record, not independently re-derived from
+FixProve's own working files this session); `patchward.toml.example`'s
+BYO-credentials model (1 method, direct file read). **5 CONFIRMED, 0
+DRIFTED, 0 UNVERIFIED (5/5)**, but every one by a single method this
+turn — no claim got the project's usual two-independent-method
+treatment, because each was a first-time spot-check of a new claim
+rather than a re-verification of an existing one where a second method
+was readily available. Flagged honestly rather than overstated as
+matching the file's usual bar.
+
+## Session log (continued) — Session 047, continued (decision + files)
+
+- [2026-09-11, Session 047 continued] Yehor decided: MIT-license
+  Patchward and formally drop the paid GitHub Marketplace/hosted-webhook
+  path, staying a free, self-hosted CLI tool. Files written directly to
+  the working tree this turn (uncommitted, per H20 — commit instructions
+  given to Yehor, same pattern as every prior close): new `LICENSE`
+  (MIT, copyright Yehor Kaliberda 2026) and `pyproject.toml` (`license =
+  "MIT"` added under `[project]`) in Patchward; `README.md` updated to
+  drop the stale "not yet published to PyPI" line (contradicted
+  `facts.yaml`'s own verified install-command fact and this file's own
+  Success Criteria — PyPI went live 2026-07-22), state the free/MIT
+  framing up front, and add a License section. In patchward-landing:
+  `facts.yaml`'s `pilot-delivery` fact rewritten in place (the file's own
+  single-source-of-truth governance model followed, not bypassed) to
+  describe the free/self-hosted/BYO-credentials model, dated and sourced
+  to this decision, with the prior pilot-era value explicitly marked
+  superseded-not-retracted; `index.astro`'s hero CTA changed from a
+  `mailto:` "Request a pilot" link to a GitHub link, "Get it free on
+  GitHub →", and the verification-receipt paragraph's "hosted
+  environment" phrasing generalized since that path is no longer being
+  built toward; `limits.astro`'s "How a pilot is delivered today"
+  section retitled "How Patchward is distributed" and its trailing
+  sentence changed from "will be revisited as the hosted path takes on
+  real installations" to reflect a settled decision, not a placeholder.
+  None of this has been git-committed or deployed — Cloudflard Pages
+  builds on push, so nothing reaches patchward.dev until Yehor commits
+  and pushes from his own machine (instructions given in-chat, same H20
+  pattern as every prior session's close-out). Not touched: the
+  `[project.optional-dependencies].webhook` dependency group or any
+  webhook/billing source code — "drop the paid path" was read as a
+  marketing/positioning decision this session, not an instruction to
+  delete working code without review; flagged back to Yehor as an open
+  question (leave the dormant webhook code as-is, or remove it later)
+  rather than decided unilaterally.

@@ -4,6 +4,10 @@ Local-first multi-repo security agent: scans your code for vulnerabilities,
 generates patches with an LLM subagent, verifies them deterministically, and
 opens draft GitHub PRs for human review.
 
+Free and open source (MIT license). No hosted service, no paid tier — you
+run it yourself, with your own Anthropic API key and GitHub token. Your
+code and credentials never pass through Patchward's own infrastructure.
+
 ## Prerequisites
 
 - Python 3.12+, uv, Docker Desktop
@@ -14,7 +18,11 @@ See [docs/user_guide.md](docs/user_guide.md) for full setup instructions.
 
 ## Installation
 
-Patchward is not yet published to PyPI. Install from source:
+```
+uv tool install patchward
+```
+
+Or from source:
 
 ```
 git clone https://github.com/yehorcallmedai-maker/Patchward.git
@@ -41,3 +49,7 @@ patchward batch
 
 Full configuration reference, prerequisites, and usage examples:
 [docs/user_guide.md](docs/user_guide.md)
+
+## License
+
+MIT — see [LICENSE](LICENSE).
