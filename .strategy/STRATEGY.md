@@ -2179,6 +2179,26 @@ session doesn't rediscover a pattern already being tracked):
   file. Logged as a single-occurrence candidate, not promoted: this is a
   first observation, the cause is unknown, and it may be specific to
   rapid sequential writes rather than a general property of the tool.
+- H44-candidate [1 occurrence, 2026-09-11]: **any secret (API token,
+  credential) that touches a chat transcript must be treated as
+  compromised the instant it's typed, and revoked immediately — not
+  sequenced behind finishing other work in the same session.** Occurred
+  when Yehor pasted a live Telegram bot API token directly into an
+  AskUserQuestion answer while proposing Telegram as a future digest
+  channel for the outreach-loop design (see
+  `memory/outreach_loop_design_2026-09-11.md`, §4a item 3). Initial
+  guidance given ("revoke it once we're done here") was corrected
+  — rightly — to "revoke it now, first, ahead of everything else": a
+  secret's exposure window doesn't wait for a session's task queue, and
+  there's no engineering reason to leave it open even briefly. As of
+  this entry, Yehor has confirmed the token is **NOT yet revoked** —
+  this remains an open, live exposure, not a closed incident. Compounding
+  factor specific to this project: Patchward's GitHub repo is now public
+  (this session's own MIT pivot), so the same discipline applies with
+  extra force to anything that touches that repo's git history —
+  standing practice adopted: secrets are environment variables or
+  gitignored local files, referenced by name, never a literal value in
+  any git-tracked file, no exceptions.
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -2784,6 +2804,30 @@ matching the file's usual bar.
   answers to the four open questions it lists (repo shortlist contents,
   digest surface, cadence, and confirming or overriding the Phase-1
   recommendation).
+- [2026-09-11, Session 047 close, post-close] **Section 4's open
+  questions answered and locked**, appended to the design doc as new
+  §4a rather than overwriting the original question record. Confirmed:
+  shortlist-first (unchanged from §2's recommendation); shortlist
+  contents = `mpfb2` only to start; cadence = weekly to start (escalate
+  to daily only after a clean run history, per H42-candidate); secret
+  storage = env var / gitignored file, standing practice project-wide
+  given the repo is now public. **Digest surface (Telegram, ~12:00) was
+  proposed but explicitly NOT locked** — it arrived attached to a live
+  bot token pasted into chat, a credential-exposure event independent of
+  which channel gets chosen, logged as H44-candidate above. The
+  file-based digest in the design doc's own §3 architecture remains the
+  actual Phase-1 default until that token is revoked and, if Telegram is
+  still wanted, a replacement is wired up via proper secret storage —
+  not typed into a chat again. Session-count estimate for the eventual
+  build (6–8 sessions, given by a second-model review) independently
+  spot-checked before being treated as reasonable: two of its three
+  supporting incidents (the soft-404 regression, manual-not-git-
+  integration deploy) verified verbatim against this file's own history;
+  the third ("token failure"/"domain-routing mixup" narrative) could not
+  be re-derived from the current, twice-compressed file — labeled Tier-1
+  rather than confirmed, not dismissed. The estimate's underlying caution
+  is independently supported by this project's own H42-candidate
+  regardless of that one unverifiable detail.
 
 ## Session log (continued) — Session 047, close
 

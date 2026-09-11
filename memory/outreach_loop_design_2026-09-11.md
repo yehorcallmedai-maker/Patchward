@@ -142,6 +142,55 @@ decision.
 4. Cadence: daily, or less frequent to start (e.g. weekly) while this is
    unproven?
 
+## 4a. Section 4 — locked answers (2026-09-11)
+
+Answered and confirmed by Yehor the same session this document was
+written. These override anything in §4 above where the two disagree —
+§4 is left intact as the question record, this section is the decision
+record.
+
+1. **Shortlist-first, confirmed, not overridden.** Phase 1 uses the
+   Yehor-maintained-shortlist model from §2. Propose-and-approve remains
+   an explicit, not-yet-built Phase 2.
+2. **Shortlist contents: `mpfb2` only, to start.** Rationale, confirmed
+   over adding more repos now: it's the one repo where Patchward already
+   has a real track record (2 merged security-fix PRs), so it isolates
+   "does the automation loop itself work" from "does a brand-new
+   maintainer relationship respond well" — two different unknowns that
+   adding more repos now would conflate. The shortlist expands only
+   after a first supervised live run goes cleanly, not on a fixed
+   timeline.
+3. **Digest surface: Telegram, delivered ~12:00 (noon), was proposed by
+   Yehor mid-session.** NOT locked as a final decision alongside the
+   other three — this arrived attached to a live bot API token pasted
+   directly into a chat session, which is a credential-exposure event in
+   its own right regardless of what channel is eventually chosen. As of
+   this entry, that token has NOT yet been revoked by Yehor's own
+   confirmation. Standing rule this project now carries forward: **any
+   secret that touches a chat transcript is compromised the instant it's
+   typed, revoke immediately, no exceptions and no sequencing behind
+   other work** — logged as a new candidate heuristic (see
+   `.strategy/STRATEGY.md`, H44-candidate). The Telegram-as-digest-
+   channel idea itself is reasonable and not rejected — it's simply not
+   treated as settled infrastructure until (a) the exposed token is
+   revoked and (b) a replacement token, if this channel is still wanted,
+   is stored via env var / gitignored secrets file per item 4 below,
+   never typed into a chat or committed to the repo. Until then, the
+   file-based digest described in §3's architecture remains the default
+   surface actually implemented in Phase 1.
+4. **Secret storage, confirmed as standing practice, not just for this
+   feature: environment variable or a local gitignored secrets file,
+   referenced by name in code, never a literal value in any git-tracked
+   file.** This matters more than it would have before tonight's own
+   MIT pivot — Patchward's GitHub repo is now public, so anything
+   committed to it is committed to the public internet, permanently
+   recoverable from git history even after a later deletion commit.
+5. **Cadence: weekly, to start**, confirmed over daily. Directly applies
+   this project's own H42-candidate (a new integration surface has
+   consistently taken more verification passes than its first framing
+   implied) — escalate to daily only after weekly has run cleanly a few
+   times, an evidence-based trigger rather than a fixed date.
+
 ## 5. Claims checked before this document was written
 
 - **"Patchward opens draft PRs, never merges"** — confirmed via direct
