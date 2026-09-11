@@ -2756,6 +2756,34 @@ matching the file's usual bar.
   delete working code without review; flagged back to Yehor as an open
   question (leave the dormant webhook code as-is, or remove it later)
   rather than decided unilaterally.
+- [2026-09-11, Session 047 close, post-close] **The floated go-to-market
+  automation idea (see this section's Session 047 open entry) got a
+  design-only pass, not a build.** A second-model review correctly
+  identified two points needing a hard gate before any automation could
+  be trusted: autonomous target-repo selection, and auto-sending email —
+  both independently verified against this project's own memory rather
+  than accepted on the review's word (H20's exact text was checked and
+  found to be about sandbox git-corruption risk specifically, not
+  PR-opening authority — the review's citation was directionally right
+  but imprecise; the substantive "irreversible external actions are
+  Yehor's call" principle is independently supported elsewhere in this
+  project's memory, so the conclusion stands even though the citation
+  needed correcting). Yehor deferred the target-repo-model choice to
+  analysis rather than picking himself, and left the auto-send question
+  open ("figure out with time") rather than locking it as permanently
+  closed. **Delivered:** `memory/outreach_loop_design_2026-09-11.md`
+  (design-only, no automation code) — recommends a Yehor-maintained
+  shortlist for Phase 1 (simpler, faster real signal) with a
+  propose-and-approve mode as an explicit, not-yet-built Phase 2;
+  implements draft-only Gmail replies as the current default without
+  building any auto-send code path, while explicitly not claiming that
+  default is locked in forever, consistent with Yehor's own answer.
+  Written uncommitted to Yehor's working tree (H20), verified landed via
+  fresh `device_list_dir` before being reported. No automation has been
+  built or scheduled; this is a design document only, awaiting Yehor's
+  answers to the four open questions it lists (repo shortlist contents,
+  digest surface, cadence, and confirming or overriding the Phase-1
+  recommendation).
 
 ## Session log (continued) — Session 047, close
 
