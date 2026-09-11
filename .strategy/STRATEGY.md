@@ -2190,15 +2190,28 @@ session doesn't rediscover a pattern already being tracked):
   guidance given ("revoke it once we're done here") was corrected
   — rightly — to "revoke it now, first, ahead of everything else": a
   secret's exposure window doesn't wait for a session's task queue, and
-  there's no engineering reason to leave it open even briefly. As of
-  this entry, Yehor has confirmed the token is **NOT yet revoked** —
-  this remains an open, live exposure, not a closed incident. Compounding
-  factor specific to this project: Patchward's GitHub repo is now public
-  (this session's own MIT pivot), so the same discipline applies with
-  extra force to anything that touches that repo's git history —
-  standing practice adopted: secrets are environment variables or
-  gitignored local files, referenced by name, never a literal value in
-  any git-tracked file, no exceptions.
+  there's no engineering reason to leave it open even briefly.
+  **Resolved same session (2026-09-11):** Yehor confirmed via BotFather's
+  own reply that the exposed token for `@roheycccbot` (bot name "Rohey")
+  has been revoked. A new token was issued in the same BotFather flow;
+  Yehor was told not to paste it into chat either — same rule applies to
+  any secret regardless of whether it has touched a transcript yet. Not
+  independently verified beyond Yehor's own screenshot of BotFather's
+  confirmation message (Tier 1 — a direct platform confirmation, not
+  re-derived by this session, since there is no tool access to Telegram
+  from here to check independently). Time-to-revoke from first exposure
+  to confirmed revocation: same session, well under an hour — treated as
+  the acceptable outcome this heuristic exists to produce, not
+  full remediation of every risk (the token was live in a chat transcript
+  for some period regardless of what happened after). Compounding factor
+  specific to this project, unaffected by the revocation: Patchward's
+  GitHub repo is now public (this session's own MIT pivot), so the same
+  discipline applies with extra force to anything that touches that
+  repo's git history — standing practice adopted: secrets are
+  environment variables or gitignored local files, referenced by name,
+  never a literal value in any git-tracked file, no exceptions. Single
+  occurrence — not promoted; promotable on a second real instance of a
+  secret touching a chat transcript in this project.
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
