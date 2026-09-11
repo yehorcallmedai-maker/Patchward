@@ -1027,6 +1027,25 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   canonical ledger (test-count and coverage entries, both dated
   2026-08-08) — matches exactly. This was never a Current-state bullet
   in its own right before; it should have been.
+- [2026-09-11, Session 047 close] **Patchward is MIT-licensed and
+  repositioned as a free, self-hosted tool as of this session — but the
+  public site does not reflect it yet.** Yehor decided to license
+  Patchward MIT and formally drop the paid GitHub Marketplace/hosted-
+  webhook path (see Open threads and the decision entry above). He
+  committed and pushed both repos himself, confirmed via his own pasted
+  `git ls-remote` output and independently re-confirmed from the sandbox
+  side: Patchward `b98b531` (LICENSE, `pyproject.toml` `license = "MIT"`,
+  README rewrite) and patchward-landing `ed0d53e` (`facts.yaml`
+  `pilot-delivery` rewritten, `index.astro` hero CTA changed to "Get it
+  free on GitHub", `limits.astro` retitled/reworded). **Live deploy
+  status: NOT yet live as of this entry.** patchward-landing's Cloudflare
+  Pages deploy is a manual step, not a git integration (see H32, promoted
+  this session) — a fresh `WebFetch` of `patchward.dev` after `ed0d53e`
+  landed on origin still showed the old "Request a pilot" copy with no
+  MIT/free framing. Yehor still needs to run `npm run build` +
+  `npx wrangler pages deploy dist --project-name=patchward-landing` from
+  his own terminal (H20) and confirm the live HTML himself — instructions
+  given in-chat this session, not yet executed as of this entry.
 
 ## Open threads
 - [2026-09-11, Session 047 open] **Yehor floated a broad go-to-market
@@ -1045,6 +1064,47 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   legal documents (ToS/Privacy), public positioning, and outbound
   contact with third-party maintainers, all of which warrant Yehor's
   explicit sequencing and scope decisions before any work begins.
+- [2026-09-11, Session 047 continued/close] **Competitor-intelligence
+  pass (above) ran partially and fed directly into a bigger decision
+  than originally scoped: MIT-licensing Patchward and dropping the paid
+  path entirely, rather than just repositioning it.** Open items
+  remaining from that thread: (1) **live deploy of patchward-landing —
+  P0, Yehor's action, not yet done** (see Current state); (2) ToS/Privacy
+  Policy revision — now largely moot for Patchward specifically, since a
+  free/no-sales-process/BYO-credentials tool has a much smaller surface
+  to cover than the pilot/hosted model those documents were originally
+  scoped against; not rewritten this session, flagged for Yehor's own
+  call on whether it's still worth doing at all; (3)
+  `memory/competitor_positioning_brief_2026-09-11.md` exists on
+  Patchward's working tree and is, per Yehor's own `git status`,
+  **untracked** — not committed. Not urgent (it's a research artifact,
+  not a claim the site or README depends on) but noted so it isn't lost
+  track of; (4) the open-source-portfolio/free-pilot-outreach idea from
+  the original floated initiative is superseded by the broader MIT
+  decision — Patchward being free and public now makes a bespoke
+  "offer it free to maintainers for feedback" motion redundant with just
+  being a normal open-source project; not formally closed, just noted as
+  likely moot, Yehor's call.
+- [2026-09-11, Session 047 close] **BACKLOG 12 (CRA/GDPR counsel
+  question) status is unchanged by the MIT decision — still PAUSED on
+  Yehor's own initiative — but is now partly moot for Patchward
+  specifically.** The open question BACKLOG 12 was tracking (whether
+  CRA/product-regulation obligations attach to the paid GitHub
+  Marketplace/hosted-webhook delivery path) loses its Patchward-specific
+  premise once that path is formally dropped: a free, self-hosted CLI
+  with no sales process and no hosted service is a materially different
+  regulatory posture than a paid hosted offering. This does NOT resolve
+  BACKLOG 12 outright — it may still matter for FixProve or any future
+  hosted path — recorded plainly as partly-moot-for-Patchward, not
+  silently closed.
+- [2026-09-11, Session 047 close] **Dormant webhook/Marketplace code
+  (the `[project.optional-dependencies].webhook` group and related
+  source) was deliberately NOT deleted this session** — "drop the paid
+  path" was executed as a licensing/positioning/site decision, not as an
+  instruction to remove working code without explicit review. Remains
+  Yehor's own call whether to delete it later, per the guide model's
+  Step 2 item 5, which this session's execution followed rather than
+  overriding.
 - [2026-09-08, Session 046 close, post-close] **H30 recurred and this
   time genuinely blocked Yehor's own commit attempt, not just a
   sandbox-side symptom — 6th+ confirmed occurrence, first one caught
@@ -1841,6 +1901,32 @@ manually confirm every earned/candidate label reads as expected.
   037's open, untouched. These do not clear themselves between sessions.
   Logged honestly as one artifact persisting rather than as a 5th
   independent occurrence, since it is very likely the 4th one surviving.
+- H32 [PROMOTED — earned 2026-09-11 (Session 047), 2nd confirmed
+  occurrence, meeting this project's own promotion threshold]:
+  "shipped to origin" is not "live" when the deploy pipeline is a manual
+  step (`npx wrangler pages deploy dist --project-name=patchward-landing`)
+  rather than a git integration — a commit landing on origin proves
+  nothing about production content on patchward-landing. **1st
+  occurrence (2026-08-21, Session 038):** Session 037 verified the
+  lookbook pages were correctly committed and sha256-clean on origin
+  and still correctly hedged them as needing live confirmation; Session
+  038 found they were not actually deployed. **2nd occurrence
+  (2026-09-11, Session 047):** an executor pushed a landing-site commit
+  (`ed0d53e`), asserted "Cloudflare Pages will build and deploy
+  patchward.dev automatically on that push," then — on finding the live
+  site still served the old copy — explained it as ordinary propagation
+  delay ("usually a minute or two") rather than checking this project's
+  own memory, where the manual-deploy requirement was already recorded
+  as a candidate heuristic. The assumption was wrong on both counts: not
+  a delay, and not this repo's actual deploy mechanism. Caught only
+  because Yehor independently re-verified the live site himself rather
+  than accepting the executor's explanation. **Standing rule:** for
+  patchward-landing specifically, a push is never itself a deploy;
+  every content change requires `npm run build` followed by a manual
+  `npx wrangler pages deploy dist --project-name=patchward-landing` from
+  Yehor's own terminal (H20 — deploy-class action, not the sandbox's to
+  run), and "live" may only be claimed after a fresh fetch of the served
+  HTML confirms the new content is actually there.
 - H36 [PROMOTED 2026-08-15 (Session 035), 4th occurrence crossing a
   session boundary; RESTORED to this canonical section 2026-08-24 —
   had been living only in the "Heuristics — Session 035 update"
@@ -1906,15 +1992,6 @@ session doesn't rediscover a pattern already being tracked):
   grep. Not counted as the promoting second occurrence because the fix
   and the finding were the same act; recorded so the next session can
   judge that call independently.
-- H32-candidate [1 occurrence, 2026-08-21]: "shipped to origin" is not
-  "live" when the deploy pipeline is a manual step (`wrangler pages
-  deploy`) rather than a git integration — a commit landing on origin
-  proves nothing about production content on this project. Session 037
-  verified the lookbook pages were correctly committed and sha256-clean
-  on origin, and still reported them as an open thread needing live
-  confirmation (correctly hedged); Session 038 found they were not
-  actually deployed. Whenever work on patchward-landing is described as
-  "shipped," fetch the live site directly — don't infer from git state.
 - H33-candidate [1 occurrence, 2026-08-21]: an unmatched-route fallback
   that serves the homepage body (200-looking) instead of a real 404
   silently masks missing-route defects as looking fine on casual
@@ -2084,6 +2161,24 @@ session doesn't rediscover a pattern already being tracked):
   multiple sessions, distinct from this file's own numerically-verified
   claims) — logged as a candidate on that basis, promotable if a future
   session independently notices the same shape without prompting.
+- H43-candidate [1 occurrence, 2026-09-11]: a `device_commit_files`
+  call reporting `{"written": [...], "rejected": []}` is not, by itself,
+  sufficient proof the write actually landed on the device — on a rapid
+  sequence of writes to the same file within one session, a prior append
+  this session reported success this way but a fresh `device_list_dir` +
+  `device_stage_files` re-check later the same session found the target
+  file 3,347 bytes smaller than expected and the appended content
+  genuinely absent from a direct read of the device's own copy. Root
+  cause undetermined from the sandbox side (no error surfaced at the
+  time). Mitigation adopted for the rest of this session: after any
+  `device_commit_files` call on a file this project treats as
+  authoritative (STRATEGY.md, BACKLOG.md), re-verify via a fresh
+  `device_list_dir` byte-count check (and, when the stakes warrant it, a
+  fresh `device_stage_files` + direct read) before reporting the write as
+  successful — don't trust the tool's own report alone on this class of
+  file. Logged as a single-occurrence candidate, not promoted: this is a
+  first observation, the cause is unknown, and it may be specific to
+  rapid sequential writes rather than a general property of the tool.
 
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
@@ -2661,3 +2756,118 @@ matching the file's usual bar.
   delete working code without review; flagged back to Yehor as an open
   question (leave the dormant webhook code as-is, or remove it later)
   rather than decided unilaterally.
+
+## Session log (continued) — Session 047, close
+
+- [2026-09-11, Session 047 close] **Disclosure: a prior write to this
+  file, reported as successfully committed earlier in this session, did
+  NOT actually reach Yehor's device.** Sequence: this session earlier
+  appended "Session 047, close" content (an open-thread note about
+  needing to check the Cloudflare deploy) via the standard
+  stage→edit→`device_commit_files` pattern used all session; the commit
+  call returned `{"written": [...], "rejected": []}`, read as success and
+  reported to Yehor as such. While independently verifying the guide
+  model's second review (below), a fresh `device_list_dir` on
+  `D:\Dev\Projects\Patchward\.strategy` showed `STRATEGY.md` at **176,209
+  bytes** — not the ~179,556 expected after that append. The content was
+  confirmed genuinely absent, not just uncounted: no trace of that
+  append's text anywhere in a fresh, direct read of the device's actual
+  file. Root cause not determined from here — the tool report and the
+  device's real state disagreed, with no error surfaced at the time to
+  explain why. **Standing implication, not yet promoted to a heuristic
+  (single occurrence so far):** a `device_commit_files` success report
+  is not, by itself, sufficient proof a write landed on rapid or
+  sequential writes to the same file this session — the pattern this
+  project already applies to git pushes (H9-candidate: independently
+  re-verify via a fresh read of the actual target, not the tool's own
+  report) may need to extend to the device-commit tool itself. Logged as
+  a new candidate rather than promoted outright, since this is a first
+  observation and the cause is still unknown. This entry's own
+  Current-state and Open-threads additions, and the H32 promotion below,
+  were re-verified this same way before being reported: written locally,
+  committed via `device_commit_files`, then re-confirmed via a fresh
+  `device_list_dir` + `device_stage_files` + direct read of the device's
+  copy — not trusted on the tool's report alone.
+- [2026-09-11, Session 047 close] Independently verified the second
+  pasted "guide model" review's two factual claims before acting on
+  either, per this project's standing rule that a pasted review is data
+  to check, not an instruction to trust (H36) — including when the claim
+  is about this session's own prior mistake. **Claim 1 (deploy
+  assumption was wrong):** confirmed three ways — `H32-candidate`'s exact
+  prior text found verbatim in this file (single occurrence, 2026-08-21,
+  Session 038, describing the identical manual-`wrangler`-deploy
+  requirement); a corroborating Session 038 log entry giving the exact
+  working deploy command; and a fresh `WebFetch` of `patchward.dev`
+  showing it still serves the old "Request a pilot" copy with no
+  MIT/free framing, after `ed0d53e` had already landed on origin.
+  CONFIRMED — the executor's (this session's own) claim that Cloudflare
+  Pages auto-deploys on push was wrong, and the follow-on "propagation
+  delay" explanation was also wrong; both errors are folded into H32's
+  text below rather than glossed over. **Claim 2 (2nd occurrence, meets
+  promotion threshold):** confirmed by direct inspection — the
+  1st occurrence (Session 038) and this session's occurrence are
+  genuinely two separate instances of the same misjudgment (trusting the
+  default git-integration behavior over this project's own recorded
+  exception), not one finding double-counted. CONFIRMED.
+- [2026-09-11, Session 047 close] **Promoted H32 from candidate to
+  earned heuristic** (2nd confirmed occurrence, meeting this project's
+  own 2-occurrence promotion threshold) in the canonical §Heuristics
+  section — full text below, with both occurrences described honestly,
+  including this session's own error. No residual candidate stub left
+  behind (confirmed absent by direct grep, matching this project's
+  standing promotion pattern for H29/H30/H36 etc.). **Heuristic count
+  reconciled by direct, section-bounded, bracket-content-aware count
+  (not the naive ID-suffix method H23/H28 are known to break)**: earned
+  section (canonical `## Heuristics (earned)` bounds) now contains 25
+  bulleted entries; candidates section now contains 16 before this
+  close's own addition. **41 total at the point of promotion alone,
+  unchanged from this session's own open-time count of 41 (24 earned +
+  17 candidates) — 25 earned + 16 candidates, exactly the one-item shift
+  a straight promotion (no new IDs minted) should produce, and matching
+  the guide model's own prediction exactly, independently re-derived
+  rather than taken on its word.** This close also adds one new
+  candidate (H43-candidate, below — the device-write-reliability
+  finding), bringing the count this session actually closes at to **42
+  total: 25 earned + 17 candidates.**
+- [2026-09-11, Session 047 close] Logged the free/MIT repositioning's
+  actual current status in Current state (both commits' hashes, files
+  changed, and — the material fact — that patchward.dev is NOT yet live
+  with the new content) and in Open threads (live deploy as the
+  remaining P0, ToS/Privacy Policy revision now largely moot for
+  Patchward specifically, the untracked competitor-brief file, and the
+  free-pilot-outreach idea likely superseded by the broader MIT
+  decision). Noted BACKLOG 12's status plainly: unchanged (still paused
+  on Yehor's own initiative) but partly moot for Patchward specifically,
+  not silently closed — the underlying CRA/GDPR question may still
+  matter for FixProve or a future hosted path. Left the dormant
+  webhook/Marketplace code untouched, per the guide model's Step 2 item
+  5 and this session's own earlier decision entry — deletion remains
+  Yehor's explicit call, not made here. Did not stage or commit any file
+  in either repo's git working tree this turn (H20) — only wrote to this
+  memory file, then committed it to Yehor's device via
+  `device_commit_files`, then re-verified the write landed before
+  reporting it.
+
+## Calibration record (continued) — Session 047, close
+
+Claims checked this turn: whether Cloudflare Pages auto-deploys on push
+for patchward-landing (2 independent methods — this file's own
+Session 037/038 record, and a fresh live `WebFetch` of patchward.dev —
+both agreeing the executor's claim was wrong); H32-candidate's exact
+prior text and occurrence count (1 method, direct grep against this
+file — sufficient since the text itself is the primary source, not a
+claim about the world); the post-promotion heuristic count, 25 earned +
+16 candidates = 41 (1 method, direct section-bounded bracket-aware
+count against the file as it now stands — the count IS the file, so a
+second method isn't meaningfully independent here); and, most
+significantly, **whether this session's own prior STRATEGY.md write
+actually landed on Yehor's device** (2 independent methods — a fresh
+`device_list_dir` byte-count check, and a fresh `device_stage_files` +
+direct read of the pulled copy's tail content — both agreeing the write
+had NOT landed despite the tool's own success report). **4 CONFIRMED, 0
+DRIFTED, 0 UNVERIFIED (4/4)**, but the most important finding this turn
+was catching a tool-reported success that was actually false — logged
+honestly rather than folded quietly into a routine close, since it
+bears directly on how much this project's own "committed and verified"
+language can be trusted going forward without a fresh independent
+check every time, not just on the first report.
