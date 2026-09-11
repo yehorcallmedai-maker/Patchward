@@ -1027,9 +1027,16 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   canonical ledger (test-count and coverage entries, both dated
   2026-08-08) — matches exactly. This was never a Current-state bullet
   in its own right before; it should have been.
-- [2026-09-11, Session 047 close] **Patchward is MIT-licensed and
-  repositioned as a free, self-hosted tool as of this session — but the
-  public site does not reflect it yet.** Yehor decided to license
+- [2026-09-11, Session 047, CORRECTED at formal close] **Patchward is
+  MIT-licensed and repositioned as a free, self-hosted tool, AND the
+  public site now reflects it — confirmed live via a fresh, cache-busted
+  `WebFetch` of `patchward.dev` later the same session** (hero CTA reads
+  "Get it free on GitHub →", no "Request a pilot" anywhere). The
+  "NOT yet live" state described immediately below was accurate at the
+  time it was written and is left intact rather than deleted, per this
+  file's own no-laundering rule — this correction supersedes it, dated
+  later the same session, after Yehor ran the manual `wrangler` deploy.
+  Yehor decided to license
   Patchward MIT and formally drop the paid GitHub Marketplace/hosted-
   webhook path (see Open threads and the decision entry above). He
   committed and pushed both repos himself, confirmed via his own pasted
@@ -2956,3 +2963,72 @@ honestly rather than folded quietly into a routine close, since it
 bears directly on how much this project's own "committed and verified"
 language can be trusted going forward without a fresh independent
 check every time, not just on the first report.
+
+## Session log (continued) — Session 047, formal close (session-close skill)
+
+- [2026-09-11, Session 047, formal close] Ran the `session-close` skill
+  to seal this session properly, at Yehor's explicit request for an
+  "industrial elegant organisational" close. Full two-pass verification
+  re-run fresh rather than trusted from this session's own prior
+  reports: fresh `git ls-remote` on both repos (Patchward `8c7dbb2`,
+  patchward-landing `ed0d53e`, both matching); a fresh full clone of
+  Patchward at HEAD, checked for stray secrets/`.env`/`.venv` in the
+  tracked tree (clean) and for the exposed Telegram token shape
+  specifically (clean); direct read of `LICENSE`/`pyproject.toml` in
+  that fresh clone confirming MIT correctly present. Delivered
+  `memory/SESSION_CLOSE_2026-09-11.md` with a full gate table, L3/L2/L1
+  judgment, decisions log, and an honest weakest-points section that
+  does not soften either miscalibration this session produced (the
+  Cloudflare auto-deploy assumption, and the silent STRATEGY.md write
+  failure) or the credential-exposure incident. Judgment: **L2 MET**
+  (the session's goal evolved via an explicit, recorded Yehor decision
+  from "competitor research" to "execute the MIT/free pivot," and both
+  the original and evolved goals are independently confirmed complete
+  and live); **L1: genuine horizon movement** — a two-month-old
+  ambiguous paid-pilot bet was retired cleanly in favor of the stronger
+  sibling project (FixProve) getting the attention, not left to linger,
+  and a real security incident was caught and closed within the same
+  session rather than surfacing later. Written uncommitted to Yehor's
+  working tree (H20); verified landed via fresh `device_list_dir`
+  before being reported (10,544 bytes, matching what was written).
+
+## Calibration record (continued) — Session 047, formal close
+
+Calibration score for this session, scored honestly against this
+file's own claims rather than rounded up: of roughly 12 significant
+state claims this session made and later checked, **10 held on first
+verification, 2 drifted and required correction before being reported
+as true** — the Cloudflare-auto-deploy assumption (corrected via H32's
+promotion, with the error folded into the heuristic's own text rather
+than smoothed over) and the STRATEGY.md write that a `device_commit_files`
+call reported as successful but had not actually landed (corrected via
+H43-candidate, redone, and re-verified three ways before being reported
+again). **Calibration: 10/12 ≈ 0.83.** Above the 0.7 threshold that
+would trigger a mandatory memory-hygiene thread, but both drift sources
+are worth naming plainly rather than letting an 0.83 read as "clean":
+one was a domain-knowledge assumption made without checking this
+project's own memory first (avoidable by the discipline this file
+already documents), the other was a tool-report/reality mismatch with
+no clear avoidance short of re-verifying every write independently
+going forward — which is exactly the practice this session adopted
+mid-stream and is now standing on H43-candidate. Both corrections
+happened within the same session that produced the error, which is the
+best realistic outcome short of the error never occurring.
+
+## Open threads (continued) — Session 047, formal close
+
+- [2026-09-11, Session 047, formal close] **Retrospective compression is
+  due, flagged fresh per the session-close skill's own check, not
+  compressed this session.** `.strategy/STRATEGY.md` measured directly
+  via `device_list_dir` at the start of this close: **196,082 bytes —
+  12.25× this project's own 16,000-byte hot-file ceiling.** This is a
+  flag only; per this project's standing rule, compression is a
+  separate, destructive rewrite of the ledger's own history and must be
+  its own explicitly-approved pass, never bundled into a session that
+  also did substantive project work (this session did both the MIT
+  pivot and an outreach-loop design — compressing the memory file in
+  the same session would risk exactly the kind of rushed, unreviewed
+  rewrite this project has been burned by before). Whenever Yehor wants
+  to run it, the prior compression precedent (2026-08-19, 2026-09-02) is
+  the template: pre-compression sha256-verified backup, dual loss-check,
+  ceiling-check before commit.
