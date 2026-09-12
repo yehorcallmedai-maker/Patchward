@@ -1053,6 +1053,79 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   `npx wrangler pages deploy dist --project-name=patchward-landing` from
   his own terminal (H20) and confirm the live HTML himself — instructions
   given in-chat this session, not yet executed as of this entry.
+- [2026-09-12, Session 048, open] **Session-open two-pass re-verification
+  of all five items flagged at Session 047's formal close — all five
+  CONFIRMED, zero drift** — plus a real mid-session reliability finding
+  that delayed this very entry from landing on the first attempt (see
+  below and H45-candidate). (1) Origin HEADs re-confirmed via `git
+  ls-remote` from the cloud sandbox, run twice across a device
+  disconnect: Patchward `ba3d1b1`, patchward-landing `ed0d53e`, both
+  exact matches to the local mount's own refs both times. Yehor
+  separately reported a third, independent re-confirmation of the same
+  two hashes plus this file's own 200,865-byte size from a different
+  vantage point (a guide-model review) — consistent with, not
+  additional Tier-1 proof beyond, this entry's own two `git ls-remote`
+  runs; not re-derived directly by this entry. A `WebFetch` call
+  against `api.github.com` (not the live site) returned specific,
+  internally-consistent, but wrong content in between the two
+  `git ls-remote` runs — a stale SHA and date for Patchward's `main`
+  and an outdated-but-real SHA for patchward-landing — while a raw
+  `curl` to the identical URL correctly surfaced the actual condition:
+  a 403, "GitHub access to this repository is not enabled for this
+  session." Mechanism unconfirmed (stale cache vs. a small
+  extraction-model producing a confident wrong answer over blocked
+  content vs. something else) — logged as H45-candidate below because
+  the operationally important fact holds regardless of mechanism: this
+  tool, against this specific host, returned wrong output that was
+  indistinguishable from genuine drift until a second, independent
+  method was tried. `git ls-remote` and direct `WebFetch` of the live
+  `patchward.dev` pages showed no sign of this failure mode and stayed
+  reliable throughout. (2) `patchward.dev` reconfirmed serving the
+  free/MIT framing via two independent cache-busted `WebFetch` calls to
+  different paths (homepage, `/limits`) — "Free, self-hosted CLI," "no
+  hosted service, no paid tier, no sales process," and the
+  draft-PR-only language all intact, unchanged since Session 047; one
+  of the two calls returned a verbatim phrase
+  ("Patchward opens a draft PR. It does not merge to your main branch
+  under any circumstance.") that was independently corroborated minutes
+  later by this session's own direct read of
+  `memory/outreach_loop_design_2026-09-11.md`, which quotes the same
+  sentence from `limits.astro`'s source — read after the WebFetch call,
+  not before, so the match isn't circular. This item was not
+  independently re-checked from Yehor's own side this session (his
+  guide-model review noted its fetch tool couldn't reach a low-traffic
+  site like this one) — it rests on this session's own `WebFetch`
+  calls, which is worth naming plainly given what the same tool just
+  proved capable of against a different host. (3) STRATEGY.md confirmed
+  still exactly 200,865 bytes, same mtime as Session 047's formal close
+  — unchanged, and (per the device disconnect below) this session's own
+  first attempt to append to it never landed at all, confirmed by a
+  fresh post-reconnect read before writing anything: same byte count,
+  same mtime, zero occurrences of "H45" or "Session 048" — a clean
+  miss, not a partial write, so this entry was composed fresh rather
+  than patched. (4) Telegram bot token status unchanged: revoked
+  same-session per Session 047's H44-candidate record; `src/` directory
+  listing shows no telegram-related file anywhere in the codebase, and
+  `memory/` carries neither `outreach_config.yaml` nor `OUTREACH_STOP`
+  — the outreach-automation design remains design-only, no code
+  written. (5) `memory/outreach_loop_design_2026-09-11.md` read in full
+  this session, including §4a's locked answers (shortlist = `mpfb2`
+  only; Telegram digest channel proposed but explicitly not locked
+  pending a properly-stored replacement token; weekly cadence to start
+  over daily). `device_bash` (the device-bridge shell) was unavailable
+  again this session — same Windows-update-linked bridge outage Session
+  047 hit, still unresolved — worked around the same way
+  (`device_list_dir`/`device_stage_files` plus the cloud sandbox's own
+  `git`/`WebFetch`); separately, the device-bridge *connection itself*
+  dropped mid-session, right as the first attempt to write this very
+  entry was in flight, which is why that attempt is absent from the
+  file rather than partially present. Net: the free/MIT pivot genuinely
+  has no open loose ends left; nothing here is gating a decision on
+  what to do next — but per Yehor's own guide-model review, three
+  reliability problems landing in one session (the bridge outage, the
+  mid-write disconnect, and the masked-403 `WebFetch` result) argue for
+  a conservative choice of what to start today, not for treating "zero
+  drift" as "environment fully trustworthy" — see Open threads.
 
 ## Open threads
 - [2026-09-11, Session 047 open] **Yehor floated a broad go-to-market
@@ -2220,6 +2293,44 @@ session doesn't rediscover a pattern already being tracked):
   occurrence — not promoted; promotable on a second real instance of a
   secret touching a chat transcript in this project.
 
+- H45-candidate [1 occurrence, 2026-09-12]: **a `WebFetch` call against
+  `api.github.com` in this environment can return specific,
+  self-consistent, but wrong content — indistinguishable from genuine
+  git drift — for a request that a raw `curl` to the identical URL
+  correctly reports as blocked (403, "GitHub access to this repository
+  is not enabled for this session").** Discovered when a
+  `WebFetch`-based check of Patchward's and patchward-landing's `main`
+  branch tips contradicted a same-session `git ls-remote` (the method
+  this project has trusted since early sessions) by roughly two months
+  and ~140 commits for one repo, and by several weeks for the other —
+  investigated rather than reported as drift, and the `git ls-remote`
+  result held up under two further independent checks: a second
+  `git ls-remote` run later the same session (after a device
+  reconnect), and a raw `curl` to the exact `WebFetch` URL, which
+  exposed the real 403 the summarized `WebFetch` result had obscured.
+  Mechanism not confirmed — could be a stale cached response, could be
+  a small extraction model producing a confident wrong answer when
+  asked to pull specific fields out of blocked/error content, could be
+  something else — and this entry deliberately doesn't guess further
+  than the evidence supports. What matters operationally: this is the
+  single most consequential failure class this project's whole
+  verification discipline exists to catch — a tool reporting something
+  that looks exactly like a real, specific answer and isn't — and it
+  was caught this time only because a second, structurally different
+  method was tried before trusting the first. Standing rule going
+  forward: never use `WebFetch` to check GitHub repository/commit/branch
+  state in this project — use `git ls-remote` (or a real clone) from the
+  cloud sandbox instead, exactly as this project already does for the
+  other half of this same check. `WebFetch` against the live rendered
+  site (`patchward.dev` itself, not `api.github.com`) showed no sign of
+  this failure mode the same session and remained reliable — the fault
+  is specific to a GitHub-API host under this session's own access
+  gate, not to `WebFetch` generally. Single occurrence, first time
+  seen — not promoted, but flagged as high-value rather than routine
+  given what it demonstrates; promotable on a second instance of
+  `WebFetch` producing confident wrong output over a blocked or
+  gated host.
+
 ## Failed approaches (ledger)
 - [2026-07-15] Trusting sandbox `git status` for close-out verification —
   false report caught twice (Session 018, this session). Retry only if the
@@ -3032,3 +3143,70 @@ best realistic outcome short of the error never occurring.
   to run it, the prior compression precedent (2026-08-19, 2026-09-02) is
   the template: pre-compression sha256-verified backup, dual loss-check,
   ceiling-check before commit.
+
+
+## Session log (continued) — Session 048, open
+
+- [2026-09-12, Session 048, open] Opened via the
+  `session-strategy-synthesis` skill per Yehor's instruction to
+  re-verify fresh rather than inherit the prior session's claims. Ran
+  the two-pass check on all five items the open prompt named. All five
+  CONFIRMED, zero drift on the substance — but the session surfaced two
+  process incidents worth logging honestly rather than smoothing over:
+  (1) a `WebFetch`-based GitHub-state check produced confident, wrong,
+  self-consistent output that a second method (raw `curl`, then a
+  second `git ls-remote`) exposed as a masked 403 rather than real
+  drift — see H45-candidate; (2) the device-bridge connection dropped
+  mid-session exactly as this file's first Session-048 write attempt
+  was in flight, so that attempt is cleanly absent rather than
+  partially applied — confirmed via a fresh post-reconnect read
+  (identical byte count and mtime to pre-attempt, zero occurrences of
+  the intended new text) before writing anything a second time, per
+  Yehor's own explicit instruction not to assume the earlier draft
+  landed. Yehor relayed a guide-model review of the situation that
+  independently reconfirmed the same two origin hashes and this file's
+  byte count from a separate vantage point (not itself re-derived by
+  this entry beyond corroborating it), flagged the `WebFetch` anomaly as
+  the most consequential finding of the session, and recommended against
+  starting either the outreach-loop build or the STRATEGY.md compression
+  today given three reliability problems landing in one session — advice
+  this entry's own author agrees with and is following. `device_bash`
+  unavailable again this session (same bridge outage Session 047 hit);
+  worked entirely through `device_list_dir`/`device_stage_files` plus
+  the cloud sandbox's own `git`/`WebFetch`. Did not stage or commit any
+  file in either repo's git working tree this turn (H20) — only wrote to
+  this memory file, then committed it to Yehor's device via
+  `device_commit_files`, then re-verified the write landed via a fresh
+  read-back before reporting it (per the lesson of the failed first
+  attempt, the write call's own success response was not treated as
+  sufficient this time). Handed Yehor copy-ready PowerShell to review
+  and commit/push this file himself (H20 — the agent never runs
+  `git add`/`commit`/`push` on this repo), and left the choice of
+  today's remaining direction — the Telegram-token task, or ending the
+  session here — to him, per the guide-model review's own reasoning.
+
+## Calibration record (continued) — Session 048, open
+
+Claims checked this turn: both repos' origin HEADs (`git ls-remote`,
+2 runs across a device disconnect, agreeing both times; a third-party
+`WebFetch`-based method was also tried, disagreed sharply, and was
+excluded after being run down rather than trusted — see H45-candidate);
+`patchward.dev`'s live framing (2 independent `WebFetch` calls,
+different paths, agreeing, one corroborated later by an unrelated
+document read); STRATEGY.md's byte count and the state of this
+session's own first write attempt (`device_list_dir` size/mtime plus a
+staged-copy read, before and after the reconnect, agreeing the first
+attempt never landed); the Telegram-token/no-code state (this file's
+own text plus a fresh `src/` directory listing, agreeing); the outreach
+design doc's content (direct full read, single method — the document's
+own text is the primary source). **5/5 substantive claims CONFIRMED, 0
+DRIFTED, 0 UNVERIFIED.** Calibration: 5/5 = 1.0 for what entered the
+final report — but, as at the prior close, the ratio undersells what
+actually happened this session: a verification method that has been
+trusted material was caught producing confident wrong output, and a
+memory write silently failed to land and was caught before being
+reported as done rather than after. Both catches came from applying
+this file's own standing discipline (never trust a single method, never
+trust a tool's own success report) to the tools doing the verifying,
+not just to the project being verified — worth naming as the session's
+real result, distinct from the clean 1.0.
