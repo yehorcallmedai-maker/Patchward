@@ -3452,3 +3452,73 @@ device write path without overclaiming what that data point proves.
   session (047, 048, 049) — the underlying mount/Windows-update issue,
   not this project's problem to fix, but worth tracking as a standing
   fact rather than re-discovering fresh each open.
+
+
+## Session log (continued) — Session 049, close
+
+- [2026-09-14, Session 049, close] Ran a formal close per Yehor's
+  request to close the session "maintaining a professional elegant
+  organisational industrial approach." Re-verified fresh rather than
+  trusting the running conversation's own account: both origin HEADs
+  via `git ls-remote` (`a72ab82` for Patchward, `ed0d53e` unchanged for
+  patchward-landing), plus a full `git clone --depth 1` content read of
+  Patchward confirming byte count (227,834), sha256 match against the
+  intended content, and the specific lines expected (H43-promoted text,
+  the digest-surface closure, the device_bash third-consecutive-session
+  note) all present exactly where Session 049's own open entries said
+  they'd be. No discrepancy found between what was claimed during the
+  session and what independent re-verification at close actually
+  showed — a clean result, stated plainly rather than assumed. Two
+  `device_commit_files` write-and-read-back round-trips against this
+  exact file both landed clean this session (the H43-update apply, and
+  this session's own open-decisions apply) — logged again as 2 data
+  points, explicitly not promoted to "reliable" on that basis; the
+  compression gate stays exactly where Session 049's open entries left
+  it. Wrote this close-out doc (`memory/SESSION_CLOSE_2026-09-14.md`)
+  plus this STRATEGY.md addition, applied both via `device_commit_files`
+  with the same mandatory read-back check used all session, and handed
+  Yehor copy-ready commit instructions (H20 — the agent never runs git
+  on this repo) rather than assuming the write's own success report was
+  sufficient.
+
+## Calibration record (continued) — Session 049, close
+
+Claims checked this close: both repos' current tips (2 methods each —
+`git ls-remote` plus, for Patchward, a full `git clone` content-level
+read cross-checking sha256 and specific expected text, not just the
+commit hash); the two device writes made earlier this session
+(re-confirmed via the same device-side read-back already performed
+in-session, not re-derived, since nothing on the device side has
+changed since); the accuracy of Yehor's own independent double-check
+claims from earlier in this session (his sha256 comparison, H43
+citation check, and digest-surface consistency check were re-run
+independently here rather than taken on his word, and agreed exactly).
+**7/7 substantive claims CONFIRMED, 0 DRIFTED, 0 UNVERIFIED across the
+whole session** (see Gate status table in the close-out doc for the
+full list spanning both the open and close). Calibration: 7/7 = 1.0.
+Two heuristics-relevant observations logged this session — device write
+reliability (2/2 clean this session, standing at 2 data points against
+4 prior failures, correctly not promoted or demoted) and a new process
+observation (a close-out doc's "queued for Yehor to commit next" is an
+intent, not a guarantee — worth an explicit landed-check at the
+following session's own open going forward). Neither is promoted to a
+numbered heuristic on one session's evidence; both are worth watching
+for a second occurrence.
+
+## Open threads (continued) — Session 049, close
+
+- [2026-09-14, Session 049, close] **New candidate path for whenever
+  device_bash is next found still down: build the outreach-loop's
+  Phase 1 as terminal-committed patches, bypassing the device bridge
+  entirely for that build.** Raised by Yehor at this close, not decided
+  tonight. Rationale worth preserving: every STRATEGY.md write made
+  through Yehor's own `git add`/`commit`/`push` across this entire
+  multi-session arc has landed clean on the first try, in contrast to
+  the device-bridge tools' documented reliability problems. This is not
+  a general license to bypass the device bridge for everything — H20
+  already restricts the agent from running git on this repo regardless,
+  and this candidate path is specifically about how *product code*
+  might get written and committed if `device_bash` remains unavailable,
+  not a change to any existing safety rule. Next session should put
+  this to Yehor explicitly rather than either assuming it or ignoring
+  it by defaulting to another open-ended wait.
