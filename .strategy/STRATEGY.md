@@ -1053,6 +1053,30 @@ memory/STATE.md + BUILD_PLAN_2026-07-10.md — confirm with Yehor)
   `npx wrangler pages deploy dist --project-name=patchward-landing` from
   his own terminal (H20) and confirm the live HTML himself — instructions
   given in-chat this session, not yet executed as of this entry.
+- [2026-09-12, Session 048, CORRECTED at close] **The write-reliability
+  incident logged in this session's own "open" entry above reached a
+  fully verified good outcome, and H43-candidate is now promoted (see
+  Heuristics) rather than left open.** After three `device_commit_files`
+  attempts disagreed with each other on this exact file, the choice made
+  was to stop retrying via the device bridge and instead hand Yehor
+  copy-ready PowerShell to review, commit, and push from his own
+  terminal (H20) — clean `git status`/`diff --stat` (178 insertions,
+  `.strategy/STRATEGY.md` only), commit `c1a87e7`, push succeeded,
+  `git ls-remote` matched. Independently re-verified from the cloud
+  sandbox twice more since: once via `git ls-remote` immediately after
+  the push, and once via a full fresh `git clone --depth 1` (a stronger
+  check than a hash comparison — it reads the actual file content from
+  origin) confirming the exact expected byte count (212,562),
+  H45-candidate's text present, and the planned write-incident addendum
+  genuinely absent — matching, rather than contradicting, this session's
+  own honest disclosure that the addendum attempt had not landed. **Open
+  item carried forward, not resolved:** the file-based-digest /
+  Telegram-deferred decision proposed for closing out `outreach_loop_
+  design_2026-09-11.md` §4 item 3 was never explicitly confirmed by
+  Yehor before the session moved to closing — treated here as an open
+  item, not a silent yes, per this file's own no-assuming-agreement
+  discipline; §4a's own text already stands as the fallback (file-based
+  default, Telegram undecided) regardless of how this resolves.
 - [2026-09-12, Session 048, open] **Session-open two-pass re-verification
   of all five items flagged at Session 047's formal close — all five
   CONFIRMED, zero drift** — plus a real mid-session reliability finding
@@ -2241,24 +2265,45 @@ session doesn't rediscover a pattern already being tracked):
   multiple sessions, distinct from this file's own numerically-verified
   claims) — logged as a candidate on that basis, promotable if a future
   session independently notices the same shape without prompting.
-- H43-candidate [1 occurrence, 2026-09-11]: a `device_commit_files`
-  call reporting `{"written": [...], "rejected": []}` is not, by itself,
-  sufficient proof the write actually landed on the device — on a rapid
-  sequence of writes to the same file within one session, a prior append
-  this session reported success this way but a fresh `device_list_dir` +
+- H43 [PROMOTED — earned 2026-09-12 (Session 048), 2nd confirmed
+  occurrence, meeting this project's own promotion threshold]: a
+  `device_commit_files` call reporting `{"written": [...], "rejected":
+  []}` is not, by itself, sufficient proof of what actually landed on
+  the device. **1st occurrence (2026-09-11, Session 047):** a rapid
+  sequence of writes to STRATEGY.md within one session — a prior append
+  reported success this way, but a fresh `device_list_dir` +
   `device_stage_files` re-check later the same session found the target
   file 3,347 bytes smaller than expected and the appended content
-  genuinely absent from a direct read of the device's own copy. Root
-  cause undetermined from the sandbox side (no error surfaced at the
-  time). Mitigation adopted for the rest of this session: after any
-  `device_commit_files` call on a file this project treats as
-  authoritative (STRATEGY.md, BACKLOG.md), re-verify via a fresh
-  `device_list_dir` byte-count check (and, when the stakes warrant it, a
-  fresh `device_stage_files` + direct read) before reporting the write as
-  successful — don't trust the tool's own report alone on this class of
-  file. Logged as a single-occurrence candidate, not promoted: this is a
-  first observation, the cause is unknown, and it may be specific to
-  rapid sequential writes rather than a general property of the tool.
+  genuinely absent. **2nd occurrence (2026-09-12, Session 048), a
+  distinct and worse manifestation of the same root class:** across a
+  device-bridge disconnect, three consecutive `device_commit_files`
+  calls to STRATEGY.md each reported clean success, and each time a
+  fresh read-back showed content that matched neither "nothing landed"
+  nor "what was just sent" — the 1st call's content landed only after a
+  delay (past a `device_list_dir` check that had shown it absent), then
+  a 2nd call's guarded write (correct `expectedMtimeMs`) reported
+  success while the 1st call's stale content was what persisted, then a
+  3rd call reported success while producing no visible change at all.
+  Root cause still undetermined from the sandbox side — no error
+  surfaced at any point in either occurrence — but the pattern is now
+  established rather than a one-off: **`expectedMtimeMs` guards and
+  `{"written":...}` success reports from `device_commit_files` do not
+  reliably reflect either whether a write landed or which of several
+  in-flight writes actually won.** Standing rule, elevated from
+  mitigation to hard requirement: after ANY `device_commit_files` call
+  to a file this project treats as authoritative (STRATEGY.md,
+  BACKLOG.md), a fresh `device_list_dir` byte-count/mtime check plus a
+  `device_stage_files` direct content read is mandatory before reporting
+  the write as done — and if that check disagrees with what was just
+  sent, do not immediately retry; re-read once more first, since a
+  disagreement may resolve itself as a delayed write lands, and a third
+  blind retry risks compounding the race rather than resolving it (as
+  it did in the 2nd occurrence, where the safest actual fix was to stop
+  retrying and verify against origin via git instead of the device
+  bridge). No occurrence of this heuristic has yet produced permanent
+  data loss — both times, a correct final state was reachable by
+  reading carefully rather than trusting reports — but the near-miss
+  margin was thin both times.
 - H44-candidate [1 occurrence, 2026-09-11]: **any secret (API token,
   credential) that touches a chat transcript must be treated as
   compromised the instant it's typed, and revoked immediately — not
@@ -3210,3 +3255,93 @@ this file's own standing discipline (never trust a single method, never
 trust a tool's own success report) to the tools doing the verifying,
 not just to the project being verified — worth naming as the session's
 real result, distinct from the clean 1.0.
+
+## Open threads (continued) — Session 048, close
+
+- [2026-09-12, Session 048, close] **Retrospective compression is even
+  more overdue — measured fresh at the start of this close, before this
+  close's own edits: 212,562 bytes, 13.3× this project's own
+  16,000-byte hot-file ceiling, up from 196,082 (12.25×) at Session
+  047's formal close.** Still a flag only, per standing rule: compression
+  is a separate, explicitly-approved, destructive rewrite of the
+  ledger's own history, never bundled into a session that also did
+  substantive verification work. This close added roughly another
+  ~4,700 bytes on top (H43 promotion, a current-state correction, this
+  entry, and the session log/calibration below) — the next session
+  should re-measure fresh rather than trust either this session's or
+  the prior session's number, per this file's own standing rule against
+  reusing a stale figure.
+- [2026-09-12, Session 048, close] **Open, not decided: file-based
+  digest vs. Telegram for Phase 1's digest surface.** Proposed to Yehor
+  as a low-stakes, no-code decision to close out `memory/outreach_loop_
+  design_2026-09-11.md` §4 item 3 cleanly before the session ended;
+  Yehor moved to closing the session without an explicit yes or no.
+  §4a's own text already establishes the fallback if this stays
+  undecided indefinitely: file-based digest is Phase 1's implemented
+  default, Telegram remains proposed-but-not-locked pending a properly-
+  stored replacement token and an actual digest generator to wire it
+  into. Whoever opens the next session should ask directly rather than
+  assume either answer.
+
+## Session log (continued) — Session 048, close
+
+- [2026-09-12, Session 048, close] Ran the `session-close` skill at
+  Yehor's explicit request for a "professional elegant organisational
+  industrial" close. Reconciled git state first via Yehor's own terminal
+  (agent never commits on this repo — H20): `git status` showed only
+  `.strategy/STRATEGY.md` modified before staging, `git diff --stat`
+  showed 178 insertions only, commit `c1a87e7` landed, `git push`
+  succeeded, `git ls-remote` matched immediately after. Two-pass
+  verification re-run fresh at close rather than trusted from mid-
+  session: a full `git clone --depth 1` of Patchward from origin (a
+  stronger, content-level check, not just a hash comparison) confirmed
+  the exact expected file content, byte count, and the honest absence
+  of the incomplete addendum; a fresh `git ls-remote` on both repos
+  confirmed Patchward `c1a87e7` and patchward-landing `ed0d53e`
+  (untouched this session, as expected). Attempted a `curl` cross-check
+  of `patchward.dev` as a second method beyond `WebFetch` for the one
+  claim this session flagged as resting on a single tool — the request
+  was blocked outright at the proxy level (`HTTP_CODE:000`), so that
+  item remains resting on `WebFetch` alone plus the cross-document quote
+  match already logged; honestly carried as a lighter-confidence
+  CONFIRMED rather than upgraded on the strength of an attempt that
+  didn't actually succeed. Promoted H43 to earned status (2nd confirmed
+  occurrence, a distinct and more severe manifestation than the 1st —
+  see Heuristics). Logged the digest-surface decision as a genuine open
+  item rather than assuming Yehor's move to close implied a yes. Did not
+  start any of the three deferred build/maintenance options (outreach-
+  loop build, Telegram wiring, STRATEGY.md compression) — correctly, per
+  this session's own reasoning: `device_bash` never came back this
+  session, and building code on a write path that just took three
+  attempts to trust would be the wrong bet regardless of which of the
+  three got picked.
+
+## Calibration record (continued) — Session 048, close
+
+Claims checked this close: the landed commit's exact content (2
+independent methods — `git ls-remote` hash match, then a full `git
+clone` content-level read, agreeing); both repos' current tips (2
+methods — fresh `git ls-remote` on each, cross-checked against the
+session-open values for patchward-landing to confirm zero drift while
+untouched); H43's occurrence count and exact prior text (1 method —
+direct read against this file, sufficient since the text itself is the
+primary source); the retrospective byte-count (1 method — direct file
+size at clone time, the number IS the fact, no second method
+meaningfully independent). One claim attempted and honestly marked
+short of full confirmation: `patchward.dev`'s framing via a second,
+non-`WebFetch` method — the attempt was made (`curl`), it failed at the
+network layer rather than confirming or contradicting anything, and
+this record says so rather than quietly dropping the attempt. **4/4
+attempted-and-completed CONFIRMED, 0 DRIFTED, 1 attempted-but-
+inconclusive (patchward.dev's second-method cross-check).** Calibration
+for claims fully checked this close: 4/4 = 1.0; counting the
+inconclusive attempt as a claim this session chose to be honest about
+rather than paper over, the more meaningful number is that nothing was
+reported more confidently than the evidence supported. Two heuristics
+moved this session: H43 promoted (2nd occurrence), H45-candidate newly
+logged (1st occurrence, high-value, not yet promotable). No heuristic
+demoted. Net: a session that produced zero project-content movement but
+real, durable improvement to how much this project's own verification
+tooling can be trusted going forward — worth recording as genuine L1
+progress on the project's verification discipline, not as "nothing
+happened."
