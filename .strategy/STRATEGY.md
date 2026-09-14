@@ -3345,3 +3345,110 @@ real, durable improvement to how much this project's own verification
 tooling can be trusted going forward — worth recording as genuine L1
 progress on the project's verification discipline, not as "nothing
 happened."
+
+## Session log (continued) — Session 049, open
+
+- [2026-09-14, Session 049, open] Opened via the `session-strategy-synthesis`
+  skill per Yehor's standing instruction to re-verify fresh, not inherit
+  the prior session's claims. `device_bash` tried directly first — still
+  down, same "no Plan9 drive shares mounted" mount failure as Sessions
+  047-048, now a third consecutive session with the bridge shell
+  unavailable (Windows-update issue from 2026-09-08, tracked by
+  Anthropic, unresolved). Both origin HEADs re-confirmed via
+  `git ls-remote` (not `WebFetch`/`api.github.com`, per H45):
+  patchward-landing unchanged at `ed0d53e`; Patchward at `dd70c8d`
+  going in, matching the local unpushed working tree exactly as the
+  prior close's own next-session prompt predicted. Investigated why
+  Session 048's own close-out doc said the STRATEGY.md update was
+  "queued for Yehor to commit next" but the file showed no trace of
+  it: `dd70c8d` (the commit that did land) turned out to contain only
+  `memory/SESSION_CLOSE_2026-09-12.md` (95 lines) — the actual
+  STRATEGY.md draft had been delivered to Yehor as a standalone file
+  and never committed. Located it at
+  `patchward-landing\Claude outputs\STRATEGY_pending_Session048_close_
+  2026-09-12.md` (221,198 bytes), diffed it against the live file
+  (exactly the two described edit regions — a current-state correction
+  and the H43 promotion/close sections, nothing else changed
+  underneath it), and applied it via `device_commit_files`. Per H43's
+  mandatory mitigation, did not trust the tool's own success report:
+  re-read the file fresh via `device_list_dir` (size/mtime) and
+  `device_stage_files` (content), sha256-compared against the intended
+  bytes — exact match. Logged as one clean round-trip, explicitly not
+  treated as proof the write path is reliable again (see Open threads
+  below). Asked Yehor directly whether the digest-surface question
+  from `outreach_loop_design_2026-09-11.md` §4 item 3 had been settled
+  since 09-12 rather than assuming either answer from silence, per the
+  prior close's own explicit finding.
+
+- [2026-09-14, Session 049] Yehor answered both open questions directly,
+  with reasoning checked and independently agreed with rather than
+  taken on faith: **(1) Digest surface: file-based, confirmed as a
+  decision, not a default left standing by omission.** No digest
+  generator exists yet for a Telegram token to plug into, and wiring
+  one in now would recreate a dormant-credential exposure surface for
+  no present benefit — the exact pattern H44 exists to name. Telegram
+  stays explicitly deferred until a generator exists and a real need
+  for a chat surface appears; this closes §4 item 3 rather than
+  re-opening it every session. **(2) Session direction: wait for
+  `device_bash`.** Explicitly declined to treat tonight's clean
+  `device_commit_files` round-trip as proof the write path is reliable
+  again — one success against four confirmed silent-failure incidents
+  on this identical file in one prior evening (a delayed write, two
+  stale-overwrite incidents, a resurrected abandoned draft) is one data
+  point, not a fixed tool. No new build work started this session
+  (outreach-loop build, Telegram wiring, and STRATEGY.md compression
+  all correctly not attempted). Yehor then committed the pending H43
+  update himself, in his own terminal, in its own clean commit
+  (`190716a`, 152 insertions/17 deletions, matching the predicted
+  212,562 → 221,198 byte delta exactly) and pushed — independently
+  re-verified via a fresh `git ls-remote` (`190716a`) and a fresh
+  `git clone --depth 1` content read (byte count, H43-promoted text,
+  and 6 occurrences of "Session 048, close" all present, sha256-matched
+  against the intended content) before being reported as landed.
+
+## Calibration record (continued) — Session 049, open
+
+Claims checked this turn: both repos' origin HEADs, twice — once before
+Yehor's commit (`git ls-remote`, agreeing with the local unpushed
+state) and once after (`git ls-remote` + a full `git clone --depth 1`
+content-level read, agreeing with the intended sha256); `device_bash`
+status (direct invocation, same mount failure as Sessions 047-048);
+the existence, location, and content of the queued Session 048 draft
+(`device_list_dir` located it, `device_stage_files` read it, diffed
+against the live file — exactly two edit regions, nothing else
+changed); the applied write's integrity, both before Yehor's commit
+(device-side read-back, sha256 match) and after (origin-side read-back,
+sha256 match). **6/6 substantive claims CONFIRMED, 0 DRIFTED, 0
+UNVERIFIED.** The digest-surface and session-direction items were
+decisions Yehor made directly this session, not claims to verify,
+recorded above rather than folded into this ratio. Net: a session that
+moved zero product code but closed out a real backlog item (the
+Session 048 draft that had been sitting unlanded for two days),
+closed a standing open question (digest surface) instead of re-asking
+it indefinitely, and added a second confirmed-good data point for the
+device write path without overclaiming what that data point proves.
+
+## Open threads (continued) — Session 049, open
+
+- [2026-09-14, Session 049] **Digest-surface decision: CLOSED.**
+  File-based digest is confirmed as Phase 1's implemented surface, not
+  merely defaulted to. Telegram is explicitly deferred pending a
+  digest generator and a real need, not left ambiguous. No further
+  re-asking needed unless a real need for a chat surface actually
+  appears.
+- [2026-09-14, Session 049] **Retrospective compression: still due,
+  still NOT authorized.** STRATEGY.md is now 221,198 bytes on origin
+  (13.8x the 16,000-byte ceiling), up from 212,562 at Session 048's
+  close. Two consecutive clean `device_commit_files` write-and-read-back
+  round-trips now exist against this exact file (tonight's device-side
+  write, plus Yehor's own git commit landing cleanly) — genuinely
+  encouraging, but still short of "proven reliable across a full
+  session" per the standing gate, and compression remains the single
+  most destructive, hardest-to-undo operation this project has. The
+  next session should not treat two successes as clearance on its own;
+  require a full session's worth of writes landing clean, or get
+  Yehor's explicit override, before running it.
+- [2026-09-14, Session 049] `device_bash` down for a third consecutive
+  session (047, 048, 049) — the underlying mount/Windows-update issue,
+  not this project's problem to fix, but worth tracking as a standing
+  fact rather than re-discovering fresh each open.
